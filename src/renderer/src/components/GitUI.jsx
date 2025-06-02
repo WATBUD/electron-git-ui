@@ -12,6 +12,7 @@ export const GitUI = () => {
   const [commandHistory, setCommandHistory] = useState([]);
   const [showFetchDialog, setShowFetchDialog] = useState(false);
   const [pruneBranches, setPruneBranches] = useState(false);
+  const [currentBranch, setCurrentBranch] = useState('');
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -76,6 +77,13 @@ export const GitUI = () => {
       const result = await window.git.listBranches();
       if (result.success) {
         setBranches(result.branches);
+        // 從原始輸出中找到當前分支
+        const rawOutput = result.command.output || '';
+        const current = rawOutput.split('\n')
+          .find(line => line.trim().startsWith('* '));
+        if (current) {
+          setCurrentBranch(current.trim().replace('* ', ''));
+        }
         await updateCommandHistory();
       }
     } catch (err) {
@@ -230,7 +238,7 @@ export const GitUI = () => {
 
           <div className="branch-list">
             <div className="branch-list-header">
-              <h3>Branches</h3>
+              <h3>Branches: {currentBranch}</h3>
               <button onClick={loadBranches} disabled={loading} className="refresh-btn">
                 ↻ Refresh
               </button>

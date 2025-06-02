@@ -50,7 +50,9 @@ export function setupGitHandlers() {
           .map(branch => branch.trim())
           .filter(branch => branch.length > 0)
           .map(branch => branch.replace('* ', '')),
-        command
+        command: {
+          output: stdout
+        }
       };
     } catch (error) {
       console.error('Error listing branches:', error);
