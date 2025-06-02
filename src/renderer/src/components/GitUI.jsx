@@ -189,9 +189,9 @@ export const GitUI = () => {
           </button>
         </div>
         <div className="command-list">
-          {commandHistory.map((command, index) => (
-            <div key={index} className="command-item">
-              <span className="command-number">{index + 1}.</span>
+          {commandHistory.slice().reverse().map((command, index) => (
+            <div key={commandHistory.length - 1 - index} className="command-item">
+              <span className="command-number">{commandHistory.length - index}.</span>
               <span className="command-text">{command}</span>
             </div>
           ))}
