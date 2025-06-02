@@ -105,12 +105,6 @@ button:disabled {
   border-radius: 4px;
 }
 
-.loading {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-
 .branch-list {
   background-color: #f8f9fa;
   border-radius: 8px;

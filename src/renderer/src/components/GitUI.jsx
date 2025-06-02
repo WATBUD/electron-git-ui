@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { LoadingModal } from './LoadingModal';
 import './GitUI.css';
 
 export const GitUI = () => {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [error, setError] = useState(null);
   const [repoPath, setRepoPath] = useState(null);
@@ -33,9 +35,19 @@ export const GitUI = () => {
     }
   };
 
+  const startLoading = (message) => {
+    setLoadingMessage(message);
+    setLoading(true);
+  };
+
+  const stopLoading = () => {
+    setLoading(false);
+    setLoadingMessage('');
+  };
+
   const handleSelectRepository = async () => {
     try {
-      setLoading(true);
+      startLoading('Selecting repository...');
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -49,14 +61,14 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error selecting repository:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const loadBranches = async () => {
     if (!repoPath) return;
     try {
-      setLoading(true);
+      startLoading('Loading branches...');
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -70,14 +82,14 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error loading branches:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const handleCreateBranch = async () => {
     if (!newBranchName.trim()) return;
     try {
-      setLoading(true);
+      startLoading(`Creating branch: ${newBranchName}...`);
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -92,13 +104,13 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error creating branch:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const handleCheckout = async (branchName) => {
     try {
-      setLoading(true);
+      startLoading(`Checking out branch: ${branchName}...`);
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -112,13 +124,13 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error checking out branch:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const handleDelete = async (branchName) => {
     try {
-      setLoading(true);
+      startLoading(`Deleting branch: ${branchName}...`);
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -132,13 +144,13 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error deleting branch:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
   const handleFetch = async () => {
     try {
-      setLoading(true);
+      startLoading('Fetching from remote...');
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -153,7 +165,7 @@ export const GitUI = () => {
       setError(err.message);
       console.error('Error fetching:', err);
     } finally {
-      setLoading(false);
+      stopLoading();
     }
   };
 
@@ -165,6 +177,8 @@ export const GitUI = () => {
 
   return (
     <div className="git-ui">
+      <LoadingModal message={loadingMessage} />
+      
       <h2>Git Branch Manager</h2>
       
       <div className="command-history">
