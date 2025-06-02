@@ -111,4 +111,16 @@ export function setupGitHandlers() {
     commandHistory = [];
     return true;
   });
+
+  ipcMain.handle('git:fetch', async (event, prune) => {
+    try {
+      const command = prune ? 'git fetch --prune' : 'git fetch';
+      const { stdout, stderr } = await execAsync(command);
+      commandHistory.push(command);
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error fetching:', error);
+      return { success: false, error: error.message };
+    }
+  });
 } 

@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('git', {
   deleteBranch: (branchName) => ipcRenderer.invoke('git:deleteBranch', branchName),
   getCommandHistory: () => ipcRenderer.invoke('git:getCommandHistory'),
   clearCommandHistory: () => ipcRenderer.invoke('git:clearCommandHistory'),
+  fetch: (prune) => ipcRenderer.invoke('git:fetch', prune)
 });
 
 // Debug log to verify git object is exposed

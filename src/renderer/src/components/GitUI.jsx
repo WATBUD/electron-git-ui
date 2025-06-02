@@ -8,6 +8,8 @@ export const GitUI = () => {
   const [error, setError] = useState(null);
   const [repoPath, setRepoPath] = useState(null);
   const [commandHistory, setCommandHistory] = useState([]);
+  const [showFetchDialog, setShowFetchDialog] = useState(false);
+  const [pruneBranches, setPruneBranches] = useState(false);
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -42,7 +44,6 @@ export const GitUI = () => {
       if (result && result.success) {
         setRepoPath(result.path);
         await updateCommandHistory();
-        await loadBranches();
       }
     } catch (err) {
       setError(err.message);
@@ -84,8 +85,8 @@ export const GitUI = () => {
       const result = await window.git.createBranch(newBranchName);
       if (result.success) {
         await updateCommandHistory();
+        setBranches(prevBranches => [...prevBranches, newBranchName]);
         setNewBranchName('');
-        await loadBranches();
       }
     } catch (err) {
       setError(err.message);
@@ -135,9 +136,32 @@ export const GitUI = () => {
     }
   };
 
+  const handleFetch = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.fetch(pruneBranches);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadBranches();
+      }
+      setShowFetchDialog(false);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    loadBranches();
-  }, []);
+    if (repoPath) {
+      loadBranches();
+    }
+  }, [repoPath]);
 
   return (
     <div className="git-ui">
@@ -171,6 +195,12 @@ export const GitUI = () => {
 
       {repoPath && (
         <>
+          <div className="action-buttons">
+            <button onClick={() => setShowFetchDialog(true)} className="fetch-btn">
+              Fetch
+            </button>
+          </div>
+
           <div className="create-branch">
             <input
               type="text"
@@ -185,7 +215,12 @@ export const GitUI = () => {
           </div>
 
           <div className="branch-list">
-            <h3>Branches</h3>
+            <div className="branch-list-header">
+              <h3>Branches</h3>
+              <button onClick={loadBranches} disabled={loading} className="refresh-btn">
+                ↻ Refresh
+              </button>
+            </div>
             {loading ? (
               <div className="loading">Loading...</div>
             ) : (
@@ -203,6 +238,32 @@ export const GitUI = () => {
             )}
           </div>
         </>
+      )}
+
+      {showFetchDialog && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <h3>Fetch Options</h3>
+            <div className="dialog-content">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={pruneBranches}
+                  onChange={(e) => setPruneBranches(e.target.checked)}
+                />
+                Prune tracking branches no longer present on remote(s)
+              </label>
+            </div>
+            <div className="dialog-buttons">
+              <button onClick={() => setShowFetchDialog(false)} className="cancel-btn">
+                Cancel
+              </button>
+              <button onClick={handleFetch} disabled={loading} className="confirm-btn">
+                Fetch
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
