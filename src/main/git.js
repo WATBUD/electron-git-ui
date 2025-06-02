@@ -42,16 +42,31 @@ export function setupGitHandlers() {
     }
     try {
       const command = 'git branch';
+      const remoteCommand = 'git branch -r';
       commandHistory.push(command);
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath });
+      commandHistory.push(remoteCommand);
+      
+      const [{ stdout: localOutput }, { stdout: remoteOutput }] = await Promise.all([
+        execAsync(command, { cwd: currentRepoPath }),
+        execAsync(remoteCommand, { cwd: currentRepoPath })
+      ]);
+
+      const localBranches = localOutput.split('\n')
+        .map(branch => branch.trim())
+        .filter(branch => branch.length > 0)
+        .map(branch => branch.replace('* ', ''));
+
+      const remoteBranches = remoteOutput.split('\n')
+        .map(branch => branch.trim())
+        .filter(branch => branch.length > 0)
+        .map(branch => branch.replace('origin/', ''));
+
       return {
         success: true,
-        branches: stdout.split('\n')
-          .map(branch => branch.trim())
-          .filter(branch => branch.length > 0)
-          .map(branch => branch.replace('* ', '')),
+        branches: localBranches,
+        remoteBranches,
         command: {
-          output: stdout
+          output: localOutput
         }
       };
     } catch (error) {

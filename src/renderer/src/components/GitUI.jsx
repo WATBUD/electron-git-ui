@@ -4,6 +4,7 @@ import './GitUI.css';
 
 export const GitUI = () => {
   const [branches, setBranches] = useState([]);
+  const [remoteBranches, setRemoteBranches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
@@ -77,6 +78,7 @@ export const GitUI = () => {
       const result = await window.git.listBranches();
       if (result.success) {
         setBranches(result.branches);
+        setRemoteBranches(result.remoteBranches);
         // 從原始輸出中找到當前分支
         const rawOutput = result.command.output || '';
         const current = rawOutput.split('\n')
@@ -246,17 +248,35 @@ export const GitUI = () => {
             {loading ? (
               <div className="loading">Loading...</div>
             ) : (
-              <ul>
-                {branches.map((branch) => (
-                  <li key={branch}>
-                    <span>{branch}</span>
-                    <div className="branch-actions">
-                      <button onClick={() => handleCheckout(branch)}>Checkout</button>
-                      <button onClick={() => handleDelete(branch)}>Delete</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <div className="branch-section">
+                  <h4>Local Branches</h4>
+                  <ul>
+                    {branches.map((branch) => (
+                      <li key={branch}>
+                        <span>{branch}</span>
+                        <div className="branch-actions">
+                          <button onClick={() => handleCheckout(branch)}>Checkout</button>
+                          <button onClick={() => handleDelete(branch)}>Delete</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="branch-section">
+                  <h4>Remote Branches</h4>
+                  <ul>
+                    {remoteBranches.map((branch) => (
+                      <li key={branch}>
+                        <span>{branch}</span>
+                        <div className="branch-actions">
+                          <button onClick={() => handleCheckout(branch)}>Checkout</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
             )}
           </div>
         </>
