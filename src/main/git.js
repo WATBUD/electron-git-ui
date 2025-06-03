@@ -309,6 +309,10 @@ export function setupGitHandlers() {
       const branchCommand = 'git rev-parse --abbrev-ref HEAD';
       const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath });
 
+      // 獲取未推送的提交數量
+      const unpushedCommand = 'git rev-list @{push}..HEAD --count';
+      const { stdout: unpushedCount } = await execAsync(unpushedCommand, { cwd: currentRepoPath });
+
       const command = 'git log --pretty=format:"%H|%an|%ad|%s" --date=iso --graph --all';
       commandHistory.push(command);
       const { stdout } = await execAsync(command, { cwd: currentRepoPath });
@@ -343,7 +347,8 @@ export function setupGitHandlers() {
             message,
             branches,
             isCurrent: hash.trim() === headHash.trim(),
-            currentBranch: branches.includes('current') ? currentBranch.trim() : null
+            currentBranch: branches.includes('current') ? currentBranch.trim() : null,
+            isUnpushed: parseInt(unpushedCount) > 0 && hash.trim() === headHash.trim()
           };
         });
 
@@ -351,7 +356,8 @@ export function setupGitHandlers() {
         success: true, 
         commits,
         currentHead: headHash.trim(),
-        currentBranch: currentBranch.trim()
+        currentBranch: currentBranch.trim(),
+        unpushedCount: parseInt(unpushedCount)
       };
     } catch (error) {
       console.error('Error getting commit history:', error);

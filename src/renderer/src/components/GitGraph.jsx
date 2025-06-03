@@ -7,6 +7,7 @@ export const GitGraph = ({ repoPath }) => {
   const [error, setError] = useState(null);
   const [currentHead, setCurrentHead] = useState(null);
   const [currentBranch, setCurrentBranch] = useState(null);
+  const [unpushedCount, setUnpushedCount] = useState(0);
 
   const loadCommitHistory = async () => {
     if (!repoPath) return;
@@ -21,6 +22,7 @@ export const GitGraph = ({ repoPath }) => {
         setCommits(result.commits);
         setCurrentHead(result.currentHead);
         setCurrentBranch(result.currentBranch);
+        setUnpushedCount(result.unpushedCount || 0);
       }
     } catch (err) {
       setError(err.message);
@@ -66,10 +68,17 @@ export const GitGraph = ({ repoPath }) => {
     <div className="git-graph">
       <div className="graph-header">
         <div className="graph-header-left">
-          <h3>Commit History</h3>
+          <h3>
+            Commit History
+            {unpushedCount > 0 && (
+              <span className="unpushed-badge" title={`${unpushedCount} commits not pushed`}>
+                {unpushedCount}
+              </span>
+            )}
+          </h3>
           {currentBranch && (
             <span className="current-branch">
-              Current Branch: {currentBranch}
+              {currentBranch}
             </span>
           )}
         </div>
@@ -103,6 +112,9 @@ export const GitGraph = ({ repoPath }) => {
                   )}
                   {commit.isCurrent && (
                     <span className="current-tag">Current</span>
+                  )}
+                  {commit.isUnpushed && (
+                    <span className="unpushed-tag">Unpushed</span>
                   )}
                 </div>
                 <div className="commit-message">{commit.message}</div>
