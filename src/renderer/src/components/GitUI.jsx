@@ -161,6 +161,29 @@ export const GitUI = () => {
     }
   };
 
+  const handleDeleteRemote = async (branchName) => {
+    try {
+      startLoading(`Deleting remote branch: ${branchName}...`);
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.deleteRemoteBranch(branchName);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadBranches();
+      } else {
+        alert(result.error || 'Failed to delete remote branch');
+      }
+    } catch (err) {
+      alert(err.message);
+      setError(err.message);
+      console.error('Error deleting remote branch:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
   const handleFetch = async (pruneBranches) => {
     try {
       startLoading('Fetching from remote...');
@@ -429,6 +452,7 @@ export const GitUI = () => {
                             <span>{branch}</span>
                             <div className="branch-actions">
                               <button onClick={() => handleCheckout(branch)}>Checkout</button>
+                              <button onClick={() => handleDeleteRemote(branch)}>Delete</button>
                             </div>
                           </li>
                         ))}

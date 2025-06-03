@@ -59,7 +59,14 @@ export function setupGitHandlers() {
       const remoteBranches = remoteOutput.split('\n')
         .map(branch => branch.trim())
         .filter(branch => branch.length > 0)
-        .map(branch => branch.replace('origin/', ''));
+        .map(branch => {
+          // 如果是 HEAD 引用，只返回 origin/HEAD
+          if (branch.includes('HEAD ->')) {
+            return 'origin/HEAD';
+          }
+          // 否則移除 "origin/" 前綴
+          return branch.replace('origin/', '');
+        });
 
       return {
         success: true,
@@ -95,10 +102,24 @@ export function setupGitHandlers() {
       throw new Error('No repository selected');
     }
     try {
-      const command = `git checkout ${branchName}`;
-      commandHistory.push(command);
-      await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, command };
+      // 如果是 origin/HEAD，直接檢出它指向的提交
+      if (branchName === 'origin/HEAD') {
+        const command = 'git checkout origin/HEAD';
+        commandHistory.push(command);
+        await execAsync(command, { cwd: currentRepoPath });
+      }
+      // 如果是其他遠程分支，使用 git checkout -b 創建本地分支
+      else if (branchName.includes('origin/')) {
+        const localBranchName = branchName.replace('origin/', '');
+        const command = `git checkout -b ${localBranchName} ${branchName}`;
+        commandHistory.push(command);
+        await execAsync(command, { cwd: currentRepoPath });
+      } else {
+        const command = `git checkout ${branchName}`;
+        commandHistory.push(command);
+        await execAsync(command, { cwd: currentRepoPath });
+      }
+      return { success: true };
     } catch (error) {
       console.error('Error checking out branch:', error);
       throw error;
@@ -117,6 +138,27 @@ export function setupGitHandlers() {
     } catch (error) {
       console.error('Error deleting branch:', error);
       throw error;
+    }
+  });
+
+  ipcMain.handle('git:deleteRemoteBranch', async (_, branchName) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      // 不允許刪除 origin/HEAD
+      if (branchName === 'origin/HEAD') {
+        throw new Error('Cannot delete origin/HEAD reference');
+      }
+      // 移除可能的 "origin/" 前綴
+      const cleanBranchName = branchName.replace('origin/', '');
+      const command = `git push origin --delete ${cleanBranchName}`;
+      commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error deleting remote branch:', error);
+      return { success: false, error: error.message };
     }
   });
 
@@ -149,10 +191,25 @@ export function setupGitHandlers() {
       throw new Error('No repository selected');
     }
     try {
-      const command = force ? 'git push -f' : 'git push';
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      // 先嘗試獲取當前分支名稱
+      const { stdout: currentBranch } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: currentRepoPath });
+      const branchName = currentBranch.trim();
+
+      // 檢查分支是否有上游分支
+      try {
+        await execAsync(`git rev-parse --abbrev-ref ${branchName}@{upstream}`, { cwd: currentRepoPath });
+        // 如果有上游分支，使用普通的 push
+        const command = force ? 'git push -f' : 'git push';
+        commandHistory.push(command);
+        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+        return { success: true, output: stdout || stderr };
+      } catch (err) {
+        // 如果沒有上游分支，使用 --set-upstream
+        const command = force ? `git push -f --set-upstream origin ${branchName}` : `git push --set-upstream origin ${branchName}`;
+        commandHistory.push(command);
+        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+        return { success: true, output: stdout || stderr };
+      }
     } catch (error) {
       console.error('Error pushing:', error);
       return { success: false, error: error.message };
