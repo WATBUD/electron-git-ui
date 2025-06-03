@@ -1,4 +1,5 @@
 import React from 'react';
+import { LoadingModal } from './LoadingModal';
 import './FileStatus.css';
 
 export const FileStatus = ({ 
@@ -6,10 +7,26 @@ export const FileStatus = ({
   onStageFile, 
   onUnstageFile,
   getStatusIcon,
-  getStatusText 
+  getStatusText,
+  onRefresh,
+  loading,
+  loadingMessage
 }) => {
   return (
     <div className="file-status-panel">
+      <LoadingModal message={loadingMessage} />
+      <div className="file-status-header">
+        <h3>File Status</h3>
+        <button 
+          onClick={onRefresh} 
+          className="file-status-refresh"
+          disabled={loading}
+          title="Refresh status"
+        >
+          <span className="refresh-icon">🔄</span>
+          <span className="refresh-text">File Status Refresh</span>
+        </button>
+      </div>
       <div className="file-status-section">
         <h3>Working Directory</h3>
         <div className="file-list">
@@ -26,6 +43,7 @@ export const FileStatus = ({
                   onClick={() => onStageFile(file.file)}
                   className="stage-btn"
                   title="Stage file"
+                  disabled={loading}
                 >
                   ➜
                 </button>
@@ -50,6 +68,7 @@ export const FileStatus = ({
                   onClick={() => onUnstageFile(file.file)}
                   className="unstage-btn"
                   title="Unstage file"
+                  disabled={loading}
                 >
                   ⬅
                 </button>

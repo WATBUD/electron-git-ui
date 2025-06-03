@@ -6,7 +6,6 @@ export const Toolbar = ({
   onFetch, 
   onPush, 
   onCommit, 
-  onRefresh,
   loading 
 }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false);
@@ -40,7 +39,7 @@ export const Toolbar = ({
         <div className="toolbar-group">
           <button 
             onClick={() => setShowFetchDialog(true)} 
-            className="toolbar-btn fetch-btn"
+            className="toolbar-btn"
             disabled={loading}
             title="Fetch from remote"
           >
@@ -49,32 +48,21 @@ export const Toolbar = ({
           </button>
           <button 
             onClick={() => setShowPushDialog(true)} 
-            className="toolbar-btn push-btn"
+            className="toolbar-btn"
             disabled={loading}
             title="Push to remote"
           >
             <span className="toolbar-icon">⬆️</span>
             <span className="toolbar-text">Push</span>
           </button>
-        </div>
-        <div className="toolbar-group">
           <button 
             onClick={() => setShowCommitDialog(true)} 
-            className="toolbar-btn commit-btn"
+            className="toolbar-btn"
             disabled={loading}
             title="Commit changes"
           >
             <span className="toolbar-icon">💾</span>
             <span className="toolbar-text">Commit</span>
-          </button>
-          <button 
-            onClick={onRefresh} 
-            className="toolbar-btn refresh-btn"
-            disabled={loading}
-            title="Refresh status"
-          >
-            <span className="toolbar-icon">🔄</span>
-            <span className="toolbar-text">Refresh</span>
           </button>
         </div>
       </div>

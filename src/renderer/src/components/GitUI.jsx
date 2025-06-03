@@ -14,12 +14,6 @@ export const GitUI = () => {
   const [error, setError] = useState(null);
   const [repoPath, setRepoPath] = useState(null);
   const [commandHistory, setCommandHistory] = useState([]);
-  const [showFetchDialog, setShowFetchDialog] = useState(false);
-  const [pruneBranches, setPruneBranches] = useState(false);
-  const [showPushDialog, setShowPushDialog] = useState(false);
-  const [forcePush, setForcePush] = useState(false);
-  const [showCommitDialog, setShowCommitDialog] = useState(false);
-  const [commitMessage, setCommitMessage] = useState('');
   const [currentBranch, setCurrentBranch] = useState('');
   const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
@@ -232,6 +226,7 @@ export const GitUI = () => {
   const loadFileStatus = async () => {
     if (!repoPath) return;
     try {
+      startLoading('Loading file status...');
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
@@ -243,6 +238,8 @@ export const GitUI = () => {
     } catch (err) {
       setError(err.message);
       console.error('Error loading file status:', err);
+    } finally {
+      stopLoading();
     }
   };
 
@@ -325,7 +322,6 @@ export const GitUI = () => {
       <LoadingModal message={loadingMessage} />
       
       <div className="header-section">
-        <h2>Git Branch Manager</h2>
         <div className="repository-selector">
           <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
             {repoPath ? 'Change Repository' : 'Select Repository'}
@@ -339,7 +335,6 @@ export const GitUI = () => {
           onFetch={handleFetch}
           onPush={handlePush}
           onCommit={handleCommit}
-          onRefresh={loadFileStatus}
           loading={loading}
         />
       )}
@@ -454,6 +449,9 @@ export const GitUI = () => {
               onUnstageFile={handleUnstageFile}
               getStatusIcon={getStatusIcon}
               getStatusText={getStatusText}
+              onRefresh={loadFileStatus}
+              loading={loading}
+              loadingMessage={loadingMessage}
             />
           )}
         </>

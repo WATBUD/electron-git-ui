@@ -202,34 +202,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
+
 .action-buttons {
   margin-bottom: 20px;
   display: flex;
   gap: 10px;
-}
-
-.fetch-btn {
-  background-color: #28a745;
-}
-
-.fetch-btn:hover {
-  background-color: #218838;
-}
-
-.push-btn {
-  background-color: #17a2b8;
-}
-
-.push-btn:hover {
-  background-color: #138496;
-}
-
-.commit-btn {
-  background-color: #6f42c1;
-}
-
-.commit-btn:hover {
-  background-color: #5a32a3;
 }
 
 .commit-message-input {
@@ -307,21 +284,6 @@ button:disabled {
   gap: 10px;
 }
 
-.cancel-btn {
-  background-color: #6c757d;
-}
-
-.cancel-btn:hover {
-  background-color: #5a6268;
-}
-
-.confirm-btn {
-  background-color: #28a745;
-}
-
-.confirm-btn:hover {
-  background-color: #218838;
-}
 
 .branch-section {
   margin-bottom: 20px;
@@ -463,12 +425,6 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
-  padding: 0 0.5rem;
-}
-
-.header-section h2 {
-  margin: 0;
-  color: #2c3e50;
 }
 
 .repository-selector {

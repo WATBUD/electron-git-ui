@@ -1,11 +1,7 @@
 .toolbar {
   display: flex;
   gap: 1rem;
-  padding: 0.5rem;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin: 0 0 1rem 0;
 }
 
 .toolbar-group {
@@ -17,74 +13,135 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #2c3e50;
-  font-weight: 500;
+  background: #f8f9fa;
+  color: #495057;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .toolbar-btn:hover:not(:disabled) {
-  background-color: #f0f0f0;
-  border-color: #ccc;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  background: #e9ecef;
 }
 
 .toolbar-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  color: #95a5a6;
 }
 
 .toolbar-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .toolbar-text {
   font-size: 0.9rem;
-  letter-spacing: 0.3px;
 }
 
-.fetch-btn {
-  color: #2980b9;
+/* Dialog styles */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.fetch-btn:hover:not(:disabled) {
-  background-color: #e3f2fd;
-  border-color: #90caf9;
-  color: #1565c0;
+.dialog {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  min-width: 400px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.push-btn {
-  color: #27ae60;
+.dialog h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
 }
 
-.push-btn:hover:not(:disabled) {
-  background-color: #e8f5e9;
-  border-color: #a5d6a7;
-  color: #2e7d32;
+.dialog-content {
+  margin-bottom: 1.5rem;
 }
 
-.commit-btn {
-  color: #f39c12;
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #495057;
+  font-size: 0.95rem;
 }
 
-.commit-btn:hover:not(:disabled) {
-  background-color: #fff3e0;
-  border-color: #ffcc80;
-  color: #ef6c00;
+.warning-message {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #fffdf5;
+  border-radius: 4px;
+  color: #ff8f00;
+  font-size: 0.9rem;
 }
 
-.refresh-btn {
-  color: #8e44ad;
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
-.refresh-btn:hover:not(:disabled) {
-  background-color: #f3e5f5;
-  border-color: #ce93d8;
-  color: #6a1b9a;
+.dialog-buttons button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn {
+  background: #f8f9fa;
+  color: #495057;
+}
+
+.cancel-btn:hover {
+  background: #e9ecef;
+}
+
+.confirm-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #1e88e5;
+}
+
+.confirm-btn:disabled {
+  background: #90caf9;
+  cursor: not-allowed;
+}
+
+.commit-message-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.commit-message-input:focus {
+  outline: none;
+  border-color: #2196f3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
 } 
