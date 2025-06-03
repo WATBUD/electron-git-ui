@@ -1,8 +1,16 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import { setupGitHandlers } from './git'
+
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+const iconPath = isDev
+  ? join(__dirname, '../../assets/appIcon.png')
+  : join(__dirname, '../../assets/appIcon.icns')
+// Set application icon
+if (process.platform === 'darwin') {
+  app.dock.setIcon(nativeImage.createFromPath(iconPath))
+}
 
 function createWindow() {
   // Create the browser window.
