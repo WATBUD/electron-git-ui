@@ -305,13 +305,20 @@ export function setupGitHandlers() {
       const headCommand = 'git rev-parse HEAD';
       const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath });
       
-      // 獲取當前分支名稱
+      // 獲取當前分支名稱或 detached HEAD 狀態
       const branchCommand = 'git rev-parse --abbrev-ref HEAD';
       const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath });
 
       // 獲取未推送的提交數量
       const unpushedCommand = 'git rev-list @{push}..HEAD --count';
-      const { stdout: unpushedCount } = await execAsync(unpushedCommand, { cwd: currentRepoPath });
+      let unpushedCount = 0;
+      try {
+        const { stdout: unpushedOutput } = await execAsync(unpushedCommand, { cwd: currentRepoPath });
+        unpushedCount = parseInt(unpushedOutput);
+      } catch (err) {
+        // 如果沒有上游分支，unpushedCount 保持為 0
+        console.log('No upstream branch found');
+      }
 
       const command = 'git log --pretty=format:"%H|%an|%ad|%s" --date=iso --graph --all';
       commandHistory.push(command);
@@ -340,15 +347,19 @@ export function setupGitHandlers() {
             })
             .filter(Boolean);
 
+          const isCurrent = hash.trim() === headHash.trim();
+          const branchName = currentBranch.trim();
+          const isDetached = branchName === 'HEAD';
+
           return {
             hash: hash.trim(),
             author,
             date,
             message,
             branches,
-            isCurrent: hash.trim() === headHash.trim(),
-            currentBranch: branches.includes('current') ? currentBranch.trim() : null,
-            isUnpushed: parseInt(unpushedCount) > 0 && hash.trim() === headHash.trim()
+            isCurrent,
+            currentBranch: isDetached ? `HEAD -> ${hash.trim().substring(0, 7)}` : branchName,
+            isUnpushed: unpushedCount > 0 && isCurrent
           };
         });
 
@@ -357,7 +368,7 @@ export function setupGitHandlers() {
         commits,
         currentHead: headHash.trim(),
         currentBranch: currentBranch.trim(),
-        unpushedCount: parseInt(unpushedCount)
+        unpushedCount
       };
     } catch (error) {
       console.error('Error getting commit history:', error);
