@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LoadingModal } from './LoadingModal';
 import { GitGraph } from './GitGraph';
 import { Toolbar } from './Toolbar';
+import { FileStatus } from './FileStatus';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -21,7 +22,7 @@ export const GitUI = () => {
   const [commitMessage, setCommitMessage] = useState('');
   const [currentBranch, setCurrentBranch] = useState('');
   const [fileStatus, setFileStatus] = useState([]);
-  const [view, setView] = useState('main'); // 'main' or 'graph'
+  const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -342,92 +343,48 @@ export const GitUI = () => {
           loading={loading}
         />
       )}
-      
+
       <div className="view-toggle">
         <button 
-          className={`view-btn ${view === 'main' ? 'active' : ''}`}
-          onClick={() => setView('main')}
+          className={`view-btn ${activeTab === 'main' ? 'active' : ''}`}
+          onClick={() => setActiveTab('main')}
         >
           Main View
         </button>
         <button 
-          className={`view-btn ${view === 'graph' ? 'active' : ''}`}
-          onClick={() => setView('graph')}
+          className={`view-btn ${activeTab === 'graph' ? 'active' : ''}`}
+          onClick={() => setActiveTab('graph')}
         >
           Graph View
         </button>
+        <button 
+          className={`view-btn ${activeTab === 'files' ? 'active' : ''}`}
+          onClick={() => setActiveTab('files')}
+        >
+          File Status
+        </button>
       </div>
 
-      {view === 'main' ? (
+      {error && <div className="error">{error}</div>}
+
+      {repoPath && (
         <>
-          <div className="command-history">
-            <div className="command-history-header">
-              <h3>Command History</h3>
-              <button onClick={handleClearHistory} className="clear-history-btn">
-                Clear History
-              </button>
-            </div>
-            <div className="command-list">
-              {commandHistory.slice().reverse().map((command, index) => (
-                <div key={commandHistory.length - 1 - index} className="command-item">
-                  <span className="command-number">{commandHistory.length - index}.</span>
-                  <span className="command-text">{command}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {error && <div className="error">{error}</div>}
-
-          {repoPath && (
+          {activeTab === 'main' && (
             <>
-              <div className="file-status-panel">
-                <div className="file-status-section">
-                  <h3>Working Directory</h3>
-                  <div className="file-list">
-                    {fileStatus
-                      .filter(file => !file.isStaged)
-                      .map((file, index) => (
-                        <div key={`working-${index}`} className="file-item">
-                          <span className="file-icon">{getStatusIcon(file)}</span>
-                          <div className="file-info">
-                            <span className="file-name">{file.file}</span>
-                            <span className="file-status">{getStatusText(file)}</span>
-                          </div>
-                          <button
-                            onClick={() => handleStageFile(file.file)}
-                            className="stage-btn"
-                            title="Stage file"
-                          >
-                            ➜
-                          </button>
-                        </div>
-                      ))}
-                  </div>
+              <div className="command-history">
+                <div className="command-history-header">
+                  <h3>Command History</h3>
+                  <button onClick={handleClearHistory} className="clear-history-btn">
+                    Clear History
+                  </button>
                 </div>
-
-                <div className="file-status-section">
-                  <h3>Staging Area</h3>
-                  <div className="file-list">
-                    {fileStatus
-                      .filter(file => file.isStaged)
-                      .map((file, index) => (
-                        <div key={`staged-${index}`} className="file-item">
-                          <span className="file-icon">{getStatusIcon(file)}</span>
-                          <div className="file-info">
-                            <span className="file-name">{file.file}</span>
-                            <span className="file-status">{getStatusText(file)}</span>
-                          </div>
-                          <button
-                            onClick={() => handleUnstageFile(file.file)}
-                            className="unstage-btn"
-                            title="Unstage file"
-                          >
-                            ⬅
-                          </button>
-                        </div>
-                      ))}
-                  </div>
+                <div className="command-list">
+                  {commandHistory.slice().reverse().map((command, index) => (
+                    <div key={commandHistory.length - 1 - index} className="command-item">
+                      <span className="command-number">{commandHistory.length - index}.</span>
+                      <span className="command-text">{command}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -485,97 +442,21 @@ export const GitUI = () => {
                   </>
                 )}
               </div>
-
-              {showCommitDialog && (
-                <div className="dialog-overlay">
-                  <div className="dialog">
-                    <h3>Commit Changes</h3>
-                    <div className="dialog-content">
-                      <textarea
-                        value={commitMessage}
-                        onChange={(e) => setCommitMessage(e.target.value)}
-                        placeholder="Enter commit message..."
-                        className="commit-message-input"
-                        rows={4}
-                      />
-                    </div>
-                    <div className="dialog-buttons">
-                      <button onClick={() => setShowCommitDialog(false)} className="cancel-btn">
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={() => handleCommit(commitMessage)} 
-                        disabled={loading || !commitMessage.trim()} 
-                        className="confirm-btn"
-                      >
-                        Commit
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           )}
 
-          {showFetchDialog && (
-            <div className="dialog-overlay">
-              <div className="dialog">
-                <h3>Fetch Options</h3>
-                <div className="dialog-content">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={pruneBranches}
-                      onChange={(e) => setPruneBranches(e.target.checked)}
-                    />
-                    Prune tracking branches no longer present on remote(s)
-                  </label>
-                </div>
-                <div className="dialog-buttons">
-                  <button onClick={() => setShowFetchDialog(false)} className="cancel-btn">
-                    Cancel
-                  </button>
-                  <button onClick={() => handleFetch(pruneBranches)} disabled={loading} className="confirm-btn">
-                    Fetch
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
 
-          {showPushDialog && (
-            <div className="dialog-overlay">
-              <div className="dialog">
-                <h3>Push Options</h3>
-                <div className="dialog-content">
-                  <label className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={forcePush}
-                      onChange={(e) => setForcePush(e.target.checked)}
-                    />
-                    Force Push
-                  </label>
-                  {forcePush && (
-                    <div className="warning-message">
-                      ⚠️ Warning: Force push will overwrite remote changes. Use with caution!
-                    </div>
-                  )}
-                </div>
-                <div className="dialog-buttons">
-                  <button onClick={() => setShowPushDialog(false)} className="cancel-btn">
-                    Cancel
-                  </button>
-                  <button onClick={() => handlePush(forcePush)} disabled={loading} className="confirm-btn">
-                    Push
-                  </button>
-                </div>
-              </div>
-            </div>
+          {activeTab === 'files' && (
+            <FileStatus
+              fileStatus={fileStatus}
+              onStageFile={handleStageFile}
+              onUnstageFile={handleUnstageFile}
+              getStatusIcon={getStatusIcon}
+              getStatusText={getStatusText}
+            />
           )}
         </>
-      ) : (
-        repoPath && <GitGraph repoPath={repoPath} />
       )}
     </div>
   );

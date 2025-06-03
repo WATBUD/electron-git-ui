@@ -1,0 +1,87 @@
+.file-status-panel {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.file-status-section {
+  flex: 1;
+  background-color: white;
+  border-radius: 4px;
+  padding: 15px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.file-status-section h3 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 1.1rem;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.file-list {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  gap: 8px;
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-icon {
+  font-size: 1.2em;
+  min-width: 24px;
+  text-align: center;
+}
+
+.file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-name {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #212529;
+  word-break: break-all;
+}
+
+.file-status {
+  font-size: 0.8em;
+  color: #6c757d;
+}
+
+.stage-btn,
+.unstage-btn {
+  padding: 4px 8px;
+  font-size: 1.2em;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6c757d;
+  transition: color 0.2s;
+  min-width: 32px;
+  text-align: center;
+}
+
+.stage-btn:hover {
+  color: #28a745;
+}
+
+.unstage-btn:hover {
+  color: #dc3545;
+} 
