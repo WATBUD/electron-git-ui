@@ -13,7 +13,12 @@ export const GitUI = () => {
   const [commandHistory, setCommandHistory] = useState([]);
   const [showFetchDialog, setShowFetchDialog] = useState(false);
   const [pruneBranches, setPruneBranches] = useState(false);
+  const [showPushDialog, setShowPushDialog] = useState(false);
+  const [forcePush, setForcePush] = useState(false);
+  const [showCommitDialog, setShowCommitDialog] = useState(false);
+  const [commitMessage, setCommitMessage] = useState('');
   const [currentBranch, setCurrentBranch] = useState('');
+  const [fileStatus, setFileStatus] = useState([]);
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -179,11 +184,145 @@ export const GitUI = () => {
     }
   };
 
+  const handlePush = async () => {
+    try {
+      startLoading('Pushing to remote...');
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.push(forcePush);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadBranches();
+        setShowPushDialog(false);
+      } else {
+        throw new Error(result.error || 'Failed to push changes');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error pushing:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  const handleCommit = async () => {
+    if (!commitMessage.trim()) {
+      setError('Commit message cannot be empty');
+      return;
+    }
+    try {
+      startLoading('Committing changes...');
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.commit(commitMessage);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadFileStatus();
+        setCommitMessage('');
+        setShowCommitDialog(false);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error committing:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  const loadFileStatus = async () => {
+    if (!repoPath) return;
+    try {
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.getStatus();
+      if (result.success) {
+        setFileStatus(result.files);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error loading file status:', err);
+    }
+  };
+
+  const handleStageFile = async (file) => {
+    try {
+      startLoading(`Staging file: ${file}...`);
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.stageFile(file);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadFileStatus();
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error staging file:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  const handleUnstageFile = async (file) => {
+    try {
+      startLoading(`Unstaging file: ${file}...`);
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.unstageFile(file);
+      if (result.success) {
+        await updateCommandHistory();
+        await loadFileStatus();
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error unstaging file:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
   useEffect(() => {
     if (repoPath) {
       loadBranches();
+      loadFileStatus();
     }
   }, [repoPath]);
+
+  const getStatusText = (file) => {
+    if (file.statusType) {
+      const { staged, working } = file.statusType;
+      if (staged === 'M') return 'Staged Changes';
+      if (staged === 'A') return 'Staged Addition';
+      if (staged === 'D') return 'Staged Deletion';
+      if (staged === 'R') return 'Staged Rename';
+      if (staged === 'C') return 'Staged Copy';
+      if (working === 'M') return 'Working Changes';
+      if (working === 'A') return 'Working Addition';
+      if (working === 'D') return 'Working Deletion';
+      if (working === '?') return 'Untracked';
+    }
+    return 'Unknown';
+  };
+
+  const getStatusIcon = (file) => {
+    const { staged, working } = file.statusType;
+    if (staged === 'M' || working === 'M') return '📝';
+    if (staged === 'A' || working === 'A') return '➕';
+    if (staged === 'D' || working === 'D') return '🗑️';
+    if (staged === 'R') return '🔄';
+    if (staged === 'C') return '📋';
+    if (staged === '?' || working === '?') return '❓';
+    return '📄';
+  };
 
   return (
     <div className="git-ui">
@@ -223,6 +362,65 @@ export const GitUI = () => {
             <button onClick={() => setShowFetchDialog(true)} className="fetch-btn">
               Fetch
             </button>
+            <button onClick={() => setShowCommitDialog(true)} className="commit-btn">
+              Commit
+            </button>
+            <button onClick={() => setShowPushDialog(true)} className="push-btn">
+              Push
+            </button>
+            <button onClick={loadFileStatus} className="refresh-btn">
+              ↻ Refresh Status
+            </button>
+          </div>
+
+          <div className="file-status-panel">
+            <div className="file-status-section">
+              <h3>Working Directory</h3>
+              <div className="file-list">
+                {fileStatus
+                  .filter(file => !file.isStaged)
+                  .map((file, index) => (
+                    <div key={`working-${index}`} className="file-item">
+                      <span className="file-icon">{getStatusIcon(file)}</span>
+                      <div className="file-info">
+                        <span className="file-name">{file.file}</span>
+                        <span className="file-status">{getStatusText(file)}</span>
+                      </div>
+                      <button
+                        onClick={() => handleStageFile(file.file)}
+                        className="stage-btn"
+                        title="Stage file"
+                      >
+                        ➜
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="file-status-section">
+              <h3>Staging Area</h3>
+              <div className="file-list">
+                {fileStatus
+                  .filter(file => file.isStaged)
+                  .map((file, index) => (
+                    <div key={`staged-${index}`} className="file-item">
+                      <span className="file-icon">{getStatusIcon(file)}</span>
+                      <div className="file-info">
+                        <span className="file-name">{file.file}</span>
+                        <span className="file-status">{getStatusText(file)}</span>
+                      </div>
+                      <button
+                        onClick={() => handleUnstageFile(file.file)}
+                        className="unstage-btn"
+                        title="Unstage file"
+                      >
+                        ⬅
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
 
           <div className="create-branch">
@@ -279,6 +477,35 @@ export const GitUI = () => {
               </>
             )}
           </div>
+
+          {showCommitDialog && (
+            <div className="dialog-overlay">
+              <div className="dialog">
+                <h3>Commit Changes</h3>
+                <div className="dialog-content">
+                  <textarea
+                    value={commitMessage}
+                    onChange={(e) => setCommitMessage(e.target.value)}
+                    placeholder="Enter commit message..."
+                    className="commit-message-input"
+                    rows={4}
+                  />
+                </div>
+                <div className="dialog-buttons">
+                  <button onClick={() => setShowCommitDialog(false)} className="cancel-btn">
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleCommit} 
+                    disabled={loading || !commitMessage.trim()} 
+                    className="confirm-btn"
+                  >
+                    Commit
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -302,6 +529,37 @@ export const GitUI = () => {
               </button>
               <button onClick={handleFetch} disabled={loading} className="confirm-btn">
                 Fetch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPushDialog && (
+        <div className="dialog-overlay">
+          <div className="dialog">
+            <h3>Push Options</h3>
+            <div className="dialog-content">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={forcePush}
+                  onChange={(e) => setForcePush(e.target.checked)}
+                />
+                Force Push
+              </label>
+              {forcePush && (
+                <div className="warning-message">
+                  ⚠️ Warning: Force push will overwrite remote changes. Use with caution!
+                </div>
+              )}
+            </div>
+            <div className="dialog-buttons">
+              <button onClick={() => setShowPushDialog(false)} className="cancel-btn">
+                Cancel
+              </button>
+              <button onClick={handlePush} disabled={loading} className="confirm-btn">
+                Push
               </button>
             </div>
           </div>

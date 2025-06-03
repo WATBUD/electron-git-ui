@@ -130,13 +130,168 @@ export function setupGitHandlers() {
   });
 
   ipcMain.handle('git:fetch', async (event, prune) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
     try {
       const command = prune ? 'git fetch --prune' : 'git fetch';
-      const { stdout, stderr } = await execAsync(command);
       commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
       return { success: true, output: stdout || stderr };
     } catch (error) {
       console.error('Error fetching:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:push', async (event, force) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = force ? 'git push -f' : 'git push';
+      commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error pushing:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:getStatus', async () => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = 'git status --porcelain';
+      commandHistory.push(command);
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath });
+      
+      const files = stdout.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          const status = line.substring(0, 2);
+          const file = line.substring(3);
+          
+          // 處理重命名和複製的情況
+          if (status[0] === 'R' || status[0] === 'C') {
+            const [oldFile, newFile] = file.split(' -> ');
+            return {
+              status,
+              file: newFile,
+              oldFile,
+              isStaged: true,
+              isModified: false,
+              statusType: {
+                staged: status[0],
+                working: ' '
+              }
+            };
+          }
+
+          // 創建兩個條目：一個用於暫存區，一個用於工作目錄
+          const entries = [];
+          
+          // 如果有暫存的更改
+          if (status[0] !== ' ' && status[0] !== '?') {
+            entries.push({
+              status,
+              file,
+              isStaged: true,
+              isModified: false,
+              statusType: {
+                staged: status[0],
+                working: ' '
+              }
+            });
+          }
+          
+          // 如果有工作目錄的更改
+          if (status[1] !== ' ' && status[1] !== '?') {
+            entries.push({
+              status,
+              file,
+              isStaged: false,
+              isModified: true,
+              statusType: {
+                staged: ' ',
+                working: status[1]
+              }
+            });
+          }
+
+          return entries;
+        })
+        .flat(); // 將嵌套數組展平
+
+      // 添加未追蹤的檔案
+      const untrackedCommand = 'git ls-files --others --exclude-standard';
+      const { stdout: untrackedOutput } = await execAsync(untrackedCommand, { cwd: currentRepoPath });
+      const untrackedFiles = untrackedOutput.split('\n')
+        .filter(line => line.trim())
+        .map(file => ({
+          status: '??',
+          file,
+          isStaged: false,
+          isModified: false,
+          statusType: {
+            staged: '?',
+            working: '?'
+          }
+        }));
+
+      return { 
+        success: true, 
+        files: [...files, ...untrackedFiles]
+      };
+    } catch (error) {
+      console.error('Error getting status:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:stageFile', async (_, file) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = `git add "${file}"`;
+      commandHistory.push(command);
+      await execAsync(command, { cwd: currentRepoPath });
+      return { success: true };
+    } catch (error) {
+      console.error('Error staging file:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:unstageFile', async (_, file) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = `git reset HEAD "${file}"`;
+      commandHistory.push(command);
+      await execAsync(command, { cwd: currentRepoPath });
+      return { success: true };
+    } catch (error) {
+      console.error('Error unstaging file:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:commit', async (_, message) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = `git commit -m "${message}"`;
+      commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error committing:', error);
       return { success: false, error: error.message };
     }
   });
