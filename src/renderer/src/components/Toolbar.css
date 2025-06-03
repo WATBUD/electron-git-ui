@@ -1,0 +1,90 @@
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.toolbar-btn:hover:not(:disabled) {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  color: #95a5a6;
+}
+
+.toolbar-icon {
+  font-size: 1.2rem;
+}
+
+.toolbar-text {
+  font-size: 0.9rem;
+  letter-spacing: 0.3px;
+}
+
+.fetch-btn {
+  color: #2980b9;
+}
+
+.fetch-btn:hover:not(:disabled) {
+  background-color: #e3f2fd;
+  border-color: #90caf9;
+  color: #1565c0;
+}
+
+.push-btn {
+  color: #27ae60;
+}
+
+.push-btn:hover:not(:disabled) {
+  background-color: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #2e7d32;
+}
+
+.commit-btn {
+  color: #f39c12;
+}
+
+.commit-btn:hover:not(:disabled) {
+  background-color: #fff3e0;
+  border-color: #ffcc80;
+  color: #ef6c00;
+}
+
+.refresh-btn {
+  color: #8e44ad;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: #f3e5f5;
+  border-color: #ce93d8;
+  color: #6a1b9a;
+} 

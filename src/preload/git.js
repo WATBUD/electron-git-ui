@@ -17,7 +17,9 @@ contextBridge.exposeInMainWorld('git', {
   getStatus: () => ipcRenderer.invoke('git:getStatus'),
   stageFile: (file) => ipcRenderer.invoke('git:stageFile', file),
   unstageFile: (file) => ipcRenderer.invoke('git:unstageFile', file),
-  commit: (message) => ipcRenderer.invoke('git:commit', message)
+  commit: (message) => ipcRenderer.invoke('git:commit', message),
+  getCommitHistory: () => ipcRenderer.invoke('git:getCommitHistory'),
+  checkoutCommit: (commitHash) => ipcRenderer.invoke('git:checkoutCommit', commitHash),
 });
 
 // Debug log to verify git object is exposed

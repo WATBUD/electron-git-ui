@@ -295,4 +295,82 @@ export function setupGitHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle('git:getCommitHistory', async () => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      // 獲取當前 HEAD 信息
+      const headCommand = 'git rev-parse HEAD';
+      const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath });
+      
+      // 獲取當前分支名稱
+      const branchCommand = 'git rev-parse --abbrev-ref HEAD';
+      const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath });
+
+      const command = 'git log --pretty=format:"%H|%an|%ad|%s" --date=iso --graph --all';
+      commandHistory.push(command);
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath });
+      
+      // 解析提交歷史
+      const commits = stdout.split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          const [graph, ...rest] = line.split(' ');
+          const [hash, author, date, ...messageParts] = rest.join(' ').split('|');
+          const message = messageParts.join('|');
+          
+          // 解析圖形信息
+          const branches = graph
+            .replace(/[^\/*\\|]/g, '')
+            .split('')
+            .map(char => {
+              switch (char) {
+                case '*': return 'current';
+                case '/': return 'branch1';
+                case '\\': return 'branch2';
+                case '|': return 'main';
+                default: return null;
+              }
+            })
+            .filter(Boolean);
+
+          return {
+            hash: hash.trim(),
+            author,
+            date,
+            message,
+            branches,
+            isCurrent: hash.trim() === headHash.trim(),
+            currentBranch: branches.includes('current') ? currentBranch.trim() : null
+          };
+        });
+
+      return { 
+        success: true, 
+        commits,
+        currentHead: headHash.trim(),
+        currentBranch: currentBranch.trim()
+      };
+    } catch (error) {
+      console.error('Error getting commit history:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:checkoutCommit', async (_, commitHash) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = `git checkout ${commitHash}`;
+      commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error checking out commit:', error);
+      return { success: false, error: error.message };
+    }
+  });
 } 
