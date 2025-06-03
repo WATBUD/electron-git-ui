@@ -166,7 +166,7 @@ export const GitUI = () => {
     }
   };
 
-  const handleFetch = async () => {
+  const handleFetch = async (pruneBranches) => {
     try {
       startLoading('Fetching from remote...');
       setError(null);
@@ -178,7 +178,6 @@ export const GitUI = () => {
         await updateCommandHistory();
         await loadBranches();
       }
-      setShowFetchDialog(false);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching:', err);
@@ -187,7 +186,7 @@ export const GitUI = () => {
     }
   };
 
-  const handlePush = async () => {
+  const handlePush = async (forcePush) => {
     try {
       startLoading('Pushing to remote...');
       setError(null);
@@ -198,7 +197,6 @@ export const GitUI = () => {
       if (result.success) {
         await updateCommandHistory();
         await loadBranches();
-        setShowPushDialog(false);
       } else {
         throw new Error(result.error || 'Failed to push changes');
       }
@@ -210,11 +208,7 @@ export const GitUI = () => {
     }
   };
 
-  const handleCommit = async () => {
-    if (!commitMessage.trim()) {
-      setError('Commit message cannot be empty');
-      return;
-    }
+  const handleCommit = async (commitMessage) => {
     try {
       startLoading('Committing changes...');
       setError(null);
@@ -225,8 +219,6 @@ export const GitUI = () => {
       if (result.success) {
         await updateCommandHistory();
         await loadFileStatus();
-        setCommitMessage('');
-        setShowCommitDialog(false);
       }
     } catch (err) {
       setError(err.message);
@@ -343,9 +335,9 @@ export const GitUI = () => {
       
       {repoPath && (
         <Toolbar 
-          onFetch={() => setShowFetchDialog(true)}
-          onPush={() => setShowPushDialog(true)}
-          onCommit={() => setShowCommitDialog(true)}
+          onFetch={handleFetch}
+          onPush={handlePush}
+          onCommit={handleCommit}
           onRefresh={loadFileStatus}
           loading={loading}
         />
@@ -512,7 +504,7 @@ export const GitUI = () => {
                         Cancel
                       </button>
                       <button 
-                        onClick={handleCommit} 
+                        onClick={() => handleCommit(commitMessage)} 
                         disabled={loading || !commitMessage.trim()} 
                         className="confirm-btn"
                       >
@@ -543,7 +535,7 @@ export const GitUI = () => {
                   <button onClick={() => setShowFetchDialog(false)} className="cancel-btn">
                     Cancel
                   </button>
-                  <button onClick={handleFetch} disabled={loading} className="confirm-btn">
+                  <button onClick={() => handleFetch(pruneBranches)} disabled={loading} className="confirm-btn">
                     Fetch
                   </button>
                 </div>
@@ -574,7 +566,7 @@ export const GitUI = () => {
                   <button onClick={() => setShowPushDialog(false)} className="cancel-btn">
                     Cancel
                   </button>
-                  <button onClick={handlePush} disabled={loading} className="confirm-btn">
+                  <button onClick={() => handlePush(forcePush)} disabled={loading} className="confirm-btn">
                     Push
                   </button>
                 </div>
