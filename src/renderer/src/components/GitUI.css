@@ -1,21 +1,18 @@
 .git-ui {
-  padding: 20px 10px;
-  width: 100%;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
-  box-sizing: border-box;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .main-content {
   flex: 1;
-  overflow-y: auto;
-  padding-bottom: 20px;
-  width: 100%;
-  /* max-width: 1200px; */
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-top: 32px; /* Add space for AppToolbar */
 }
 
 .command-history {

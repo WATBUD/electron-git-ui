@@ -250,4 +250,46 @@
 .branch-tag.head {
   background-color: #0366d6;
   color: white;
+}
+
+.context-menu {
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+}
+
+.context-menu-header {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 0.9em;
+  color: #495057;
+}
+
+.context-menu-content {
+  padding: 8px;
+}
+
+.context-menu-content button {
+  width: 100%;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+.context-menu-content button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.context-menu-content button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
 } 

@@ -4,6 +4,8 @@ import { GitGraph } from './GitGraph';
 import { Toolbar } from './Toolbar';
 import { FileStatus } from './FileStatus';
 import { RefreshButton } from './RefreshButton';
+import { FooterArea } from './FooterArea';
+import { AppToolbar } from './AppToolbar';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -19,6 +21,7 @@ export const GitUI = () => {
   const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   const [activeCommandTab, setActiveCommandTab] = useState('history');
+  const [showFooter, setShowFooter] = useState(true);
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -344,6 +347,10 @@ export const GitUI = () => {
 
   return (
     <div className="git-ui">
+      <AppToolbar 
+        showFooter={showFooter}
+        onToggleFooter={() => setShowFooter(!showFooter)}
+      />
       <LoadingModal message={loadingMessage} />
 
       <div className="main-content">
@@ -471,50 +478,12 @@ export const GitUI = () => {
         )}
       </div>
 
-      <div className="command-history">
-        <div className="command-tabs">
-          <button 
-            className={`command-tab ${activeCommandTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveCommandTab('history')}
-          >
-            Command History
-          </button>
-          <button 
-            className={`command-tab ${activeCommandTab === 'terminal' ? 'active' : ''}`}
-            onClick={() => setActiveCommandTab('terminal')}
-          >
-            Terminal
-          </button>
-        </div>
-        {activeCommandTab === 'history' && (
-          <>
-            <div className="command-history-header">
-              <h3>Command History</h3>
-              <button onClick={handleClearHistory} className="clear-history-btn">
-                Clear History
-              </button>
-            </div>
-            <div className="command-list">
-              {commandHistory
-                .slice()
-                .reverse()
-                .map((command, index) => (
-                  <div key={commandHistory.length - 1 - index} className="command-item">
-                    <span className="command-number">{commandHistory.length - index}.</span>
-                    <span className="command-text">{command}</span>
-                  </div>
-                ))}
-            </div>
-          </>
-        )}
-        {activeCommandTab === 'terminal' && (
-          <div className="terminal-container">
-            <div className="terminal-content">
-              Terminal content will be implemented here
-            </div>
-          </div>
-        )}
-      </div>
+      {showFooter && (
+        <FooterArea 
+          commandHistory={commandHistory}
+          onClearHistory={handleClearHistory}
+        />
+      )}
     </div>
   );
 }; 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LoadingModal } from './LoadingModal';
 import { RefreshButton } from './RefreshButton';
 import './GitGraph.css';
@@ -10,6 +10,8 @@ export const GitGraph = ({ repoPath }) => {
   const [currentHead, setCurrentHead] = useState(null);
   const [currentBranch, setCurrentBranch] = useState(null);
   const [unpushedCount, setUnpushedCount] = useState(0);
+  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, targetCommit: null });
+  const contextMenuRef = useRef(null);
 
   const loadCommitHistory = async () => {
     if (!repoPath) return;
@@ -59,11 +61,56 @@ export const GitGraph = ({ repoPath }) => {
     }
   };
 
+  const handleContextMenu = (e, commit) => {
+    e.preventDefault();
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      targetCommit: commit
+    });
+  };
+
+  const handleMerge = async (sourceBranch) => {
+    try {
+      setLoading(true);
+      setError(null);
+      if (!window.git) {
+        throw new Error('Git API not initialized');
+      }
+      const result = await window.git.mergeBranch(sourceBranch);
+      if (result.success) {
+        await loadCommitHistory();
+      } else {
+        throw new Error(result.error || 'Failed to merge branch');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error merging branch:', err);
+    } finally {
+      setLoading(false);
+      setContextMenu({ show: false, x: 0, y: 0, targetCommit: null });
+    }
+  };
+
   useEffect(() => {
     if (repoPath) {
       loadCommitHistory();
     }
   }, [repoPath]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+        setContextMenu({ show: false, x: 0, y: 0, targetCommit: null });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const formatDate = (dateStr) => {
     try {
@@ -111,6 +158,7 @@ export const GitGraph = ({ repoPath }) => {
             <div 
               key={commit.hash} 
               className={`commit-item ${commit.isCurrent ? 'current-commit' : ''}`}
+              onContextMenu={(e) => handleContextMenu(e, commit)}
             >
               <div className="commit-graph">
                 {commit.branches.map((branch, i) => (
@@ -157,6 +205,30 @@ export const GitGraph = ({ repoPath }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {contextMenu.show && (
+        <div 
+          ref={contextMenuRef}
+          className="context-menu"
+          style={{ 
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x
+          }}
+        >
+          <div className="context-menu-header">
+            Merge {contextMenu.targetCommit?.branches[0] || 'branch'} into {currentBranch}
+          </div>
+          <div className="context-menu-content">
+            <button 
+              onClick={() => handleMerge(contextMenu.targetCommit?.branches[0])}
+              disabled={!contextMenu.targetCommit?.branches[0] || contextMenu.targetCommit?.branches[0] === currentBranch}
+            >
+              Merge
+            </button>
+          </div>
         </div>
       )}
     </div>

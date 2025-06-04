@@ -1,0 +1,148 @@
+.footer-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 0;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: height 0.1s ease;
+}
+
+.resize-handle {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 1001;
+}
+
+.resize-handle:hover::after,
+.resize-handle:active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  background-color: #007bff;
+  border-radius: 2px;
+}
+
+.command-tabs {
+  display: flex;
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 10px;
+}
+
+.command-tab {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: #495057;
+  font-size: 0.9em;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.command-tab:hover {
+  background-color: #e9ecef;
+}
+
+.command-tab.active {
+  color: #007bff;
+}
+
+.command-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #007bff;
+}
+
+.command-history-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 10px 15px;
+  flex-shrink: 0;
+}
+
+.command-history-header h3 {
+  margin: 0;
+  color: #495057;
+}
+
+.clear-history-btn {
+  padding: 4px 8px;
+  font-size: 0.9em;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.clear-history-btn:hover {
+  background-color: #5a6268;
+}
+
+.command-list {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin: 0 15px 15px;
+  padding: 10px;
+}
+
+.command-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+  font-family: monospace;
+}
+
+.command-item:last-child {
+  border-bottom: none;
+}
+
+.command-number {
+  color: #6c757d;
+  margin-right: 10px;
+  min-width: 25px;
+}
+
+.command-text {
+  color: #212529;
+}
+
+.terminal-container {
+  flex: 1;
+  background-color: #1e1e1e;
+  color: #fff;
+  font-family: 'Consolas', 'Monaco', monospace;
+  margin: 15px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.terminal-content {
+  padding: 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+} 
