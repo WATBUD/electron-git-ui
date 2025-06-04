@@ -1,25 +1,78 @@
 .git-ui {
-  padding: 20px;
-  max-width: 800px;
+  padding: 20px 10px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 20px;
+  width: 100%;
+  /* max-width: 1200px; */
   margin: 0 auto;
 }
 
 .command-history {
-  margin-bottom: 20px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 15px;
-  height: 35vh;
+  border-top: 1px solid #dee2e6;
+  padding: 0;
+  height: 200px;
   display: flex;
   flex-direction: column;
+  z-index: 1000;
+}
+
+.command-tabs {
+  display: flex;
+  background-color: #f1f3f5;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 10px;
+}
+
+.command-tab {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: #495057;
+  font-size: 0.9em;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.command-tab:hover {
+  background-color: #e9ecef;
+}
+
+.command-tab.active {
+  color: #007bff;
+}
+
+.command-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #007bff;
 }
 
 .command-history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin: 10px 15px;
   flex-shrink: 0;
 }
 
@@ -462,4 +515,18 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.terminal-container {
+  flex: 1;
+  background-color: #1e1e1e;
+  color: #fff;
+  font-family: 'Consolas', 'Monaco', monospace;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.terminal-content {
+  white-space: pre-wrap;
+  word-break: break-all;
 } 

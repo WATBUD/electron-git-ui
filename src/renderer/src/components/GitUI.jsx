@@ -18,6 +18,7 @@ export const GitUI = () => {
   const [currentBranch, setCurrentBranch] = useState('');
   const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
+  const [activeCommandTab, setActiveCommandTab] = useState('history');
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -344,146 +345,176 @@ export const GitUI = () => {
   return (
     <div className="git-ui">
       <LoadingModal message={loadingMessage} />
-      
-      <div className="header-section">
-        <div className="repository-selector">
-          <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
-            {repoPath ? 'Change Repository' : 'Select Repository'}
-          </button>
-          {repoPath && <span className="repo-path">{repoPath}</span>}
+
+      <div className="main-content">
+        <div className="header-section">
+          <div className="repository-selector">
+            <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
+              {repoPath ? 'Change Repository' : 'Select Repository'}
+            </button>
+            {repoPath && <span className="repo-path">{repoPath}</span>}
+          </div>
         </div>
-      </div>
-      
-      {repoPath && (
-        <Toolbar 
-          onFetch={handleFetch}
-          onPush={handlePush}
-          onCommit={handleCommit}
-          loading={loading}
-        />
-      )}
 
-      <div className="view-toggle">
-        <button 
-          className={`view-btn ${activeTab === 'main' ? 'active' : ''}`}
-          onClick={() => setActiveTab('main')}
-        >
-          Main View
-        </button>
-        <button 
-          className={`view-btn ${activeTab === 'graph' ? 'active' : ''}`}
-          onClick={() => setActiveTab('graph')}
-        >
-          Graph View
-        </button>
-        <button 
-          className={`view-btn ${activeTab === 'files' ? 'active' : ''}`}
-          onClick={() => setActiveTab('files')}
-        >
-          File Status
-        </button>
-      </div>
+        {repoPath && (
+          <Toolbar
+            onFetch={handleFetch}
+            onPush={handlePush}
+            onCommit={handleCommit}
+            loading={loading}
+          />
+        )}
 
-      {error && <div className="error">{error}</div>}
+        <div className="view-toggle">
+          <button
+            className={`view-btn ${activeTab === 'main' ? 'active' : ''}`}
+            onClick={() => setActiveTab('main')}
+          >
+            Main View
+          </button>
+          <button
+            className={`view-btn ${activeTab === 'graph' ? 'active' : ''}`}
+            onClick={() => setActiveTab('graph')}
+          >
+            Graph View
+          </button>
+          <button
+            className={`view-btn ${activeTab === 'files' ? 'active' : ''}`}
+            onClick={() => setActiveTab('files')}
+          >
+            File Status
+          </button>
+        </div>
 
-      {repoPath && (
-        <>
-          {activeTab === 'main' && (
-            <>
-              <div className="command-history">
-                <div className="command-history-header">
-                  <h3>Command History</h3>
-                  <button onClick={handleClearHistory} className="clear-history-btn">
-                    Clear History
+        {error && <div className="error">{error}</div>}
+
+        {repoPath && (
+          <>
+            {activeTab === 'main' && (
+              <>
+                <div className="create-branch">
+                  <input
+                    type="text"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    placeholder="New branch name"
+                    disabled={loading}
+                  />
+                  <button onClick={handleCreateBranch} disabled={loading}>
+                    Create Branch
                   </button>
                 </div>
-                <div className="command-list">
-                  {commandHistory.slice().reverse().map((command, index) => (
-                    <div key={commandHistory.length - 1 - index} className="command-item">
-                      <span className="command-number">{commandHistory.length - index}.</span>
-                      <span className="command-text">{command}</span>
-                    </div>
-                  ))}
+
+                <div className="branch-list">
+                  <div className="branch-list-header">
+                    <h3>Branches: {currentBranch}</h3>
+                    <RefreshButton
+                      onClick={loadBranches}
+                      disabled={loading}
+                      title="Refresh branches"
+                      text="Branch Refresh"
+                    />
+                  </div>
+                  {loading ? (
+                    <div className="loading">Loading...</div>
+                  ) : (
+                    <>
+                      <div className="branch-section">
+                        <h4>Local Branches</h4>
+                        <ul>
+                          {branches.map((branch) => (
+                            <li key={branch}>
+                              <span>{branch}</span>
+                              <div className="branch-actions">
+                                <button onClick={() => handleCheckout(branch)}>Checkout</button>
+                                <button onClick={() => handleDelete(branch)}>Delete</button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div className="branch-section">
+                        <h4>Remote Branches</h4>
+                        <ul>
+                          {remoteBranches.map((branch) => (
+                            <li key={branch}>
+                              <span>{branch}</span>
+                              <div className="branch-actions">
+                                <button onClick={() => handleCheckout(branch)}>Checkout</button>
+                                <button onClick={() => handleDeleteRemote(branch)}>Delete</button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
+              </>
+            )}
 
-              <div className="create-branch">
-                <input
-                  type="text"
-                  value={newBranchName}
-                  onChange={(e) => setNewBranchName(e.target.value)}
-                  placeholder="New branch name"
-                  disabled={loading}
-                />
-                <button onClick={handleCreateBranch} disabled={loading}>
-                  Create Branch
-                </button>
-              </div>
+            {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
 
-              <div className="branch-list">
-                <div className="branch-list-header">
-                  <h3>Branches: {currentBranch}</h3>
-                  <RefreshButton
-                    onClick={loadBranches}
-                    disabled={loading}
-                    title="Refresh branches"
-                    text="Branch Refresh"
-                  />
-                </div>
-                {loading ? (
-                  <div className="loading">Loading...</div>
-                ) : (
-                  <>
-                    <div className="branch-section">
-                      <h4>Local Branches</h4>
-                      <ul>
-                        {branches.map((branch) => (
-                          <li key={branch}>
-                            <span>{branch}</span>
-                            <div className="branch-actions">
-                              <button onClick={() => handleCheckout(branch)}>Checkout</button>
-                              <button onClick={() => handleDelete(branch)}>Delete</button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="branch-section">
-                      <h4>Remote Branches</h4>
-                      <ul>
-                        {remoteBranches.map((branch) => (
-                          <li key={branch}>
-                            <span>{branch}</span>
-                            <div className="branch-actions">
-                              <button onClick={() => handleCheckout(branch)}>Checkout</button>
-                              <button onClick={() => handleDeleteRemote(branch)}>Delete</button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
+            {activeTab === 'files' && (
+              <FileStatus
+                fileStatus={fileStatus}
+                onStageFile={handleStageFile}
+                onUnstageFile={handleUnstageFile}
+                getStatusIcon={getStatusIcon}
+                getStatusText={getStatusText}
+                onRefresh={loadFileStatus}
+                loading={loading}
+                loadingMessage={loadingMessage}
+              />
+            )}
+          </>
+        )}
+      </div>
 
-          {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
-
-          {activeTab === 'files' && (
-            <FileStatus
-              fileStatus={fileStatus}
-              onStageFile={handleStageFile}
-              onUnstageFile={handleUnstageFile}
-              getStatusIcon={getStatusIcon}
-              getStatusText={getStatusText}
-              onRefresh={loadFileStatus}
-              loading={loading}
-              loadingMessage={loadingMessage}
-            />
-          )}
-        </>
-      )}
+      <div className="command-history">
+        <div className="command-tabs">
+          <button 
+            className={`command-tab ${activeCommandTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveCommandTab('history')}
+          >
+            Command History
+          </button>
+          <button 
+            className={`command-tab ${activeCommandTab === 'terminal' ? 'active' : ''}`}
+            onClick={() => setActiveCommandTab('terminal')}
+          >
+            Terminal
+          </button>
+        </div>
+        {activeCommandTab === 'history' && (
+          <>
+            <div className="command-history-header">
+              <h3>Command History</h3>
+              <button onClick={handleClearHistory} className="clear-history-btn">
+                Clear History
+              </button>
+            </div>
+            <div className="command-list">
+              {commandHistory
+                .slice()
+                .reverse()
+                .map((command, index) => (
+                  <div key={commandHistory.length - 1 - index} className="command-item">
+                    <span className="command-number">{commandHistory.length - index}.</span>
+                    <span className="command-text">{command}</span>
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
+        {activeCommandTab === 'terminal' && (
+          <div className="terminal-container">
+            <div className="terminal-content">
+              Terminal content will be implemented here
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }; 
