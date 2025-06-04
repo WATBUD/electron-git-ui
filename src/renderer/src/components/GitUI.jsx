@@ -3,6 +3,7 @@ import { LoadingModal } from './LoadingModal';
 import { GitGraph } from './GitGraph';
 import { Toolbar } from './Toolbar';
 import { FileStatus } from './FileStatus';
+import { RefreshButton } from './RefreshButton';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -422,9 +423,12 @@ export const GitUI = () => {
               <div className="branch-list">
                 <div className="branch-list-header">
                   <h3>Branches: {currentBranch}</h3>
-                  <button onClick={loadBranches} disabled={loading} className="refresh-btn">
-                    ↻ Refresh
-                  </button>
+                  <RefreshButton
+                    onClick={loadBranches}
+                    disabled={loading}
+                    title="Refresh branches"
+                    text="Branch Refresh"
+                  />
                 </div>
                 {loading ? (
                   <div className="loading">Loading...</div>

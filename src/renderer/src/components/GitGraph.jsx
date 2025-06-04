@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { LoadingModal } from './LoadingModal';
+import { RefreshButton } from './RefreshButton';
 import './GitGraph.css';
 
 export const GitGraph = ({ repoPath }) => {
@@ -91,9 +93,12 @@ export const GitGraph = ({ repoPath }) => {
             </span>
           )}
         </div>
-        <button onClick={loadCommitHistory} className="refresh-btn" disabled={loading}>
-          ↻ Refresh
-        </button>
+        <RefreshButton
+          onClick={loadCommitHistory}
+          disabled={loading}
+          title="Refresh commit history"
+          text="Commit History Refresh"
+        />
       </div>
 
       {error && <div className="error">{error}</div>}
