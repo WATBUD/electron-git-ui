@@ -360,14 +360,17 @@ export function setupGitHandlers() {
     try {
       // 獲取當前 HEAD 信息
       const headCommand = 'git rev-parse HEAD';
+      commandHistory.push(headCommand);
       const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath });
       
       // 獲取當前分支名稱或 detached HEAD 狀態
       const branchCommand = 'git rev-parse --abbrev-ref HEAD';
+      commandHistory.push(branchCommand);
       const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath });
 
       // 獲取未推送的提交數量
       const unpushedCommand = 'git rev-list @{push}..HEAD --count';
+      commandHistory.push(unpushedCommand);
       let unpushedCount = 0;
       try {
         const { stdout: unpushedOutput } = await execAsync(unpushedCommand, { cwd: currentRepoPath });
@@ -377,7 +380,8 @@ export function setupGitHandlers() {
         console.log('No upstream branch found');
       }
 
-      const command = 'git log --pretty=format:"%H|%an|%ad|%s" --date=iso --graph --all';
+      // 修改 git log 命令以包含分支信息
+      const command = 'git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --graph --all';
       commandHistory.push(command);
       const { stdout } = await execAsync(command, { cwd: currentRepoPath });
       
@@ -385,12 +389,24 @@ export function setupGitHandlers() {
       const commits = stdout.split('\n')
         .filter(line => line.trim())
         .map(line => {
-          const [graph, ...rest] = line.split(' ');
-          const [hash, author, date, ...messageParts] = rest.join(' ').split('|');
-          const message = messageParts.join('|');
+          // 分離圖形和提交信息
+          const match = line.match(/^([\s\/*\\|]+)(.+)$/);
+          if (!match) return null;
           
+          const [, graph, info] = match;
+          const [hash, author, date, message, refs] = info.trim().split('|');
+          
+          // 解析分支信息
+          const branchNames = refs
+            ? refs
+                .replace(/[()]/g, '') // 移除括號
+                .split(',')
+                .map(ref => ref.trim())
+                .filter(ref => ref) // 移除空字符串
+            : [];
+
           // 解析圖形信息
-          const branches = graph
+          const graphLines = graph
             .replace(/[^\/*\\|]/g, '')
             .split('')
             .map(char => {
@@ -413,12 +429,14 @@ export function setupGitHandlers() {
             author,
             date,
             message,
-            branches,
+            branches: branchNames,
+            graphLines,
             isCurrent,
             currentBranch: isDetached ? `HEAD -> ${hash.trim().substring(0, 7)}` : branchName,
             isUnpushed: unpushedCount > 0 && isCurrent
           };
-        });
+        })
+        .filter(Boolean); // 移除可能的 null 值
 
       return { 
         success: true, 

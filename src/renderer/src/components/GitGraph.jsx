@@ -18,15 +18,19 @@ export const GitGraph = ({ repoPath }) => {
         throw new Error('Git API not initialized');
       }
       const result = await window.git.getCommitHistory();
+      console.log('Git history result:', result);
+      
       if (result.success) {
         setCommits(result.commits);
         setCurrentHead(result.currentHead);
         setCurrentBranch(result.currentBranch);
         setUnpushedCount(result.unpushedCount || 0);
+      } else {
+        throw new Error(result.error || 'Failed to get commit history');
       }
     } catch (err) {
-      setError(err.message);
       console.error('Error loading commit history:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -60,8 +64,13 @@ export const GitGraph = ({ repoPath }) => {
   }, [repoPath]);
 
   const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleString();
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleString();
+    } catch (err) {
+      console.error('Error formatting date:', dateStr, err);
+      return dateStr;
+    }
   };
 
   return (
@@ -106,10 +115,21 @@ export const GitGraph = ({ repoPath }) => {
               </div>
               <div className="commit-info">
                 <div className="commit-header">
-                  <span className="commit-hash">{commit.hash.substring(0, 7)}</span>
-                  {commit.currentBranch && (
-                    <span className="commit-branch">{commit.currentBranch}</span>
-                  )}
+                  <div className="commit-hash-container">
+                    <span className="commit-hash">{commit.hash.substring(0, 7)}</span>
+                    {commit.branches.length > 0 && (
+                      <div className="branch-tags">
+                        {commit.branches.map((branch, i) => (
+                          <span 
+                            key={i} 
+                            className={`branch-tag ${branch.startsWith('origin/') ? 'remote' : ''} ${branch.includes('HEAD') ? 'head' : ''}`}
+                          >
+                            {branch}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {commit.isCurrent && (
                     <span className="current-tag">Current</span>
                   )}
