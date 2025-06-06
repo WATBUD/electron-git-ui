@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { setupGitHandlers } from './git'
+import { setupGitHandlers } from './gitIpcHandlersMain'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const iconPath = isDev
@@ -23,7 +23,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: join(__dirname, '../preload/git.js'),
+      preload: join(__dirname, '../preload/gitIpcHandlersPreload.js'),
       sandbox: false
     }
   })
