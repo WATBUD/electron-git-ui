@@ -465,4 +465,47 @@ export function setupGitHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  ipcMain.handle('git:mergeAbort', async () => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      const command = 'git merge --abort';
+      commandHistory.push(command);
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
+      return { success: true, output: stdout || stderr };
+    } catch (error) {
+      console.error('Error aborting merge:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('git:checkMergeInProgress', async () => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      // Check for .git/MERGE_HEAD file
+      const { stdout, stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', { 
+        cwd: currentRepoPath 
+      }).catch(() => ({})); // Ignore error if MERGE_HEAD doesn't exist
+      
+      const mergeHeadHash = stdout.trim();
+      const isMergeInProgress = mergeHeadHash.length > 0;
+      return { 
+        success: true, 
+        isMergeInProgress,
+        output: isMergeInProgress ? `Merge in progress (${mergeHeadHash})` : 'No merge in progress',
+        mergeHeadHash: isMergeInProgress ? mergeHeadHash : null
+      };
+    } catch (error) {
+      console.error('Error checking merge status:', error);
+      return { 
+        success: false, 
+        isMergeInProgress: false,
+        error: error.message 
+      };
+    }
+  });
 } 

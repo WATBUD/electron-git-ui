@@ -22,6 +22,7 @@ export const GitUI = () => {
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   const [activeCommandTab, setActiveCommandTab] = useState('history');
   const [showFooter, setShowFooter] = useState(true);
+  const [hasMergeInProgress, setHasMergeInProgress] = useState(false);
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -73,6 +74,43 @@ export const GitUI = () => {
     } finally {
       stopLoading();
     }
+  };
+
+  const [mergeStatus, setMergeStatus] = useState({ isInProgress: false, message: '' });
+
+  const checkMergeInProgress = async () => {
+    if (!repoPath || !window.git) {
+      const status = { isInProgress: false, message: 'No repository selected' };
+      setMergeStatus(status);
+      setHasMergeInProgress(false);
+      return false;
+    }
+    try {
+      const result = await window.git.checkMergeInProgress();
+      const status = {
+        isInProgress: result?.isMergeInProgress || false,
+        message: result?.output || 'No merge in progress',
+        mergeHash: result?.mergeHeadHash || null
+      };
+      setMergeStatus(status);
+      setHasMergeInProgress(status.isInProgress);
+      return status.isInProgress;
+    } catch (error) {
+      console.error('Error checking merge status:', error);
+      const status = { 
+        isInProgress: false, 
+        message: error.message || 'Error checking merge status' 
+      };
+      setMergeStatus(status);
+      setHasMergeInProgress(false);
+      return false;
+    }
+  };
+
+  const refreshRepositoryState = async () => {
+    await loadBranches();
+    await checkMergeInProgress();
+    await loadFileStatus();
   };
 
   const loadBranches = async () => {
@@ -345,11 +383,44 @@ export const GitUI = () => {
     return '📄';
   };
 
+  const handleMergeAbort = async () => {
+    if (!window.git) {
+      setError('Git API not initialized');
+      return;
+    }
+    
+    try {
+      startLoading('Aborting merge...');
+      const result = await window.git.mergeAbort();
+      if (result.success) {
+        // Refresh the repository state
+        await loadBranches();
+        await loadFileStatus();
+      } else {
+        setError(result.error || 'Failed to abort merge');
+      }
+    } catch (err) {
+      setError(err.message || 'Error aborting merge');
+      console.error('Error aborting merge:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  // Update merge status when repo changes
+  useEffect(() => {
+    if (repoPath) {
+      checkMergeInProgress();
+    }
+  }, [repoPath]);
+
   return (
     <div className="git-ui">
       <AppToolbar 
         showFooter={showFooter}
         onToggleFooter={() => setShowFooter(!showFooter)}
+        onMergeAbort={handleMergeAbort}
+        hasMergeInProgress={hasMergeInProgress}
       />
       <LoadingModal message={loadingMessage} />
 
@@ -359,7 +430,19 @@ export const GitUI = () => {
             <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
               {repoPath ? 'Change Repository' : 'Select Repository'}
             </button>
-            {repoPath && <span className="repo-path">{repoPath}</span>}
+            {repoPath && (
+              <div className="repo-info">
+                <span className="repo-path">{repoPath}</span>
+                <span className="merge-warning" title={mergeStatus.message}>
+                    ⚠️ {mergeStatus.message}
+                  </span>
+                {/* {hasMergeInProgress && (
+                  <span className="merge-warning" title={mergeStatus.message}>
+                    ⚠️ {mergeStatus.message}
+                  </span>
+                )} */}
+              </div>
+            )}
           </div>
         </div>
 

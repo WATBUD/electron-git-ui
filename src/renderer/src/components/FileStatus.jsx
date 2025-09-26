@@ -26,30 +26,6 @@ export const FileStatus = ({
         />
       </div>
       <div className="file-status-content">
-        <div className="file-status-section">
-          <h3>Working Directory</h3>
-          <div className="file-list">
-            {fileStatus
-              .filter(file => !file.isStaged)
-              .map((file, index) => (
-                <div key={`working-${index}`} className="file-item">
-                  <span className="file-icon">{getStatusIcon(file)}</span>
-                  <div className="file-info">
-                    <span className="file-name">{file.file}</span>
-                    <span className="file-status">{getStatusText(file)}</span>
-                  </div>
-                  <button
-                    onClick={() => onStageFile(file.file)}
-                    className="stage-btn"
-                    title="Stage file"
-                    disabled={loading}
-                  >
-                    ➜
-                  </button>
-                </div>
-              ))}
-          </div>
-        </div>
 
         <div className="file-status-section">
           <h3>Staging Area</h3>
@@ -70,6 +46,30 @@ export const FileStatus = ({
                     disabled={loading}
                   >
                     ⬅
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
+        <div className="file-status-section">
+          <h3>Working Directory</h3>
+          <div className="file-list">
+            {fileStatus
+              .filter(file => !file.isStaged)
+              .map((file, index) => (
+                <div key={`working-${index}`} className="file-item">
+                  <span className="file-icon">{getStatusIcon(file)}</span>
+                  <div className="file-info">
+                    <span className="file-name">{file.file}</span>
+                    <span className="file-status">{getStatusText(file)}</span>
+                  </div>
+                  <button
+                    onClick={() => onStageFile(file.file)}
+                    className="stage-btn"
+                    title="Stage file"
+                    disabled={loading}
+                  >
+                    ➜
                   </button>
                 </div>
               ))}
