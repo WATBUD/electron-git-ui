@@ -1,11 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './FooterArea.css';
+import { Copy } from 'lucide-react';
 
 export const FooterArea = ({ commandHistory, onClearHistory }) => {
   const [activeCommandTab, setActiveCommandTab] = useState('history');
   const [height, setHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const footerRef = useRef(null);
+  
+  const copyToClipboard = (text, index) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    });
+  };
   const startYRef = useRef(0);
   const startHeightRef = useRef(0);
   const rafRef = useRef(null);
@@ -94,6 +103,14 @@ export const FooterArea = ({ commandHistory, onClearHistory }) => {
                 <div key={commandHistory.length - 1 - index} className="command-item">
                   <span className="command-number">{commandHistory.length - index}.</span>
                   <span className="command-text">{command}</span>
+                  <button 
+                    className={`copy-button ${copiedIndex === index ? 'copied' : ''}`}
+                    onClick={() => copyToClipboard(command, index)}
+                    title="Copy command"
+                  >
+                    <Copy size={14} />
+                    {copiedIndex === index && <span className="copied-text">Copied!</span>}
+                  </button>
                 </div>
               ))}
           </div>
