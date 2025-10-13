@@ -216,6 +216,28 @@ export function setupGitHandlers() {
     }
   });
 
+  ipcMain.handle('git:refreshTags', async () => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      // Clear local tags
+      const clearTagsCommand = 'git tag -l | xargs git tag -d';
+      commandHistory.push(clearTagsCommand);
+      await execAsync(clearTagsCommand, { cwd: currentRepoPath });
+      
+      // Fetch latest tags from remote
+      const fetchTagsCommand = 'git fetch --tags';
+      commandHistory.push(fetchTagsCommand);
+      await execAsync(fetchTagsCommand, { cwd: currentRepoPath });
+      
+      return { success: true, commands: [clearTagsCommand, fetchTagsCommand] };
+    } catch (error) {
+      console.error('Error refreshing tags:', error);
+      throw error;
+    }
+  });
+
   ipcMain.handle('git:getStatus', async () => {
     if (!currentRepoPath) {
       throw new Error('No repository selected');

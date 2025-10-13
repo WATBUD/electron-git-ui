@@ -385,23 +385,49 @@ export const GitUI = () => {
 
   const handleMergeAbort = async () => {
     if (!window.git) {
-      setError('Git API not initialized');
+      setError('Git integration not available');
       return;
     }
-    
+
     try {
       startLoading('Aborting merge...');
-      const result = await window.git.mergeAbort();
+      const result = await window.git.abortMerge();
+      
       if (result.success) {
-        // Refresh the repository state
+        await checkMergeInProgress();
         await loadBranches();
-        await loadFileStatus();
+        setError(null);
       } else {
         setError(result.error || 'Failed to abort merge');
       }
     } catch (err) {
       setError(err.message || 'Error aborting merge');
       console.error('Error aborting merge:', err);
+    } finally {
+      stopLoading();
+    }
+  };
+
+  const handleRefreshTags = async () => {
+    if (!window.git) {
+      setError('Git integration not available');
+      return;
+    }
+
+    try {
+      startLoading('Refreshing tags...');
+      const result = await window.git.refreshTags();
+      
+      if (result.success) {
+        setError(null);
+        // Reload branches to reflect any tag changes
+        await loadBranches();
+      } else {
+        setError('Failed to refresh tags');
+      }
+    } catch (err) {
+      setError(err.message || 'Error refreshing tags');
+      console.error('Error refreshing tags:', err);
     } finally {
       stopLoading();
     }
@@ -421,6 +447,7 @@ export const GitUI = () => {
         onToggleFooter={() => setShowFooter(!showFooter)}
         onMergeAbort={handleMergeAbort}
         hasMergeInProgress={hasMergeInProgress}
+        onRefreshTags={handleRefreshTags}
       />
       <LoadingModal message={loadingMessage} />
 
@@ -513,7 +540,7 @@ export const GitUI = () => {
                         <h4>Local Branches</h4>
                         <ul>
                           {branches.map((branch) => (
-                            <li key={branch}>
+                            <li key={`local-${branch}`}>
                               <span>{branch}</span>
                               <div className="branch-actions">
                                 <button onClick={() => handleCheckout(branch)}>Checkout</button>
@@ -527,7 +554,7 @@ export const GitUI = () => {
                         <h4>Remote Branches</h4>
                         <ul>
                           {remoteBranches.map((branch) => (
-                            <li key={branch}>
+                            <li key={`remote-${branch}`}>
                               <span>{branch}</span>
                               <div className="branch-actions">
                                 <button onClick={() => handleCheckout(branch)}>Checkout</button>
