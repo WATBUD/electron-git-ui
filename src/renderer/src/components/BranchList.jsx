@@ -105,7 +105,7 @@ const BranchList = ({
             className="refresh-btn"
             title="Refresh branches"
           >
-            ⟳ Refresh
+            Refresh
           </button>
         </div>
         
