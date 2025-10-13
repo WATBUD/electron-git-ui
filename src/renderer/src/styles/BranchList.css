@@ -1,0 +1,270 @@
+:root {
+  --bg-color: #1e1e2d;
+  --text-color: #e2e8f0;
+  --text-muted: #a0aec0;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --border-color: #2d3748;
+  --hover-bg: rgba(255, 255, 255, 0.05);
+  --active-bg: rgba(79, 70, 229, 0.2);
+  --danger-color: #e53e3e;
+  --danger-hover: #c53030;
+  --input-bg: #2d3748;
+  --input-border: #4a5568;
+  --card-bg: #2d3748;
+  --card-border: #4a5568;
+}
+
+.branch-management {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+  color: var(--text-color);
+}
+
+.create-branch {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.create-branch input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.create-branch input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.create-branch button {
+  padding: 0.5rem 1rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-branch button:hover {
+  background-color: var(--primary-hover);
+}
+
+.create-branch button:disabled {
+  background-color: #4a5568;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.branch-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.branch-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.branch-list-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.current-branch {
+  color: var(--primary-color);
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.branch-list-container {
+  overflow-y: auto;
+  max-height: 60vh;
+  padding: 0.5rem 0;
+}
+
+.branch-section {
+  margin-bottom: 1rem;
+}
+
+.branch-section:last-child {
+  margin-bottom: 0;
+}
+
+.branch-section h4 {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.branch-section ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.branch-section li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  margin: 0.125rem 0.25rem;
+}
+
+.branch-section li:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.branch-section li.clickable-branch {
+  cursor: pointer;
+}
+
+.branch-section li.clickable-branch:hover {
+  background-color: var(--hover-bg);
+  border-color: var(--primary-color);
+}
+
+.branch-section li.active-branch {
+  background-color: var(--active-bg);
+  border-left: 3px solid var(--primary-color);
+  padding-left: 0.75rem;
+}
+
+.branch-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.branch-section li:hover .branch-actions {
+  opacity: 1;
+
+.branch-section li.active-branch .branch-actions {
+  opacity: 1;
+}
+
+/* Prevent text selection */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.branch-actions button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.branch-actions button:hover {
+  background-color: var(--hover-bg);
+}
+
+.branch-actions .copy-btn {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.branch-actions .copy-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.branch-actions .delete-btn:hover {
+  background-color: var(--danger-hover);
+  border-color: var(--danger-hover);
+  color: white;
+}
+
+.branch-actions .copy-btn,
+.branch-actions .delete-btn {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+  color: #feb2b2;
+}
+
+.active-branch {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.current-branch-indicator {
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-left: 0.25rem;
+  font-weight: normal;
+}
+
+.refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background-color: var(--hover-bg);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}

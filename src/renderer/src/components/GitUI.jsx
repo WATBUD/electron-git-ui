@@ -6,6 +6,8 @@ import { FileStatus } from './FileStatus';
 import { RefreshButton } from './RefreshButton';
 import { FooterArea } from './FooterArea';
 import { AppToolbar } from './AppToolbar';
+import LeftSideBar from './LeftSideBar';
+import BranchList from './BranchList';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -451,26 +453,36 @@ export const GitUI = () => {
       />
       <LoadingModal message={loadingMessage} />
 
-      <div className="main-content">
-        <div className="header-section">
-          <div className="repository-selector">
-            <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
-              {repoPath ? 'Change Repository' : 'Select Repository'}
-            </button>
-            {repoPath && (
-              <div className="repo-info">
-                <span className="repo-path">{repoPath}</span>
+      <div style={{
+        display: 'flex',
+        flex: 1,
+        overflow: 'hidden',
+        minHeight: 'calc(100vh - 48px)', /* Account for AppToolbar height */
+        backgroundColor: '#f8fafc',
+      }}>
+        <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="main-content" style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'auto',
+          padding: '20px 30px',
+          boxSizing: 'border-box',
+        }}>
+        <div className="repository-selector">
+          <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
+            {repoPath ? 'Change Repository' : 'Select Repository'}
+          </button>
+          {repoPath && (
+            <div className="repo-info">
+              <span className="repo-path">{repoPath}</span>
+              {hasMergeInProgress && mergeStatus.message && (
                 <span className="merge-warning" title={mergeStatus.message}>
-                    ⚠️ {mergeStatus.message}
-                  </span>
-                {/* {hasMergeInProgress && (
-                  <span className="merge-warning" title={mergeStatus.message}>
-                    ⚠️ {mergeStatus.message}
-                  </span>
-                )} */}
-              </div>
-            )}
-          </div>
+                  ⚠️ {mergeStatus.message}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {repoPath && (
@@ -482,92 +494,25 @@ export const GitUI = () => {
           />
         )}
 
-        <div className="view-toggle">
-          <button
-            className={`view-btn ${activeTab === 'main' ? 'active' : ''}`}
-            onClick={() => setActiveTab('main')}
-          >
-            Main View
-          </button>
-          <button
-            className={`view-btn ${activeTab === 'graph' ? 'active' : ''}`}
-            onClick={() => setActiveTab('graph')}
-          >
-            Graph View
-          </button>
-          <button
-            className={`view-btn ${activeTab === 'files' ? 'active' : ''}`}
-            onClick={() => setActiveTab('files')}
-          >
-            File Status
-          </button>
-        </div>
 
         {error && <div className="error">{error}</div>}
 
         {repoPath && (
           <>
             {activeTab === 'main' && (
-              <>
-                <div className="create-branch">
-                  <input
-                    type="text"
-                    value={newBranchName}
-                    onChange={(e) => setNewBranchName(e.target.value)}
-                    placeholder="New branch name"
-                    disabled={loading}
-                  />
-                  <button onClick={handleCreateBranch} disabled={loading}>
-                    Create Branch
-                  </button>
-                </div>
-
-                <div className="branch-list">
-                  <div className="branch-list-header">
-                    <h3>Branches: {currentBranch}</h3>
-                    <RefreshButton
-                      onClick={loadBranches}
-                      disabled={loading}
-                      title="Refresh branches"
-                      text="Branch Refresh"
-                    />
-                  </div>
-                  {loading ? (
-                    <div className="loading">Loading...</div>
-                  ) : (
-                    <>
-                      <div className="branch-section">
-                        <h4>Local Branches</h4>
-                        <ul>
-                          {branches.map((branch) => (
-                            <li key={`local-${branch}`}>
-                              <span>{branch}</span>
-                              <div className="branch-actions">
-                                <button onClick={() => handleCheckout(branch)}>Checkout</button>
-                                <button onClick={() => handleDelete(branch)}>Delete</button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="branch-section">
-                        <h4>Remote Branches</h4>
-                        <ul>
-                          {remoteBranches.map((branch) => (
-                            <li key={`remote-${branch}`}>
-                              <span>{branch}</span>
-                              <div className="branch-actions">
-                                <button onClick={() => handleCheckout(branch)}>Checkout</button>
-                                <button onClick={() => handleDeleteRemote(branch)}>Delete</button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
+              <BranchList
+                branches={branches}
+                remoteBranches={remoteBranches}
+                currentBranch={currentBranch}
+                loading={loading}
+                onCheckout={handleCheckout}
+                onDelete={handleDelete}
+                onDeleteRemote={handleDeleteRemote}
+                onRefresh={loadBranches}
+                newBranchName={newBranchName}
+                onBranchNameChange={(e) => setNewBranchName(e.target.value)}
+                onCreateBranch={handleCreateBranch}
+              />
             )}
 
             {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
@@ -586,6 +531,7 @@ export const GitUI = () => {
             )}
           </>
         )}
+        </div>
       </div>
 
       {showFooter && (
