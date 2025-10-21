@@ -7,6 +7,10 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const iconPath = isDev
   ? join(__dirname, '../../assets/appIcon.png')
   : join(__dirname, '../../assets/appIcon.icns')
+
+// Disable Autofill features to prevent DevTools errors
+app.commandLine.appendSwitch('disable-features', 'Autofill')
+
 // Set application icon
 if (process.platform === 'darwin') {
   app.dock.setIcon(nativeImage.createFromPath(iconPath))
@@ -33,6 +37,16 @@ function createWindow() {
     // Open DevTools in development
     if (is.dev) {
       mainWindow.webContents.openDevTools()
+    }
+  })
+
+  // Filter out Autofill-related console errors
+  mainWindow.webContents.on('console-message', (event) => {
+    const { message, sourceId } = event
+    if (message.includes('Autofill.enable') || 
+        message.includes('Autofill.setAddresses') ||
+        (sourceId.includes('devtools_compatibility.js') && message.includes('length'))) {
+      event.preventDefault()
     }
   })
 

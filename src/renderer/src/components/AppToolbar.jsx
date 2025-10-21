@@ -1,9 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   refreshTags, 
   toggleFooter, 
-  clearError,
   abortMerge,
   checkMergeInProgress
 } from '../store/gitSlice';
@@ -14,21 +13,12 @@ export const AppToolbar = () => {
   const { 
     showFooter, 
     isRefreshingTags, 
-    hasMergeInProgress, 
-    error 
+    hasMergeInProgress
   } = useSelector((state) => ({
     showFooter: state.git.showFooter,
     isRefreshingTags: state.git.isRefreshingTags,
-    hasMergeInProgress: state.git.hasMergeInProgress,
-    error: state.git.error
+    hasMergeInProgress: state.git.hasMergeInProgress
   }));
-
-  useEffect(() => {
-    if (error) {
-      console.error('Error in AppToolbar:', error);
-      dispatch(clearError());
-    }
-  }, [error, dispatch]);
 
   const handleRefreshTags = () => {
     if (isRefreshingTags) return;

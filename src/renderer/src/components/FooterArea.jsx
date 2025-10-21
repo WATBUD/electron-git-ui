@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import './FooterArea.css';
 import { Copy } from 'lucide-react';
+import { clearCommandHistory } from '../store/gitSlice';
 
-export const FooterArea = ({ commandHistory, onClearHistory }) => {
+export const FooterArea = () => {
+  const dispatch = useDispatch();
+  const commandHistory = useSelector((state) => state.git.commandHistory);
   const [activeCommandTab, setActiveCommandTab] = useState('history');
   const [height, setHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
@@ -91,7 +95,7 @@ export const FooterArea = ({ commandHistory, onClearHistory }) => {
       {activeCommandTab === 'history' && (
         <>
           <div className="command-history-header">
-            <button onClick={onClearHistory} className="clear-history-btn">
+            <button onClick={() => dispatch(clearCommandHistory())} className="clear-history-btn">
               Clear History
             </button>
           </div>

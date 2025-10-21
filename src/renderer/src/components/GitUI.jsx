@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { LoadingModal } from './LoadingModal';
+import { ErrorModal } from './ErrorModal';
 import { GitGraph } from './GitGraph';
 import { Toolbar } from './Toolbar';
 import { FileStatus } from './FileStatus';
@@ -13,25 +14,38 @@ import {
   abortMerge, 
   checkMergeInProgress, 
   refreshTags,
-  deleteBranch 
+  deleteBranch,
+  loadBranches,
+  createBranch,
+  checkoutBranch,
+  deleteRemoteBranch,
+  fetchFromRemote,
+  pushToRemote,
+  commitChanges,
+  loadFileStatus,
+  stageFile,
+  unstageFile,
+  updateCommandHistory,
+  selectRepository
 } from '../store/gitSlice';
 import './GitUI.css';
 
 export const GitUI = () => {
-  const [branches, setBranches] = useState([]);
-  const [remoteBranches, setRemoteBranches] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMessage, setLoadingMessage] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
-  const [error, setError] = useState(null);
-  const [repoPath, setRepoPath] = useState(null);
-  const [commandHistory, setCommandHistory] = useState([]);
-  const [currentBranch, setCurrentBranch] = useState('');
-  const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
-  const [activeCommandTab, setActiveCommandTab] = useState('history');
+  
+  // Get state from Redux
   const showFooter = useSelector((state) => state.git.showFooter);
   const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress);
+  const branches = useSelector((state) => state.git.branches);
+  const remoteBranches = useSelector((state) => state.git.remoteBranches);
+  const currentBranch = useSelector((state) => state.git.currentBranch);
+  const fileStatus = useSelector((state) => state.git.fileStatus);
+  const loading = useSelector((state) => state.git.loading);
+  const loadingMessage = useSelector((state) => state.git.loadingMessage);
+  const repoPath = useSelector((state) => state.git.repoPath);
+  const mergeStatus = useSelector((state) => state.git.mergeStatus);
+  
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -42,315 +56,20 @@ export const GitUI = () => {
     }
   }, []);
 
-  const updateCommandHistory = async () => {
-    if (window.git) {
-      const history = await window.git.getCommandHistory();
-      setCommandHistory(history);
-    }
-  };
-
-  const handleClearHistory = async () => {
-    if (window.git) {
-      await window.git.clearCommandHistory();
-      setCommandHistory([]);
-    }
-  };
-
-  const startLoading = (message) => {
-    setLoadingMessage(message);
-    setLoading(true);
-  };
-
-  const stopLoading = () => {
-    setLoading(false);
-    setLoadingMessage('');
-  };
-
   const handleSelectRepository = async () => {
-    try {
-      startLoading('Selecting repository...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.selectRepository();
-      if (result && result.success) {
-        setRepoPath(result.path);
-        await updateCommandHistory();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error selecting repository:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const [mergeStatus, setMergeStatus] = useState({ isInProgress: false, message: '' });
-
-  const checkMergeInProgressLocal = async () => {
-    if (!repoPath || !window.git) {
-      const status = { isInProgress: false, message: 'No repository selected' };
-      setMergeStatus(status);
-      return false;
-    }
-    try {
-      const result = await window.git.checkMergeInProgress();
-      const status = {
-        isInProgress: result?.isMergeInProgress || false,
-        message: result?.output || 'No merge in progress',
-        mergeHash: result?.mergeHeadHash || null
-      };
-      setMergeStatus(status);
-      return status.isInProgress;
-    } catch (error) {
-      console.error('Error checking merge status:', error);
-      const status = { 
-        isInProgress: false, 
-        message: error.message || 'Error checking merge status' 
-      };
-      setMergeStatus(status);
-      return false;
-    }
-  };
-
-  const loadBranches = async () => {
-    if (!repoPath) return;
-    try {
-      startLoading('Loading branches...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.listBranches();
-      if (result.success) {
-        setBranches(result.branches);
-        setRemoteBranches(result.remoteBranches);
-        // 從原始輸出中找到當前分支
-        const rawOutput = result.command.output || '';
-        const current = rawOutput.split('\n')
-          .find(line => line.trim().startsWith('* '));
-        if (current) {
-          setCurrentBranch(current.trim().replace('* ', ''));
-        }
-        await updateCommandHistory();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error loading branches:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleCreateBranch = async () => {
-    if (!newBranchName.trim()) return;
-    try {
-      startLoading(`Creating branch: ${newBranchName}...`);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.createBranch(newBranchName);
-      if (result.success) {
-        await updateCommandHistory();
-        setBranches(prevBranches => [...prevBranches, newBranchName]);
-        setNewBranchName('');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error creating branch:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleCheckout = async (branchName) => {
-    try {
-      startLoading(`Checking out branch: ${branchName}...`);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.checkoutBranch(branchName);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadBranches();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error checking out branch:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleDelete = async (branchName) => {
-    try {
-      startLoading(`Deleting branch: ${branchName}...`);
-      setError(null);
-      await dispatch(deleteBranch(branchName)).unwrap();
-      await updateCommandHistory();
-      await loadBranches();
-    } catch (err) {
-      setError(err.message || err);
-      console.error('Error deleting branch:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleDeleteRemote = async (branchName) => {
-    try {
-      startLoading(`Deleting remote branch: ${branchName}...`);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.deleteRemoteBranch(branchName);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadBranches();
-      } else {
-        alert(result.error || 'Failed to delete remote branch');
-      }
-    } catch (err) {
-      alert(err.message);
-      setError(err.message);
-      console.error('Error deleting remote branch:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleFetch = async (pruneBranches) => {
-    try {
-      startLoading('Fetching from remote...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.fetch(pruneBranches);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadBranches();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error fetching:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handlePush = async (forcePush) => {
-    try {
-      startLoading('Pushing to remote...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.push(forcePush);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadBranches();
-      } else {
-        throw new Error(result.error || 'Failed to push changes');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error pushing:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleCommit = async (commitMessage) => {
-    try {
-      startLoading('Committing changes...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.commit(commitMessage);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadFileStatus();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error committing:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const loadFileStatus = async () => {
-    if (!repoPath) return;
-    try {
-      startLoading('Loading file status...');
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.getStatus();
-      if (result.success) {
-        setFileStatus(result.files);
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error loading file status:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleStageFile = async (file) => {
-    try {
-      startLoading(`Staging file: ${file}...`);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.stageFile(file);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadFileStatus();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error staging file:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleUnstageFile = async (file) => {
-    try {
-      startLoading(`Unstaging file: ${file}...`);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.unstageFile(file);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadFileStatus();
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error unstaging file:', err);
-    } finally {
-      stopLoading();
+    const result = await dispatch(selectRepository());
+    if (selectRepository.fulfilled.match(result)) {
+      dispatch(updateCommandHistory());
     }
   };
 
   useEffect(() => {
     if (repoPath) {
-      loadBranches();
-      loadFileStatus();
+      dispatch(loadBranches());
+      dispatch(loadFileStatus());
+      dispatch(updateCommandHistory());
     }
-  }, [repoPath]);
+  }, [repoPath, dispatch]);
 
   const getStatusText = (file) => {
     if (file.statusType) {
@@ -390,6 +109,7 @@ export const GitUI = () => {
     <div className="git-ui">
       <AppToolbar />
       <LoadingModal message={loadingMessage} />
+      <ErrorModal />
 
       <div style={{
         display: 'flex',
@@ -414,7 +134,7 @@ export const GitUI = () => {
           {repoPath && (
             <div className="repo-info">
               <span className="repo-path">{repoPath}</span>
-              {hasMergeInProgress && mergeStatus.message && (
+              {hasMergeInProgress && mergeStatus?.message && (
                 <span className="merge-warning" title={mergeStatus.message}>
                   ⚠️ {mergeStatus.message}
                 </span>
@@ -425,15 +145,30 @@ export const GitUI = () => {
 
         {repoPath && (
           <Toolbar
-            onFetch={handleFetch}
-            onPush={handlePush}
-            onCommit={handleCommit}
+            onFetch={async (pruneBranches) => {
+              const result = await dispatch(fetchFromRemote(pruneBranches));
+              if (fetchFromRemote.fulfilled.match(result)) {
+                dispatch(loadBranches());
+                dispatch(updateCommandHistory());
+              }
+            }}
+            onPush={async (forcePush) => {
+              const result = await dispatch(pushToRemote(forcePush));
+              if (pushToRemote.fulfilled.match(result)) {
+                dispatch(loadBranches());
+                dispatch(updateCommandHistory());
+              }
+            }}
+            onCommit={async (commitMessage) => {
+              const result = await dispatch(commitChanges(commitMessage));
+              if (commitChanges.fulfilled.match(result)) {
+                dispatch(loadFileStatus());
+                dispatch(updateCommandHistory());
+              }
+            }}
             loading={loading}
           />
         )}
-
-
-        {error && <div className="error">{error}</div>}
 
         {repoPath && (
           <>
@@ -443,13 +178,41 @@ export const GitUI = () => {
                 remoteBranches={remoteBranches}
                 currentBranch={currentBranch}
                 loading={loading}
-                onCheckout={handleCheckout}
-                onDelete={handleDelete}
-                onDeleteRemote={handleDeleteRemote}
-                onRefresh={loadBranches}
+                onCheckout={async (branchName) => {
+                  const result = await dispatch(checkoutBranch(branchName));
+                  if (checkoutBranch.fulfilled.match(result)) {
+                    dispatch(loadBranches());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
+                onDelete={async (branchName) => {
+                  const result = await dispatch(deleteBranch(branchName));
+                  if (deleteBranch.fulfilled.match(result)) {
+                    dispatch(loadBranches());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
+                onDeleteRemote={async (branchName) => {
+                  const result = await dispatch(deleteRemoteBranch(branchName));
+                  if (deleteRemoteBranch.fulfilled.match(result)) {
+                    dispatch(loadBranches());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
+                onRefresh={() => {
+                  dispatch(loadBranches());
+                  dispatch(updateCommandHistory());
+                }}
                 newBranchName={newBranchName}
                 onBranchNameChange={(e) => setNewBranchName(e.target.value)}
-                onCreateBranch={handleCreateBranch}
+                onCreateBranch={async () => {
+                  if (!newBranchName.trim()) return;
+                  const result = await dispatch(createBranch(newBranchName));
+                  if (createBranch.fulfilled.match(result)) {
+                    setNewBranchName('');
+                    dispatch(updateCommandHistory());
+                  }
+                }}
               />
             )}
 
@@ -458,11 +221,26 @@ export const GitUI = () => {
             {activeTab === 'files' && (
               <FileStatus
                 fileStatus={fileStatus}
-                onStageFile={handleStageFile}
-                onUnstageFile={handleUnstageFile}
+                onStageFile={async (file) => {
+                  const result = await dispatch(stageFile(file));
+                  if (stageFile.fulfilled.match(result)) {
+                    dispatch(loadFileStatus());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
+                onUnstageFile={async (file) => {
+                  const result = await dispatch(unstageFile(file));
+                  if (unstageFile.fulfilled.match(result)) {
+                    dispatch(loadFileStatus());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
                 getStatusIcon={getStatusIcon}
                 getStatusText={getStatusText}
-                onRefresh={loadFileStatus}
+                onRefresh={() => {
+                  dispatch(loadFileStatus());
+                  dispatch(updateCommandHistory());
+                }}
                 loading={loading}
                 loadingMessage={loadingMessage}
               />
@@ -472,12 +250,7 @@ export const GitUI = () => {
         </div>
       </div>
 
-      {showFooter && (
-        <FooterArea 
-          commandHistory={commandHistory}
-          onClearHistory={handleClearHistory}
-        />
-      )}
+      {showFooter && <FooterArea />}
     </div>
   );
 }; 
