@@ -1,10 +1,34 @@
+:root {
+  --modal-bg: #1e1e2d;
+  --modal-border: #2d3748;
+  --modal-shadow: rgba(0, 0, 0, 0.5);
+  --header-bg: linear-gradient(to bottom, #1e1e2d, #16162a);
+  --header-border: #2d3748;
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-error: #f87171;
+  --btn-bg: #4f46e5;
+  --btn-hover: #4338ca;
+  --btn-shadow: rgba(79, 70, 229, 0.3);
+  --copy-btn-bg: #2d3748;
+  --copy-btn-color: #e2e8f0;
+  --copy-btn-border: #4a5568;
+  --copy-btn-hover: #4f46e5;
+  --copy-btn-success-bg: #065f46;
+  --copy-btn-success-color: #d1fae5;
+  --copy-btn-success-border: #10b981;
+  --error-bg: #7f1d1d;
+  --error-border: #991b1b;
+  --error-color: #fca5a5;
+}
+
 .error-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,9 +46,10 @@
 }
 
 .error-modal-content {
-  background: white;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
   border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 40px var(--modal-shadow);
   min-width: 400px;
   max-width: 600px;
   max-height: 80vh;
@@ -46,8 +71,8 @@
 
 .error-modal-header {
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(to bottom, #fff, #fafafa);
+  border-bottom: 1px solid var(--header-border);
+  background: var(--header-bg);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -57,7 +82,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #dc2626;
+  color: var(--text-error);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -68,9 +93,9 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background: var(--copy-btn-bg);
+  color: var(--copy-btn-color);
+  border: 1px solid var(--copy-btn-border);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -79,14 +104,14 @@
 }
 
 .copy-error-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
+  background: var(--copy-btn-hover);
+  border-color: var(--copy-btn-hover);
 }
 
 .copy-error-btn.copied {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #86efac;
+  background: var(--copy-btn-success-bg);
+  color: var(--copy-btn-success-color);
+  border-color: var(--copy-btn-success-border);
 }
 
 .copy-error-btn:active {
@@ -102,10 +127,10 @@
 .error-message {
   margin: 0;
   padding: 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
   border-radius: 8px;
-  color: #991b1b;
+  color: var(--error-color);
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
   line-height: 1.6;
@@ -117,16 +142,16 @@
 
 .error-modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--header-border);
   display: flex;
   justify-content: flex-end;
-  background: #fafafa;
+  background: var(--header-bg);
   border-radius: 0 0 12px 12px;
 }
 
 .error-modal-ok-btn {
   padding: 10px 24px;
-  background: #dc2626;
+  background: var(--btn-bg);
   color: white;
   border: none;
   border-radius: 6px;
@@ -134,12 +159,12 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 2px 4px var(--btn-shadow);
 }
 
 .error-modal-ok-btn:hover {
-  background: #b91c1c;
-  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+  background: var(--btn-hover);
+  box-shadow: 0 4px 8px var(--btn-shadow);
   transform: translateY(-1px);
 }
 
@@ -154,15 +179,15 @@
 }
 
 .error-message::-webkit-scrollbar-track {
-  background: #fee2e2;
+  background: var(--error-bg);
   border-radius: 4px;
 }
 
 .error-message::-webkit-scrollbar-thumb {
-  background: #fca5a5;
+  background: var(--error-border);
   border-radius: 4px;
 }
 
 .error-message::-webkit-scrollbar-thumb:hover {
-  background: #f87171;
+  background: var(--text-error);
 }

@@ -17,7 +17,7 @@ export const FileStatus = ({
     <div className="file-status-panel">
       <LoadingModal message={loadingMessage} />
       <div className="file-status-header">
-        <h3>File Status</h3>
+        <h3></h3>
         <RefreshButton
           onClick={onRefresh}
           disabled={loading}

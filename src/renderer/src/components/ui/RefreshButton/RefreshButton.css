@@ -1,25 +1,37 @@
 .refresh-button {
+  --bg-color: #1e1e2d;
+  --text-color: #e2e8f0;
+  --text-hover: #ffffff;
+  --border-color: #2d3748;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --active-bg: rgba(79, 70, 229, 0.2);
+
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #dee2e6;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  color: #495057;
+  color: var(--text-color);
   font-size: 0.9em;
   cursor: pointer;
   transition: all 0.2s;
 }
+}
 
 .refresh-button:hover:not(:disabled) {
-  background-color: #e9ecef;
-  border-color: #ced4da;
-}
+  background-color: var(--active-bg);
+  border-color: var(--primary-color);
+  color: var(--text-hover);
 
 .refresh-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background-color: var(--bg-color);
+  border-color: var(--border-color);
+  color: var(--text-color);
 }
 
 .refresh-icon {

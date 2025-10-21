@@ -111,22 +111,10 @@ export const GitMainPage = () => {
       <LoadingModal message={loadingMessage} />
       <ErrorModal />
 
-      <div style={{
-        display: 'flex',
-        flex: 1,
-        overflow: 'hidden',
-        minHeight: 'calc(100vh - 48px)', /* Account for AppToolbar height */
-        backgroundColor: '#f8fafc',
-      }}>
-        <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="main-content" style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'auto',
-          padding: '20px 30px',
-          boxSizing: 'border-box',
-        }}>
+      <div className="main-layout">
+        <div className="content-area">
+          <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="main-content">
         <div className="repository-selector">
           <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
             {repoPath ? 'Change Repository' : 'Select Repository'}
@@ -247,10 +235,11 @@ export const GitMainPage = () => {
             )}
           </>
         )}
+          </div>
         </div>
+        
+        {showFooter && <FooterArea />}
       </div>
-
-      {showFooter && <FooterArea />}
     </div>
   );
 }; 

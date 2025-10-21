@@ -1,3 +1,19 @@
+:root {
+  --bg-color: #1e1e2d;
+  --bg-secondary: #16162a;
+  --text-color: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --border-color: #2d3748;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --success-color: #48bb78;
+  --danger-color: #f56565;
+  --warning-color: #ed8936;
+  --surface-color: #2d3748;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+}
+
 .toolbar {
   display: flex;
   gap: 1rem;
@@ -15,20 +31,21 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: none;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #f8f9fa;
-  color: #495057;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--bg-color);
+  color: var(--text-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .toolbar-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  background: #e9ecef;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
 }
 
 .toolbar-btn:disabled {
@@ -51,7 +68,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,16 +76,17 @@
 }
 
 .dialog {
-  background: white;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
   padding: 1.5rem;
   border-radius: 8px;
   min-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .dialog h3 {
   margin: 0 0 1rem 0;
-  color: #2c3e50;
+  color: var(--text-color);
   font-size: 1.2rem;
 }
 
@@ -80,16 +98,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #495057;
+  color: var(--text-color);
   font-size: 0.95rem;
 }
 
 .warning-message {
   margin-top: 0.75rem;
   padding: 0.75rem;
-  background: #fffdf5;
+  background: rgba(237, 137, 54, 0.1);
   border-radius: 4px;
-  color: #ff8f00;
+  color: var(--warning-color);
   font-size: 0.9rem;
 }
 
@@ -101,7 +119,7 @@
 
 .dialog-buttons button {
   padding: 0.5rem 1rem;
-  border: none;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -109,40 +127,42 @@
 }
 
 .cancel-btn {
-  background: #f8f9fa;
-  color: #495057;
+  background: var(--bg-secondary);
+  color: var(--text-color);
 }
 
 .cancel-btn:hover {
-  background: #e9ecef;
+  background: var(--surface-color);
 }
 
 .confirm-btn {
-  background: #2196f3;
+  background: var(--primary-color);
   color: white;
 }
 
 .confirm-btn:hover:not(:disabled) {
-  background: #1e88e5;
+  background: var(--primary-hover);
 }
 
 .confirm-btn:disabled {
-  background: #90caf9;
+  background: var(--text-muted);
   cursor: not-allowed;
 }
 
 .commit-message-input {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   font-size: 0.95rem;
   resize: vertical;
   min-height: 100px;
+  background: var(--bg-secondary);
+  color: var(--text-color);
 }
 
 .commit-message-input:focus {
   outline: none;
-  border-color: #2196f3;
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
 } 

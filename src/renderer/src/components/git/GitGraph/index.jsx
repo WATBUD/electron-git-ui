@@ -127,7 +127,6 @@ export const GitGraph = ({ repoPath }) => {
       <div className="graph-header">
         <div className="graph-header-left">
           <h3>
-            Commit History
             {unpushedCount > 0 && (
               <span className="unpushed-badge" title={`${unpushedCount} commits not pushed`}>
                 {unpushedCount}

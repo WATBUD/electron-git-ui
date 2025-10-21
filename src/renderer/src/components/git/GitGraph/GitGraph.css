@@ -1,5 +1,20 @@
+:root {
+  --bg-color: #1e1e2d;
+  --bg-secondary: #16162a;
+  --text-color: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --border-color: #2d3748;
+  --primary-color: #4f46e5;
+  --success-color: #48bb78;
+  --danger-color: #f56565;
+  --warning-color: #ed8936;
+  --surface-color: #2d3748;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+}
+
 .git-graph {
-  background-color: #f8f9fa;
+  background-color: var(--bg-color);
   border-radius: 8px;
   height: 100%;
   display: flex;
@@ -21,18 +36,18 @@
 
 .graph-header-left h3 {
   margin: 0;
-  color: #495057;
+  color: var(--text-color);
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
 .current-branch {
-  background-color: #e9ecef;
+  background-color: var(--surface-color);
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 0.9em;
-  color: #495057;
+  color: var(--text-color);
 }
 
 .commit-list {
@@ -45,16 +60,16 @@
   display: flex;
   gap: 20px;
   padding: 15px;
-  background-color: white;
+  background-color: var(--bg-secondary);
   border-radius: 4px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: all 0.2s;
 }
 
 .commit-item.current-commit {
-  background-color: #e3f2fd;
-  border: 1px solid #90caf9;
+  background-color: rgba(79, 70, 229, 0.1);
+  border: 1px solid var(--primary-color);
 }
 
 .commit-graph {
@@ -67,26 +82,26 @@
 .branch-line {
   width: 2px;
   height: 20px;
-  background-color: #dee2e6;
+  background-color: var(--border-color);
   margin: 2px 0;
 }
 
 .branch-line.current {
-  background-color: #007bff;
+  background-color: var(--primary-color);
 }
 
 .commit-node {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background-color: #6c757d;
-  border: 2px solid white;
-  box-shadow: 0 0 0 2px #dee2e6;
+  background-color: var(--text-secondary);
+  border: 2px solid var(--bg-color);
+  box-shadow: 0 0 0 2px var(--border-color);
 }
 
 .commit-node.current {
-  background-color: #007bff;
-  box-shadow: 0 0 0 2px #007bff;
+  background-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
 }
 
 .commit-info {
@@ -102,36 +117,36 @@
 
 .commit-hash {
   font-family: monospace;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 0.9em;
 }
 
 .commit-branch {
-  background-color: #e1e4e8;
+  background-color: var(--surface-color);
   padding: 2px 6px;
   border-radius: 12px;
   font-size: 0.85em;
   margin-right: 8px;
-  color: #24292e;
+  color: var(--text-color);
 }
 
 .commit-branch.current {
-  background-color: #0366d6;
+  background-color: var(--primary-color);
   color: white;
 }
 
 .commit-branch.remote {
-  background-color: #d1d5da;
-  color: #586069;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 .commit-branch.remote.current {
-  background-color: #0366d6;
+  background-color: var(--primary-color);
   color: white;
 }
 
 .current-tag {
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -141,7 +156,7 @@
 .commit-message {
   font-weight: 500;
   margin-bottom: 5px;
-  color: #212529;
+  color: var(--text-color);
 }
 
 .commit-meta {
@@ -149,7 +164,7 @@
   align-items: center;
   gap: 15px;
   font-size: 0.9em;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .commit-author {
@@ -158,7 +173,7 @@
 
 .checkout-btn {
   padding: 4px 12px;
-  background-color: #28a745;
+  background-color: var(--success-color);
   color: white;
   border: none;
   border-radius: 4px;
@@ -168,25 +183,25 @@
 }
 
 .checkout-btn:hover {
-  background-color: #218838;
+  background-color: #38a169;
 }
 
 .checkout-btn:disabled {
-  background-color: #6c757d;
+  background-color: var(--text-muted);
   cursor: not-allowed;
 }
 
 .loading {
   text-align: center;
   padding: 20px;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .error {
-  color: #dc3545;
+  color: var(--danger-color);
   margin: 10px 0;
   padding: 10px;
-  background-color: #f8d7da;
+  background-color: rgba(245, 101, 101, 0.1);
   border-radius: 4px;
 }
 
@@ -203,7 +218,7 @@
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background-color: #ffc107;
+  background-color: var(--warning-color);
   color: #000;
   border-radius: 10px;
   font-size: 0.8em;
@@ -213,8 +228,8 @@
 .unpushed-tag {
   display: inline-block;
   padding: 2px 6px;
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: rgba(237, 137, 54, 0.1);
+  color: var(--warning-color);
   border-radius: 4px;
   font-size: 0.8em;
   margin-left: 8px;
@@ -236,36 +251,36 @@
   font-size: 0.85em;
   padding: 2px 6px;
   border-radius: 12px;
-  background-color: #e1e4e8;
-  color: #24292e;
+  background-color: var(--surface-color);
+  color: var(--text-color);
   white-space: nowrap;
 }
 
 .branch-tag.remote {
-  background-color: #d1d5da;
-  color: #586069;
+  background-color: var(--border-color);
+  color: var(--text-secondary);
 }
 
 .branch-tag.head {
-  background-color: #0366d6;
+  background-color: var(--primary-color);
   color: white;
 }
 
 .context-menu {
-  background-color: white;
-  border: 1px solid #dee2e6;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   min-width: 200px;
   z-index: 1000;
 }
 
 .context-menu-header {
   padding: 8px 12px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
   font-size: 0.9em;
-  color: #495057;
+  color: var(--text-color);
 }
 
 .context-menu-content {
@@ -275,7 +290,7 @@
 .context-menu-content button {
   width: 100%;
   padding: 6px 12px;
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   border-radius: 4px;
@@ -285,10 +300,10 @@
 }
 
 .context-menu-content button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: var(--primary-hover);
 }
 
 .context-menu-content button:disabled {
-  background-color: #6c757d;
+  background-color: var(--text-muted);
   cursor: not-allowed;
 } 

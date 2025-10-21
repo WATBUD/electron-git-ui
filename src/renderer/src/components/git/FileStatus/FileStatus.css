@@ -1,8 +1,21 @@
+:root {
+  --bg-color: #1e1e2d;
+  --bg-secondary: #16162a;
+  --text-color: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --border-color: #2d3748;
+  --primary-color: #4f46e5;
+  --success-color: #48bb78;
+  --danger-color: #f56565;
+  --surface-color: #2d3748;
+}
+
 .file-status-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: #f8f9fa;
+  background-color: var(--bg-color);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -16,7 +29,7 @@
 
 .file-status-header h3 {
   margin: 0;
-  color: #495057;
+  color: var(--text-color);
   font-size: 1.2rem;
 }
 
@@ -25,10 +38,9 @@
   flex-direction: column;
   gap: 24px;
   flex: 1;
-  padding-bottom:354px;
+  padding-bottom: 20px;
   padding-right: 10px;
   overflow-y: auto;
-
 }
 
 .file-status-content::-webkit-scrollbar {
@@ -36,32 +48,32 @@
 }
 
 .file-status-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-secondary);
   border-radius: 4px;
 }
 
 .file-status-content::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--border-color);
   border-radius: 4px;
 }
 
 .file-status-content::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--text-muted);
 }
 
 .file-status-section {
-  background-color: white;
+  background-color: var(--bg-secondary);
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .file-status-section h3 {
   margin: 0 0 16px 0;
-  color: #495057;
+  color: var(--text-color);
   font-size: 1.1rem;
   padding-bottom: 12px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .file-list {
@@ -98,13 +110,13 @@
 .file-name {
   font-family: monospace;
   font-size: 0.9em;
-  color: #212529;
+  color: var(--text-color);
   word-break: break-all;
 }
 
 .file-status {
   font-size: 0.8em;
-  color: #6c757d;
+  color: var(--text-secondary);
 }
 
 .stage-btn,
@@ -114,18 +126,18 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #6c757d;
+  color: var(--text-secondary);
   transition: color 0.2s;
   min-width: 32px;
   text-align: center;
 }
 
 .stage-btn:hover {
-  color: #28a745;
+  color: var(--success-color);
 }
 
 .unstage-btn:hover {
-  color: #dc3545;
+  color: var(--danger-color);
 }
 
 .file-status-refresh {
@@ -133,21 +145,22 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  color: #000;
-  background-color: #0000;
-  border: 1px solid #ddd;
+  color: var(--text-color);
+  background-color: transparent;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
 }
 
 .file-status-refresh:hover:not(:disabled) {
-  background-color: #e0e0e0;
+  background-color: var(--surface-color);
+  border-color: var(--primary-color);
 }
 
 .file-status-refresh:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  background-color: #f8f9fa;
+  background-color: var(--bg-secondary);
 }
 
 .refresh-icon {
@@ -167,6 +180,6 @@
 .loading {
   text-align: center;
   padding: 20px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 0.9em;
 } 

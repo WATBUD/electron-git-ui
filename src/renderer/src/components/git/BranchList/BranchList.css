@@ -241,14 +241,8 @@
   color: white;
 }
 
-.branch-actions .copy-btn,
 .branch-actions .delete-btn {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-  color: #feb2b2;
+  color: var(--danger-color);
 }
 
 .active-branch {
