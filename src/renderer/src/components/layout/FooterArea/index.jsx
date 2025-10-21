@@ -85,12 +85,12 @@ export const FooterArea = () => {
         >
           Command History
         </button>
-        <button 
+        {/* <button 
           className={`command-tab ${activeCommandTab === 'terminal' ? 'active' : ''}`}
           onClick={() => setActiveCommandTab('terminal')}
         >
           Terminal
-        </button>
+        </button> */}
       </div>
       {activeCommandTab === 'history' && (
         <>

@@ -11,9 +11,7 @@ import { AppToolbar } from '../../layout/AppToolbar';
 import LeftSideBar from '../../layout/LeftSideBar';
 import BranchList from '../BranchList';
 import { 
-  abortMerge, 
   checkMergeInProgress, 
-  refreshTags,
   deleteBranch,
   loadBranches,
   createBranch,
