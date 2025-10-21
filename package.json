@@ -22,7 +22,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
-    "lucide-react": "^0.545.0"
+    "@reduxjs/toolkit": "^2.9.0",
+    "antd": "^5.27.5",
+    "lucide-react": "^0.545.0",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^2.0.0",

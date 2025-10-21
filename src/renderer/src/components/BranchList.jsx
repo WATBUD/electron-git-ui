@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { message } from 'antd';
+import { Copy } from 'lucide-react';
 import '../styles/BranchList.css';
 
 const BranchList = ({
@@ -17,15 +18,19 @@ const BranchList = ({
 }) => {
   const sortBranches = (branches) => {
     return [...branches].sort((a, b) => {
-      if (a === currentBranch) return -1;
       if (b === currentBranch) return 1;
       return a.localeCompare(b);
     });
   };
 
-  const handleCopyBranchName = (branchName) => {
-    navigator.clipboard.writeText(branchName);
-    message.success(`Copied: ${branchName}`);
+  const [copiedBranch, setCopiedBranch] = useState(null);
+
+  const handleCopyBranchName = (branch) => {
+    const branchName = branch.replace('refs/heads/', '');
+    navigator.clipboard.writeText(branchName).then(() => {
+      setCopiedBranch(branch);
+      setTimeout(() => setCopiedBranch(null), 2000);
+    });
   };
 
   const renderBranchSection = (title, branches, isRemote = false) => {
@@ -36,40 +41,41 @@ const BranchList = ({
         <div className="branch-list-container">
           <ul>
             {sortedBranches.map((branch) => (
-            <li 
-              key={`${isRemote ? 'remote' : 'local'}-${branch}`}
-              onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
-              className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
-              title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <span>
-                {branch}
-                {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
-              </span>
-              <div className="branch-actions">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyBranchName(branch);
-                  }}
-                  className="copy-btn"
-                  title="Copy branch name"
-                >
-                  Copy
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    isRemote ? onDeleteRemote(branch) : onDelete(branch);
-                  }}
-                  className="delete-btn"
-                  title="Delete branch"
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
+              <li 
+                key={`${isRemote ? 'remote' : 'local'}-${branch}`}
+                onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
+                className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
+                title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                <span>
+                  {branch}
+                  {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
+                </span>
+                <div className="branch-actions">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyBranchName(branch);
+                    }}
+                    className={`copy-button ${copiedBranch === branch ? 'copied' : ''}`}
+                    title="Copy branch name"
+                  >
+                    <Copy size={14} />
+                    {copiedBranch === branch && <span className="copied-text">Copied!</span>}
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      isRemote ? onDeleteRemote(branch) : onDelete(branch);
+                    }}
+                    className="delete-btn"
+                    title="Delete branch"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
             ))}
           </ul>
         </div>

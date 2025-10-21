@@ -509,9 +509,9 @@ export function setupGitHandlers() {
     }
     try {
       // Check for .git/MERGE_HEAD file
-      const { stdout, stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', { 
+      const { stdout = '', stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', { 
         cwd: currentRepoPath 
-      }).catch(() => ({})); // Ignore error if MERGE_HEAD doesn't exist
+      }).catch(() => ({ stdout: '', stderr: '' })); // Ignore error if MERGE_HEAD doesn't exist
       
       const mergeHeadHash = stdout.trim();
       const isMergeInProgress = mergeHeadHash.length > 0;

@@ -1,5 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { Provider } from 'react-redux';
+import { store } from './store';          // ← 你的 Redux store
 import { GitUI } from './components/GitUI';
 import './index.css';
 
@@ -9,6 +11,8 @@ const root = createRoot(container);
 
 root.render(
   <React.StrictMode>
-    <GitUI />
+    <Provider store={store}>
+      <GitUI />
+    </Provider>
   </React.StrictMode>
-); 
+);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { LoadingModal } from './LoadingModal';
 import { GitGraph } from './GitGraph';
 import { Toolbar } from './Toolbar';
@@ -8,6 +9,11 @@ import { FooterArea } from './FooterArea';
 import { AppToolbar } from './AppToolbar';
 import LeftSideBar from './LeftSideBar';
 import BranchList from './BranchList';
+import { 
+  abortMerge, 
+  checkMergeInProgress, 
+  refreshTags 
+} from '../store/uiSlice';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -23,8 +29,9 @@ export const GitUI = () => {
   const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   const [activeCommandTab, setActiveCommandTab] = useState('history');
-  const [showFooter, setShowFooter] = useState(true);
-  const [hasMergeInProgress, setHasMergeInProgress] = useState(false);
+  const showFooter = useSelector((state) => state.ui.showFooter);
+  const hasMergeInProgress = useSelector((state) => state.ui.hasMergeInProgress);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     // Debug: Check if window.git is available
@@ -80,11 +87,10 @@ export const GitUI = () => {
 
   const [mergeStatus, setMergeStatus] = useState({ isInProgress: false, message: '' });
 
-  const checkMergeInProgress = async () => {
+  const checkMergeInProgressLocal = async () => {
     if (!repoPath || !window.git) {
       const status = { isInProgress: false, message: 'No repository selected' };
       setMergeStatus(status);
-      setHasMergeInProgress(false);
       return false;
     }
     try {
@@ -95,7 +101,6 @@ export const GitUI = () => {
         mergeHash: result?.mergeHeadHash || null
       };
       setMergeStatus(status);
-      setHasMergeInProgress(status.isInProgress);
       return status.isInProgress;
     } catch (error) {
       console.error('Error checking merge status:', error);
@@ -104,15 +109,8 @@ export const GitUI = () => {
         message: error.message || 'Error checking merge status' 
       };
       setMergeStatus(status);
-      setHasMergeInProgress(false);
       return false;
     }
-  };
-
-  const refreshRepositoryState = async () => {
-    await loadBranches();
-    await checkMergeInProgress();
-    await loadFileStatus();
   };
 
   const loadBranches = async () => {
@@ -385,72 +383,16 @@ export const GitUI = () => {
     return '📄';
   };
 
-  const handleMergeAbort = async () => {
-    if (!window.git) {
-      setError('Git integration not available');
-      return;
-    }
-
-    try {
-      startLoading('Aborting merge...');
-      const result = await window.git.abortMerge();
-      
-      if (result.success) {
-        await checkMergeInProgress();
-        await loadBranches();
-        setError(null);
-      } else {
-        setError(result.error || 'Failed to abort merge');
-      }
-    } catch (err) {
-      setError(err.message || 'Error aborting merge');
-      console.error('Error aborting merge:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
-  const handleRefreshTags = async () => {
-    if (!window.git) {
-      setError('Git integration not available');
-      return;
-    }
-
-    try {
-      startLoading('Refreshing tags...');
-      const result = await window.git.refreshTags();
-      
-      if (result.success) {
-        setError(null);
-        // Reload branches to reflect any tag changes
-        await loadBranches();
-      } else {
-        setError('Failed to refresh tags');
-      }
-    } catch (err) {
-      setError(err.message || 'Error refreshing tags');
-      console.error('Error refreshing tags:', err);
-    } finally {
-      stopLoading();
-    }
-  };
-
   // Update merge status when repo changes
   useEffect(() => {
     if (repoPath) {
-      checkMergeInProgress();
+      dispatch(checkMergeInProgress());
     }
-  }, [repoPath]);
+  }, [repoPath, dispatch]);
 
   return (
     <div className="git-ui">
-      <AppToolbar 
-        showFooter={showFooter}
-        onToggleFooter={() => setShowFooter(!showFooter)}
-        onMergeAbort={handleMergeAbort}
-        hasMergeInProgress={hasMergeInProgress}
-        onRefreshTags={handleRefreshTags}
-      />
+      <AppToolbar />
       <LoadingModal message={loadingMessage} />
 
       <div style={{

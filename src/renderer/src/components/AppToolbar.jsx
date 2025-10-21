@@ -1,66 +1,89 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  refreshTags, 
+  toggleFooter, 
+  clearError,
+  abortMerge,
+  checkMergeInProgress
+} from '../store/uiSlice';
 import './AppToolbar.css';
 
-export const AppToolbar = ({ showFooter, onToggleFooter, onMergeAbort, hasMergeInProgress = false, onRefreshTags }) => {
-  const [isRefreshing, setIsRefreshing] = useState(false);
+export const AppToolbar = () => {
+  const dispatch = useDispatch();
+  const { 
+    showFooter, 
+    isRefreshingTags, 
+    hasMergeInProgress, 
+    error 
+  } = useSelector((state) => ({
+    showFooter: state.ui.showFooter,
+    isRefreshingTags: state.ui.isRefreshingTags,
+    hasMergeInProgress: state.ui.hasMergeInProgress,
+    error: state.ui.error
+  }));
 
-  const handleRefreshTags = async () => {
-    if (isRefreshing) return;
-    
-    setIsRefreshing(true);
-    try {
-      await onRefreshTags();
-    } catch (error) {
-      console.error('Error refreshing tags:', error);
-    } finally {
-      setIsRefreshing(false);
+  useEffect(() => {
+    if (error) {
+      console.error('Error in AppToolbar:', error);
+      dispatch(clearError());
+    }
+  }, [error, dispatch]);
+
+  const handleRefreshTags = () => {
+    if (isRefreshingTags) return;
+    dispatch(refreshTags());
+  };
+
+  const handleMergeAbort = () => {
+    if (hasMergeInProgress) {
+      dispatch(abortMerge())
+        .then(() => dispatch(checkMergeInProgress()));
     }
   };
+
   return (
     <div className="app-toolbar">
       <div className="toolbar-section">
         <div className="toolbar-menu">
-          <span className="menu-label">View</span>
-          <div className="menu-content">
-            <label className="menu-item">
-              <input
-                type="checkbox"
-                checked={showFooter}
-                onChange={onToggleFooter}
-              />
-              <span>Show Footer</span>
-            </label>
-          </div>
+          <label className="menu-item">
+            <input
+              type="checkbox"
+              checked={showFooter}
+              onChange={() => dispatch(toggleFooter())}
+            />
+            <span>Show Footer</span>
+          </label>
         </div>
-        
-        <div className="toolbar-menu">
-          <span className="menu-label">Merge</span>
-          <div className="menu-content">
-            <button 
-              className={`menu-item merge-abort-btn ${hasMergeInProgress ? 'active' : 'disabled'}`}
-              onClick={hasMergeInProgress ? onMergeAbort : null}
-              disabled={!hasMergeInProgress}
-              title={hasMergeInProgress ? 'Abort the current merge operation' : 'No merge in progress'}
-            >
-              Abort
-            </button>
-          </div>
+      </div>
+      
+      <div className="toolbar-menu">
+        <span className="menu-label">Merge</span>
+        <div className="menu-content">
+          <button 
+            className={`menu-item merge-abort-btn ${hasMergeInProgress ? 'active' : 'disabled'}`}
+            onClick={handleMergeAbort}
+            disabled={!hasMergeInProgress}
+            title={hasMergeInProgress ? 'Abort the current merge operation' : 'No merge in progress'}
+          >
+            Abort Merge
+          </button>
         </div>
+      </div>
 
-        <div className="toolbar-menu">
-          <span className="menu-label">Tags</span>
-          <div className="menu-content">
-            <button 
-              className={`menu-item refresh-tags-btn ${isRefreshing ? 'disabled' : ''}`}
-              onClick={handleRefreshTags}
-              disabled={isRefreshing}
-              title="Clear local tags and fetch latest from remote"
-            >
-              {isRefreshing ? 'Refreshing...' : 'Refresh Tags'}
-            </button>
-          </div>
+      <div className="toolbar-menu">
+        <span className="menu-label">Tags</span>
+        <div className="menu-content">
+          <button 
+            className={`menu-item refresh-tags-btn ${isRefreshingTags ? 'refreshing' : ''}`}
+            onClick={handleRefreshTags}
+            disabled={isRefreshingTags}
+            title="Refresh tags from remote"
+          >
+            {isRefreshingTags ? 'Refreshing...' : 'Refresh Tags'}
+          </button>
         </div>
       </div>
     </div>
   );
-}; 
+};
