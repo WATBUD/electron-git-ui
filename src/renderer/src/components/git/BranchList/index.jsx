@@ -114,15 +114,102 @@ const BranchList = ({
             Refresh
           </button>
         </div>
-        
-        {loading ? (
-          <div className="loading">Loading branches...</div>
-        ) : (
-          <>
-            {renderBranchSection('Local Branches', branches, false)}
-            {remoteBranches.length > 0 && renderBranchSection('Remote Branches', remoteBranches, true)}
-          </>
-        )}
+
+        <div className="branch-list-container">
+          {loading ? (
+            <div className="loading">Loading branches...</div>
+          ) : (
+            <>
+              <div className="branch-section">
+                <h4>Local Branches</h4>
+                <ul>
+                  {sortBranches(branches).map((branch) => (
+                    <li
+                      key={`local-${branch}`}
+                      onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
+                      className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
+                      title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
+                      onContextMenu={(e) => e.preventDefault()}
+                    >
+                      <span>
+                        {branch}
+                        {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
+                      </span>
+                      <div className="branch-actions">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCopyBranchName(branch);
+                          }}
+                          className={`copy-button ${copiedBranch === branch ? 'copied' : ''}`}
+                          title="Copy branch name"
+                        >
+                          <Copy size={14} />
+                          {copiedBranch === branch && <span className="copied-text">Copied!</span>}
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(branch);
+                          }}
+                          className="delete-btn"
+                          title="Delete branch"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {remoteBranches.length > 0 && (
+                <div className="branch-section">
+                  <h4>Remote Branches</h4>
+                  <ul>
+                    {sortBranches(remoteBranches).map((branch) => (
+                      <li
+                        key={`remote-${branch}`}
+                        onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
+                        className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
+                        title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
+                        onContextMenu={(e) => e.preventDefault()}
+                      >
+                        <span>
+                          {branch}
+                          {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
+                        </span>
+                        <div className="branch-actions">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyBranchName(branch);
+                            }}
+                            className={`copy-button ${copiedBranch === branch ? 'copied' : ''}`}
+                            title="Copy branch name"
+                          >
+                            <Copy size={14} />
+                            {copiedBranch === branch && <span className="copied-text">Copied!</span>}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteRemote(branch);
+                            }}
+                            className="delete-btn"
+                            title="Delete branch"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

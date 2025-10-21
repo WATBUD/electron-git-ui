@@ -1,3 +1,24 @@
+:root {
+  --bg-color: #1e1e2d;
+  --bg-secondary: #16162a;
+  --text-color: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #718096;
+  --border-color: #2d3748;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --success-color: #48bb78;
+  --danger-color: #f56565;
+  --warning-color: #ed8936;
+  --surface-color: #2d3748;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+
+  /* Error modal specific colors */
+  --error-bg: #7f1d1d;
+  --error-border: #991b1b;
+  --text-error: #fca5a5;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,7 +26,39 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Global scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--bg-secondary);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--bg-secondary);
 }
 
 * {

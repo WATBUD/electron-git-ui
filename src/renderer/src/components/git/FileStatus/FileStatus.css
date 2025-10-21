@@ -1,16 +1,3 @@
-:root {
-  --bg-color: #1e1e2d;
-  --bg-secondary: #16162a;
-  --text-color: #e2e8f0;
-  --text-secondary: #a0aec0;
-  --text-muted: #718096;
-  --border-color: #2d3748;
-  --primary-color: #4f46e5;
-  --success-color: #48bb78;
-  --danger-color: #f56565;
-  --surface-color: #2d3748;
-}
-
 .file-status-panel {
   display: flex;
   flex-direction: column;
@@ -41,24 +28,6 @@
   padding-bottom: 20px;
   padding-right: 10px;
   overflow-y: auto;
-}
-
-.file-status-content::-webkit-scrollbar {
-  width: 8px;
-}
-
-.file-status-content::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 4px;
-}
-
-.file-status-content::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-}
-
-.file-status-content::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
 }
 
 .file-status-section {
