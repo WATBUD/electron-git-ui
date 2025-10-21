@@ -28,9 +28,9 @@ import {
   updateCommandHistory,
   selectRepository
 } from '../../../store/gitSlice';
-import './GitUI.css';
+import './GitMainPage.css';
 
-export const GitUI = () => {
+export const GitMainPage = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   
