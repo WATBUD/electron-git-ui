@@ -1,4 +1,4 @@
-import Versions from './components/Versions'
+import Versions from './components/ui/Versions'
 import electronLogo from './assets/electron.svg'
 
 function App() {

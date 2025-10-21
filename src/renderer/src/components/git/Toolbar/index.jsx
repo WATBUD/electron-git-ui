@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ModalPortal } from './ModalPortal';
+import { ModalPortal } from '../../ui/ModalPortal';
 import './Toolbar.css';
 
 export const Toolbar = ({ 

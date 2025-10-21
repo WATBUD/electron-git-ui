@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { message } from 'antd';
 import { Copy } from 'lucide-react';
-import '../styles/BranchList.css';
+import './BranchList.css';
 
 const BranchList = ({
   branches = [],

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { LoadingModal } from './LoadingModal';
-import { ErrorModal } from './ErrorModal';
-import { GitGraph } from './GitGraph';
-import { Toolbar } from './Toolbar';
-import { FileStatus } from './FileStatus';
-import { RefreshButton } from './RefreshButton';
-import { FooterArea } from './FooterArea';
-import { AppToolbar } from './AppToolbar';
-import LeftSideBar from './LeftSideBar';
-import BranchList from './BranchList';
+import { LoadingModal } from '../../ui/LoadingModal';
+import { ErrorModal } from '../../ui/ErrorModal';
+import { GitGraph } from '../GitGraph';
+import { Toolbar } from '../Toolbar';
+import { FileStatus } from '../FileStatus';
+import { RefreshButton } from '../../ui/RefreshButton';
+import { FooterArea } from '../../layout/FooterArea';
+import { AppToolbar } from '../../layout/AppToolbar';
+import LeftSideBar from '../../layout/LeftSideBar';
+import BranchList from '../BranchList';
 import { 
   abortMerge, 
   checkMergeInProgress, 
@@ -27,7 +27,7 @@ import {
   unstageFile,
   updateCommandHistory,
   selectRepository
-} from '../store/gitSlice';
+} from '../../../store/gitSlice';
 import './GitUI.css';
 
 export const GitUI = () => {

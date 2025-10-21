@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/LeftSideBar.css';
+import './LeftSideBar.css';
 
 const LeftSideBar = ({ activeTab, onTabChange }) => {
   const menuItems = [

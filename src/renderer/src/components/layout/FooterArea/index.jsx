@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import './FooterArea.css';
 import { Copy } from 'lucide-react';
-import { clearCommandHistory } from '../store/gitSlice';
+import { clearCommandHistory } from '../../../store/gitSlice';
 
 export const FooterArea = () => {
   const dispatch = useDispatch();

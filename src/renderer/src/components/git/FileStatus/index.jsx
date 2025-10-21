@@ -1,6 +1,6 @@
 import React from 'react';
-import { LoadingModal } from './LoadingModal';
-import { RefreshButton } from './RefreshButton';
+import { LoadingModal } from '../../ui/LoadingModal';
+import { RefreshButton } from '../../ui/RefreshButton';
 import './FileStatus.css';
 
 export const FileStatus = ({ 

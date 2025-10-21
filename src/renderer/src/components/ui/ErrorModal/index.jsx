@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearError } from '../store/gitSlice';
+import { clearError } from '../../../store/gitSlice';
 import { Copy, Check } from 'lucide-react';
 import './ErrorModal.css';
 

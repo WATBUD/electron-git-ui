@@ -5,7 +5,7 @@ import {
   toggleFooter, 
   abortMerge,
   checkMergeInProgress
-} from '../store/gitSlice';
+} from '../../../store/gitSlice';
 import './AppToolbar.css';
 
 export const AppToolbar = () => {
