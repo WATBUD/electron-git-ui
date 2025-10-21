@@ -6,7 +6,7 @@ import {
   clearError,
   abortMerge,
   checkMergeInProgress
-} from '../store/uiSlice';
+} from '../store/gitSlice';
 import './AppToolbar.css';
 
 export const AppToolbar = () => {
@@ -17,10 +17,10 @@ export const AppToolbar = () => {
     hasMergeInProgress, 
     error 
   } = useSelector((state) => ({
-    showFooter: state.ui.showFooter,
-    isRefreshingTags: state.ui.isRefreshingTags,
-    hasMergeInProgress: state.ui.hasMergeInProgress,
-    error: state.ui.error
+    showFooter: state.git.showFooter,
+    isRefreshingTags: state.git.isRefreshingTags,
+    hasMergeInProgress: state.git.hasMergeInProgress,
+    error: state.git.error
   }));
 
   useEffect(() => {

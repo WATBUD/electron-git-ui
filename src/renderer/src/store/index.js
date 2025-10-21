@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import uiReducer from './uiSlice';
+import gitReducer from './gitSlice';
 
 export const store = configureStore({
   reducer: {
-    ui: uiReducer,
+    git: gitReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

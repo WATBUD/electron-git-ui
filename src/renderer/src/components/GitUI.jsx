@@ -12,8 +12,9 @@ import BranchList from './BranchList';
 import { 
   abortMerge, 
   checkMergeInProgress, 
-  refreshTags 
-} from '../store/uiSlice';
+  refreshTags,
+  deleteBranch 
+} from '../store/gitSlice';
 import './GitUI.css';
 
 export const GitUI = () => {
@@ -29,8 +30,8 @@ export const GitUI = () => {
   const [fileStatus, setFileStatus] = useState([]);
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   const [activeCommandTab, setActiveCommandTab] = useState('history');
-  const showFooter = useSelector((state) => state.ui.showFooter);
-  const hasMergeInProgress = useSelector((state) => state.ui.hasMergeInProgress);
+  const showFooter = useSelector((state) => state.git.showFooter);
+  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress);
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -188,16 +189,11 @@ export const GitUI = () => {
     try {
       startLoading(`Deleting branch: ${branchName}...`);
       setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.deleteBranch(branchName);
-      if (result.success) {
-        await updateCommandHistory();
-        await loadBranches();
-      }
+      await dispatch(deleteBranch(branchName)).unwrap();
+      await updateCommandHistory();
+      await loadBranches();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || err);
       console.error('Error deleting branch:', err);
     } finally {
       stopLoading();

@@ -1,14 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const refreshTags = createAsyncThunk(
-  'ui/refreshTags',
+  'git/refreshTags',
   async (_, { getState, rejectWithValue }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
     }
 
     try {
-      const result = await window.git.refreshTags();
+      const result = await window.git.refreshTags();  
       
       if (result.success) {
         return { success: true };
@@ -22,7 +22,7 @@ export const refreshTags = createAsyncThunk(
 );
 
 export const abortMerge = createAsyncThunk(
-  'ui/abortMerge',
+  'git/abortMerge',
   async (_, { getState, rejectWithValue }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
@@ -43,7 +43,7 @@ export const abortMerge = createAsyncThunk(
 );
 
 export const checkMergeInProgress = createAsyncThunk(
-  'ui/checkMergeInProgress',
+  'git/checkMergeInProgress',
   async (_, { getState, rejectWithValue }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
@@ -63,6 +63,27 @@ export const checkMergeInProgress = createAsyncThunk(
   }
 );
 
+export const deleteBranch = createAsyncThunk(
+  'git/deleteBranch',
+  async (branchName, { rejectWithValue }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized');
+    }
+
+    try {
+      const result = await window.git.deleteBranch(branchName);
+      
+      if (result.success) {
+        return { success: true, branchName };
+      } else {
+        return rejectWithValue(result.error || 'Failed to delete branch');
+      }
+    } catch (err) {
+      return rejectWithValue(err.message || 'Error deleting branch');
+    }
+  }
+);
+
 const initialState = {
   showFooter: false,
   isRefreshingTags: false,
@@ -70,7 +91,7 @@ const initialState = {
   error: null,
 };
 
-const uiSlice = createSlice({
+const gitSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
@@ -108,6 +129,9 @@ const uiSlice = createSlice({
       })
       .addCase(checkMergeInProgress.rejected, (state, action) => {
         state.error = action.payload;
+      })
+      .addCase(deleteBranch.rejected, (state, action) => {
+        state.error = action.payload;
       });
   },
 });
@@ -116,6 +140,6 @@ export const {
   toggleFooter, 
   setMergeInProgress,
   clearError,
-} = uiSlice.actions;
+} = gitSlice.actions;
 
-export default uiSlice.reducer;
+export default gitSlice.reducer;
