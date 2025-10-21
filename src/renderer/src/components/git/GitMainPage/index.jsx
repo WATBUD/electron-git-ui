@@ -238,7 +238,9 @@ export const GitMainPage = () => {
           </div>
         </div>
         
-        {showFooter && <FooterArea />}
+        <div style={{ display: showFooter ? 'block' : 'none' }}>
+          <FooterArea />
+        </div>
       </div>
     </div>
   );

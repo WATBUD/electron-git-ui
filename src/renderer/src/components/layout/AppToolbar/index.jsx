@@ -36,13 +36,14 @@ export const AppToolbar = () => {
     <div className="app-toolbar">
       <div className="toolbar-section">
         <div className="toolbar-menu">
-          <label className="menu-item">
+          <label className="toggle-switch">
             <input
               type="checkbox"
               checked={showFooter}
               onChange={() => dispatch(toggleFooter())}
             />
-            <span>Show Footer</span>
+            <span className="toggle-checkbox"></span>
+            <span className="toggle-label">Show Footer</span>
           </label>
         </div>
       </div>
