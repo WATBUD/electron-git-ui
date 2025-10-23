@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Select, Card, List, Switch, message, Space, Divider } from 'antd';
-import { PlayCircleOutlined, PauseCircleOutlined, SaveOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Button, Card, List, message, Space } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import Toolbar from '../../layout/Toolbar';
 import { Outlet } from 'react-router-dom';
 import './main-page-macro.css';
 
 
 export const MainPageMacro = () => {
-  const { Option } = Select;
-
   const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [recordedActions, setRecordedActions] = useState([]);
@@ -15,6 +14,8 @@ export const MainPageMacro = () => {
   const [savedMacros, setSavedMacros] = useState([]);
   const [selectedMacro, setSelectedMacro] = useState(null);
   const [targetWindow, setTargetWindow] = useState('MapleStory');
+  const [availableWindows, setAvailableWindows] = useState([]);
+  const [selectedWindowId, setSelectedWindowId] = useState(null);
   const [loop, setLoop] = useState(false);
   const [speed, setSpeed] = useState(1.0);
   
@@ -133,6 +134,31 @@ export const MainPageMacro = () => {
     message.success('Macro deleted');
   };
 
+  const refreshWindowList = async () => {
+    if (!window.macroAPI) {
+      message.error('Macro API not available');
+      return;
+    }
+    
+    try {
+      const windows = await window.macroAPI.getWindowList();
+      setAvailableWindows(windows);
+      message.success(`Found ${windows.length} window(s)`);
+    } catch (error) {
+      console.error('Failed to get window list:', error);
+      message.error('Failed to get window list');
+    }
+  };
+
+  const handleWindowSelect = (windowId) => {
+    const window = availableWindows.find(w => w.id === windowId);
+    if (window) {
+      setSelectedWindowId(windowId);
+      setTargetWindow(window.title);
+      message.success(`Selected window: ${window.title}`);
+    }
+  };
+
   return (
     <div className="macro-module">
       <div className="macro-content">
@@ -142,107 +168,29 @@ export const MainPageMacro = () => {
             className="recorder-card"
             bodyStyle={{ padding: '16px' }}
           >
-            <div className="recorder-controls">
-              <Space wrap>
-                {!isRecording ? (
-                  <Button 
-                    type="primary" 
-                    danger 
-                    onClick={startRecording}
-                    icon={<PlayCircleOutlined />}
-                    disabled={isPlaying}
-                  >
-                    Record
-                  </Button>
-                ) : (
-                  <Button 
-                    type="primary" 
-                    onClick={stopRecording}
-                    icon={<PauseCircleOutlined />}
-                  >
-                    Stop
-                  </Button>
-                )}
-                
-                {!isPlaying ? (
-                  <Button 
-                    type="primary" 
-                    onClick={playMacro}
-                    disabled={recordedActions.length === 0 || isRecording}
-                    icon={<PlayCircleOutlined />}
-                  >
-                    Play
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={stopPlaying}
-                    icon={<PauseCircleOutlined />}
-                    disabled={isRecording}
-                  >
-                    Stop
-                  </Button>
-                )}
-                
-                <Button 
-                  type="primary" 
-                  onClick={saveMacro}
-                  disabled={recordedActions.length === 0 || isRecording || isPlaying}
-                  icon={<SaveOutlined />}
-                >
-                  Save Macro
-                </Button>
-                
-                <Input
-                  placeholder="Enter macro name"
-                  value={macroName}
-                  onChange={(e) => setMacroName(e.target.value)}
-                  style={{ width: 200 }}
-                  disabled={recordedActions.length === 0 || isRecording || isPlaying}
-                />
-              </Space>
-              
-              <Divider style={{ margin: '16px 0' }} />
-              
-              <div className="macro-settings">
-                <Space wrap>
-                  <div className="setting-group">
-                    <span className="setting-label">Target Window:</span>
-                    <Input 
-                      value={targetWindow}
-                      onChange={(e) => setTargetWindow(e.target.value)}
-                      style={{ width: 200 }}
-                      placeholder="Window title"
-                      disabled={isRecording || isPlaying}
-                    />
-                  </div>
-                  
-                  <div className="setting-group">
-                    <span className="setting-label">Speed:</span>
-                    <Select 
-                      value={speed} 
-                      onChange={setSpeed}
-                      style={{ width: 100 }}
-                      disabled={isRecording || isPlaying}
-                    >
-                      <Option value={0.5}>0.5x</Option>
-                      <Option value={0.75}>0.75x</Option>
-                      <Option value={1.0}>1.0x</Option>
-                      <Option value={1.5}>1.5x</Option>
-                      <Option value={2.0}>2.0x</Option>
-                    </Select>
-                  </div>
-                  
-                  <div className="setting-group">
-                    <span className="setting-label">Loop:</span>
-                    <Switch 
-                      checked={loop} 
-                      onChange={setLoop}
-                      disabled={isRecording || isPlaying}
-                    />
-                  </div>
-                </Space>
-              </div>
-            </div>
+            <Toolbar
+              isRecording={isRecording}
+              isPlaying={isPlaying}
+              recordedActions={recordedActions}
+              macroName={macroName}
+              setMacroName={setMacroName}
+              targetWindow={targetWindow}
+              setTargetWindow={setTargetWindow}
+              availableWindows={availableWindows}
+              selectedWindowId={selectedWindowId}
+              setSelectedWindowId={setSelectedWindowId}
+              speed={speed}
+              setSpeed={setSpeed}
+              loop={loop}
+              setLoop={setLoop}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
+              onPlayMacro={playMacro}
+              onStopPlaying={stopPlaying}
+              onSaveMacro={saveMacro}
+              onRefreshWindowList={refreshWindowList}
+              onWindowSelect={(win) => setTargetWindow(win.title)}
+            />
             
             <div className="actions-panel">
               <div className="actions-header">
@@ -262,17 +210,23 @@ export const MainPageMacro = () => {
               <div className="actions-list">
                 {recordedActions.length > 0 ? (
                   <div className="actions-container">
-                    {recordedActions.map((action, index) => (
-                      <div key={index} className="action-item">
+                    {[...recordedActions].reverse().map((action, index) => (
+                      <div key={`${action.timestamp}-${index}`} className="action-item">
                         <span className="action-type">{action.type}</span>
                         <span className="action-details">
-                          {action.type === 'key' ? (
-                            `Key: ${action.key}, State: ${action.state}`
+                          {action.type === 'keydown' || action.type === 'keyup' ? (
+                            <span>Keycode: <strong>{action.keycode}</strong></span>
+                          ) : action.type === 'mousedown' || action.type === 'mouseup' ? (
+                            <span>Button: <strong>{action.button}</strong>, X: {action.x}, Y: {action.y}</span>
+                          ) : action.type === 'mousemove' ? (
+                            <span>X: {action.x}, Y: {action.y}</span>
+                          ) : action.type === 'wheel' ? (
+                            <span>Rotation: {action.rotation}, Direction: {action.direction}</span>
                           ) : (
-                            `X: ${action.x}, Y: ${action.y}${action.button ? `, Button: ${action.button}` : ''}${action.state ? `, State: ${action.state}` : ''}`
+                            JSON.stringify(action)
                           )}
                         </span>
-                        <span className="action-time">{action.timestamp}ms</span>
+                        <span className="action-time">+{action.timestamp}ms</span>
                       </div>
                     ))}
                   </div>

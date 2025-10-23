@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('macroAPI', {
+  // Window management
+  getWindowList: () => ipcRenderer.invoke('get-window-list'),
+  
   // Recording control
   startRecording: () => ipcRenderer.send('start-recording'),
   stopRecording: () => ipcRenderer.send('stop-recording'),

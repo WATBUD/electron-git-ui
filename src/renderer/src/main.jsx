@@ -16,7 +16,7 @@ const PAGES = {
 };
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState(PAGES.MACRO);
+  const [currentPage, setCurrentPage] = useState(PAGES.GIT);
 
   const navStyle = {
     display: 'flex',

@@ -6,6 +6,9 @@ import './gitIpcHandlersPreload'
 
 // Macro API
 const macroAPI = {
+  // Window management
+  getWindowList: () => ipcRenderer.invoke('get-window-list'),
+  
   // Recording control
   startRecording: () => ipcRenderer.send('start-recording'),
   stopRecording: () => ipcRenderer.send('stop-recording'),
