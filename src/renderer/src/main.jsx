@@ -2,7 +2,8 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { store } from './modules/git/store';          // ← 你的 Redux store
-import { GitMainPage } from './modules/git/components/GitMainPage';
+import { GitMainPage } from './modules/git/pages/main-page/main-page-git';
+// import MacroModule from './modules/macro-recorder/MacroModule';
 import './main.css';
 
 const container = document.getElementById('root');
@@ -13,6 +14,7 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <GitMainPage />
+      {/* <MacroModule /> */}
     </Provider>
   </React.StrictMode>
 );

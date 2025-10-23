@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { ErrorModal } from '../../../../shared/components/ErrorModal';
-import { GitGraph } from '../GitGraph';
-import { Toolbar } from '../Toolbar';
-import { FileStatus } from '../FileStatus';
-import { RefreshButton } from '../../../../shared/components/RefreshButton';
+import { GitGraph } from '../../components/GitGraph';
+import { Toolbar } from '../../components/Toolbar';
+import { FileStatus } from '../../components/FileStatus';
 import { FooterArea } from '../../layout/FooterArea';
 import { AppToolbar } from '../../layout/AppToolbar';
 import LeftSideBar from '../../layout/LeftSideBar';
-import BranchList from '../BranchList';
+import BranchList from '../../components/BranchList';
 import { 
   checkMergeInProgress, 
   deleteBranch,
@@ -26,7 +25,7 @@ import {
   selectRepository,
   clearError
 } from '../../store/gitSlice';
-import './GitMainPage.css';
+import './main-page-git.css';
 import { LoadingModal } from '../../../../shared/components/LoadingModal';
 
 export const GitMainPage = () => {
