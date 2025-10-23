@@ -1,17 +1,3 @@
-
-# Git UI
-
-An Electron application built with React and Redux Toolkit for Git repository management.
-
-## 🚀 Features
-
-- Git repository management
-- Branch management
-- Commit history visualization
-- File status tracking
-- Staging and committing changes
-- Remote repository operations
-
 ## 🏗️ Project Structure
 
 ```
@@ -56,34 +42,6 @@ npm run dev
 npm run build
 ```
 
-## 📝 License
-
-MIT
-│   ├── BranchList/      # 分支列表
-│   ├── GitGraph/        # Git 圖表視圖
-│   ├── FileStatus/      # 文件狀態
-│   ├── Toolbar/         # Git 操作工具列
-│   └── MainPageGit/     # Git UI 主容器
-└── ui/              # 通用 UI 組件
-    ├── LoadingModal/    # 載入中模態框
-    ├── ErrorModal/      # 錯誤模態框
-    ├── RefreshButton/   # 刷新按鈕
-    ├── ModalPortal/     # 模態框傳送門
-    └── Versions/        # 版本信息
-```
-
-### 組件命名規範
-
-* 每個組件一個資料夾
-* 主文件：`index.jsx`
-* CSS 文件：`[ComponentName].css`
-* Import 使用資料夾路徑，例如：
-
-```javascript
-import { MainPageGit } from '@/components/git/MainPageGit';
-import Versions from '@/components/ui/Versions';
-```
-
 ### Import 範例
 
 ```javascript
@@ -97,22 +55,11 @@ import { MainPageGit } from './components/git/MainPageGit';
 import Versions from './components/ui/Versions';
 ```
 
-### 優點
-
-1. **清晰職責分離**：layout、git、ui 各司其職
-2. **易於擴展**：新增組件時一目了然
-3. **語義化 Import**：路徑直接反映組件用途
-4. **團隊協作友好**：模組明確，各人負責不同部分
-5. **業界標準**：與大型 React 專案最佳實踐一致
-
 ---
 
 ## ⚙️ Recommended IDE Setup
 
 * **VSCode** + **ESLint** + **Prettier**
-  [VSCode](https://code.visualstudio.com/)
-  [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-  [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
 ---
 
