@@ -27,7 +27,8 @@
     "antd": "^5.27.5",
     "lucide-react": "^0.545.0",
     "react-redux": "^9.2.0",
-    "react-router-dom": "^7.9.4"
+    "react-router-dom": "^7.9.4",
+    "robotjs": "^0.6.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^2.0.0",

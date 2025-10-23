@@ -28,7 +28,7 @@ import {
 import './main-page-git.css';
 import { LoadingModal } from '../../../../shared/components/LoadingModal';
 
-export const GitMainPage = () => {
+export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
   const error = useSelector((state) => state.git.error);

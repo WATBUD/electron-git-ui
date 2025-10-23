@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { store } from './modules/git/store';
-import { GitMainPage } from './modules/git/pages/main-page/main-page-git';
-import { MacroModule } from './modules/macro-recorder/pages/main-page/main-page-macro';
+import { MainPageGit } from './modules/git/pages/main-page/main-page-git';
+import { MainPageMacro } from './modules/macro-recorder/pages/main-page/main-page-macro';
 import './main.css';
 
 const container = document.getElementById('root');
@@ -57,7 +57,7 @@ const App = () => {
       </nav> */}
       
       <div style={{ flex: 1, overflow: 'auto' }}>
-        {currentPage === PAGES.GIT ? <GitMainPage /> : <MacroModule />}
+        {currentPage === PAGES.GIT ? <MainPageGit /> : <MainPageMacro />}
       </div>
     </div>
   );

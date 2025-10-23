@@ -63,7 +63,7 @@ MIT
 │   ├── GitGraph/        # Git 圖表視圖
 │   ├── FileStatus/      # 文件狀態
 │   ├── Toolbar/         # Git 操作工具列
-│   └── GitMainPage/     # Git UI 主容器
+│   └── MainPageGit/     # Git UI 主容器
 └── ui/              # 通用 UI 組件
     ├── LoadingModal/    # 載入中模態框
     ├── ErrorModal/      # 錯誤模態框
@@ -80,20 +80,20 @@ MIT
 * Import 使用資料夾路徑，例如：
 
 ```javascript
-import { GitMainPage } from '@/components/git/GitMainPage';
+import { MainPageGit } from '@/components/git/MainPageGit';
 import Versions from '@/components/ui/Versions';
 ```
 
 ### Import 範例
 
 ```javascript
-// GitMainPage 內引入
+// MainPageGit 內引入
 import { LoadingModal } from '../../ui/LoadingModal';
 import { AppToolbar } from '../../layout/AppToolbar';
 import { BranchList } from '../BranchList';
 
 // App.jsx 引入
-import { GitMainPage } from './components/git/GitMainPage';
+import { MainPageGit } from './components/git/MainPageGit';
 import Versions from './components/ui/Versions';
 ```
 
