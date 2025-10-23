@@ -15,11 +15,9 @@ export default defineConfig({
   preload: {
     build: {
       rollupOptions: {
-        input: {
-          gitIpcHandlersPreload: resolve(__dirname, 'src/preload/gitIpcHandlersPreload.js'),
-        },
-      },
-    },
+        input: resolve(__dirname, 'src/preload/index.js')
+      }
+    }
   },
   renderer: {
     resolve: {

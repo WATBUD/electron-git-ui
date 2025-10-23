@@ -1,7 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { setupGitHandlers } from './gitIpcHandlersMain'
+import { setupGitHandlers } from './gitIpcHandlers'
+import { setupMacroHandlers } from './macroIpcHandlers'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const iconPath = isDev
@@ -27,7 +28,9 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: join(__dirname, '../preload/gitIpcHandlersPreload.js'),
+      preload: isDev
+        ? join(__dirname, '../preload/index.js')
+        : join(__dirname, '../out/preload/index.js'),
       sandbox: false
     }
   })
@@ -84,7 +87,9 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
+  // Set up IPC handlers
   setupGitHandlers()
+  setupMacroHandlers()
 
   createWindow()
 
