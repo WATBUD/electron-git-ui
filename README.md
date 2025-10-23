@@ -19,21 +19,8 @@ src/renderer/src/
 ├── modules/                    # Feature modules
 │   └── git/                   # Git module
 │       ├── components/        # Git-specific components
-│       │   ├── BranchList/    # Branch management UI
-│       │   ├── FileStatus/    # File status and staging UI
-│       │   ├── GitGraph/      # Commit history visualization
-│       │   ├── Toolbar/       # Git operation buttons
-│       │   └── GitMainPage/   # Main Git interface
-│       │
 │       ├── layout/            # Layout components for Git module
-│       │   ├── AppToolbar/    # Top toolbar
-│       │   ├── LeftSideBar/   # Left sidebar navigation
-│       │   └── FooterArea/    # Bottom panel for logs/terminal
-│       │
 │       ├── store/             # Redux store configuration
-│       │   ├── gitSlice.js    # Git-related reducers and actions
-│       │   └── index.js       # Store setup
-│       │
 │       └── index.js           # Module exports
 │
 ├── shared/                    # Shared resources
