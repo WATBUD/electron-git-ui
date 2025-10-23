@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LoadingModal } from '../../ui/LoadingModal';
-import { RefreshButton } from '../../ui/RefreshButton';
+import { RefreshButton } from '../../../../shared/components/RefreshButton';
 import './GitGraph.css';
 
 export const GitGraph = ({ repoPath }) => {

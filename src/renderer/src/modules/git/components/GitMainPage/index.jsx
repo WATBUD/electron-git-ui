@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { LoadingModal } from '../../ui/LoadingModal';
-import { ErrorModal } from '../../ui/ErrorModal';
+import { ErrorModal } from '../../../../shared/components/ErrorModal';
 import { GitGraph } from '../GitGraph';
 import { Toolbar } from '../Toolbar';
 import { FileStatus } from '../FileStatus';
-import { RefreshButton } from '../../ui/RefreshButton';
+import { RefreshButton } from '../../../../shared/components/RefreshButton';
 import { FooterArea } from '../../layout/FooterArea';
 import { AppToolbar } from '../../layout/AppToolbar';
 import LeftSideBar from '../../layout/LeftSideBar';
@@ -24,13 +23,16 @@ import {
   stageFile,
   unstageFile,
   updateCommandHistory,
-  selectRepository
-} from '../../../store/gitSlice';
+  selectRepository,
+  clearError
+} from '../../store/gitSlice';
 import './GitMainPage.css';
+import { LoadingModal } from '../../../../shared/components/LoadingModal';
 
 export const GitMainPage = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
+  const error = useSelector((state) => state.git.error);
   
   // Get state from Redux
   const showFooter = useSelector((state) => state.git.showFooter);
@@ -107,7 +109,11 @@ export const GitMainPage = () => {
     <div className="git-ui">
       <AppToolbar />
       <LoadingModal message={loadingMessage} />
-      <ErrorModal />
+      <ErrorModal 
+        error={error}
+        show={!!error}
+        onClose={() => dispatch(clearError())}
+      />
 
       <div className="main-layout">
         <div className="content-area">

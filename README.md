@@ -1,23 +1,77 @@
 
----
+# Git UI
 
-# git-ui
+An Electron application built with React and Redux Toolkit for Git repository management.
 
-An Electron application built with React.
+## 🚀 Features
 
-## 📂 Components Structure
+- Git repository management
+- Branch management
+- Commit history visualization
+- File status tracking
+- Staging and committing changes
+- Remote repository operations
 
-專案組件按功能分類，方便維護與擴展。
-
-### 資料夾結構
+## 🏗️ Project Structure
 
 ```
-components/
-├── layout/          # 佈局組件
-│   ├── AppToolbar/  # 頂部工具列
-│   ├── LeftSideBar/ # 左側導航欄
-│   └── FooterArea/  # 底部區域
-├── git/             # Git 核心功能組件
+src/renderer/src/
+├── modules/                    # Feature modules
+│   └── git/                   # Git module
+│       ├── components/        # Git-specific components
+│       │   ├── BranchList/    # Branch management UI
+│       │   ├── FileStatus/    # File status and staging UI
+│       │   ├── GitGraph/      # Commit history visualization
+│       │   ├── Toolbar/       # Git operation buttons
+│       │   └── GitMainPage/   # Main Git interface
+│       │
+│       ├── layout/            # Layout components for Git module
+│       │   ├── AppToolbar/    # Top toolbar
+│       │   ├── LeftSideBar/   # Left sidebar navigation
+│       │   └── FooterArea/    # Bottom panel for logs/terminal
+│       │
+│       ├── store/             # Redux store configuration
+│       │   ├── gitSlice.js    # Git-related reducers and actions
+│       │   └── index.js       # Store setup
+│       │
+│       └── index.js           # Module exports
+│
+├── shared/                    # Shared resources
+│   ├── components/            # Reusable UI components
+│   │   ├── ErrorModal/        # Error display modal
+│   │   ├── LoadingModal/      # Loading indicator
+│   │   └── ...
+│   ├── hooks/                 # Custom React hooks
+│   └── utils/                 # Utility functions
+│
+├── App.jsx                    # Root component
+└── main.jsx                   # Application entry point
+```
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 16+
+- npm or yarn
+- Git
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## 📝 License
+
+MIT
 │   ├── BranchList/      # 分支列表
 │   ├── GitGraph/        # Git 圖表視圖
 │   ├── FileStatus/      # 文件狀態
