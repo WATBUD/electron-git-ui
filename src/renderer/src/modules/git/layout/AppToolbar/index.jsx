@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   refreshTags, 
@@ -9,6 +9,8 @@ import {
 import './AppToolbar.css';
 
 export const AppToolbar = () => {
+  const [activeMenu, setActiveMenu] = useState(null);
+  const menuRef = useRef(null);
   const dispatch = useDispatch();
   const { 
     showFooter, 
@@ -19,6 +21,26 @@ export const AppToolbar = () => {
     isRefreshingTags: state.git.isRefreshingTags,
     hasMergeInProgress: state.git.hasMergeInProgress
   }));
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setActiveMenu(null);
+      }
+    }
+
+    // Bind the event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuRef]);
+
+  const toggleMenu = (menuName) => {
+    setActiveMenu(activeMenu === menuName ? null : menuName);
+  };
 
   const handleRefreshTags = () => {
     if (isRefreshingTags) return;
@@ -48,12 +70,21 @@ export const AppToolbar = () => {
         </div>
       </div>
       
-      <div className="toolbar-menu">
-        <span className="menu-label">Merge</span>
+      <div className={`toolbar-menu ${activeMenu === 'merge' ? 'active' : ''}`} ref={menuRef}>
+        <span 
+          className="menu-label"
+          onClick={() => toggleMenu('merge')}
+        >
+          Merge
+        </span>
         <div className="menu-content">
           <button 
             className={`menu-item merge-abort-btn ${hasMergeInProgress ? 'active' : 'disabled'}`}
-            onClick={handleMergeAbort}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMergeAbort();
+              setActiveMenu(null);
+            }}
             disabled={!hasMergeInProgress}
             title={hasMergeInProgress ? 'Abort the current merge operation' : 'No merge in progress'}
           >
@@ -62,12 +93,21 @@ export const AppToolbar = () => {
         </div>
       </div>
 
-      <div className="toolbar-menu">
-        <span className="menu-label">Tags</span>
+      <div className={`toolbar-menu ${activeMenu === 'tags' ? 'active' : ''}`} ref={menuRef}>
+        <span 
+          className="menu-label"
+          onClick={() => toggleMenu('tags')}
+        >
+          Tags
+        </span>
         <div className="menu-content">
           <button 
             className={`menu-item refresh-tags-btn ${isRefreshingTags ? 'refreshing' : ''}`}
-            onClick={handleRefreshTags}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRefreshTags();
+              setActiveMenu(null);
+            }}
             disabled={isRefreshingTags}
             title="Refresh tags from remote"
           >

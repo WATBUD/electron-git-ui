@@ -13,6 +13,7 @@
   height: 48px;
   box-sizing: border-box;
   z-index: 1000;
+  user-select: none;
 }
 
 .toolbar-section {
@@ -27,6 +28,7 @@
   display: flex;
   align-items: center;
   height: 100%;
+  padding: 0 0.25rem;
 }
 
 .menu-label {
@@ -36,11 +38,12 @@
   font-size: 0.875rem;
   font-weight: 500;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   height: 100%;
   display: flex;
   align-items: center;
   white-space: nowrap;
+  position: relative;
 }
 
 .menu-label:hover {
@@ -48,45 +51,150 @@
   color: var(--text-hover);
 }
 
-.menu-content {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: var(--bg-color);
-  min-width: 180px;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  z-index: 1000;
-  padding: 0.25rem 0;
-  margin-top: 0.25rem;
+/* Add a subtle indicator for dropdowns */
+.menu-label::after {
+  content: '▼';
+  font-size: 0.6em;
+  margin-left: 0.5em;
+  opacity: 0.7;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.toolbar-menu:hover .menu-content {
-  display: block;
+/* Rotate arrow when menu is active */
+.toolbar-menu.active .menu-label::after {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.menu-content {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background-color: var(--bg-color);
+  min-width: 200px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 1100;
+  padding: 0.5rem 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+  pointer-events: none;
+}
+
+.toolbar-menu {
+  position: relative;
+  cursor: pointer;
+}
+
+/* Show menu when parent has active class */
+.toolbar-menu.active .menu-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+
+/* Add a small arrow at the top of the dropdown */
+.menu-content::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-color);
+  border-left: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
+  transform: rotate(45deg);
+  z-index: -1;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
+  margin: 0 0.5rem;
   cursor: pointer;
   color: var(--text-color);
   font-size: 0.875rem;
+  font-weight: 400;
   user-select: none;
   white-space: nowrap;
-  width: 100%;
+  width: calc(100% - 1rem);
   box-sizing: border-box;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   background: none;
   border: none;
   text-align: left;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background-color: var(--primary-color);
+  transform: scaleY(0);
+  transform-origin: center;
+  transition: transform 0.2s ease;
 }
 
 .menu-item:hover {
   background-color: var(--active-bg);
   color: var(--text-hover);
+  padding-left: 1.5rem;
+}
+
+.menu-item:hover::before {
+  transform: scaleY(1);
+}
+
+/* Disabled state */
+.menu-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: none !important;
+  padding-left: 1.25rem !important;
+}
+
+.menu-item:disabled::before {
+  display: none;
+}
+
+/* Active state for merge abort button */
+.merge-abort-btn.active {
+  color: var(--error-color);
+}
+
+.merge-abort-btn.active:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Loading state for refresh button */
+.refresh-tags-btn.refreshing {
+  position: relative;
+  color: var(--text-secondary);
+}
+
+.refresh-tags-btn.refreshing::after {
+  content: '↻';
+  display: inline-block;
+  margin-left: 0.5rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Custom Checkbox Switch for Show Footer */
@@ -181,7 +289,6 @@
 }
 
 .refresh-tags-btn {
-  width: 100%;
   text-align: left;
   background: none;
   border: none;
