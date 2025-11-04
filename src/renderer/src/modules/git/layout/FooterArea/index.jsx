@@ -81,20 +81,20 @@ export const FooterArea = () => {
       style={{ height: `${height}px` }}
     >
       <div className="resize-handle" onMouseDown={handleMouseDown} />
-      <div className="command-tabs">
+      {/* <div className="command-tabs">
         <button 
           className={`command-tab ${activeCommandTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveCommandTab('history')}
         >
           Command History
         </button>
-        {/* <button 
+        <button 
           className={`command-tab ${activeCommandTab === 'terminal' ? 'active' : ''}`}
           onClick={() => setActiveCommandTab('terminal')}
         >
           Terminal
-        </button> */}
-      </div>
+        </button>
+      </div> */}
       {activeCommandTab === 'history' && (
         <>
           <div className="command-history-header">

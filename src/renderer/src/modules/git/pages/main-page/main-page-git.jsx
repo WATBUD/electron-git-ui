@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { ErrorModal } from '../../../../shared/components/ErrorModal';
-import { GitGraph } from '../../components/GitGraph';
-import { Toolbar } from '../../components/Toolbar';
-import { FileStatus } from '../../components/FileStatus';
-import { FooterArea } from '../../layout/FooterArea';
-import { AppToolbar } from '../../layout/AppToolbar';
-import LeftSideBar from '../../layout/LeftSideBar';
-import BranchList from '../../components/BranchList';
-import { 
-  checkMergeInProgress, 
+import React, { useState, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { ErrorModal } from '../../../../shared/components/ErrorModal'
+import { GitGraph } from '../../components/GitGraph'
+import { Toolbar } from '../../components/Toolbar'
+import { FileStatus } from '../../components/FileStatus'
+import { FooterArea } from '../../layout/FooterArea'
+import { AppToolbar } from '../../layout/AppToolbar'
+import LeftSideBar from '../../layout/LeftSideBar'
+import BranchList from '../../components/BranchList'
+import {
+  checkMergeInProgress,
   deleteBranch,
   loadBranches,
   createBranch,
@@ -25,100 +25,90 @@ import {
   updateCommandHistory,
   selectRepository,
   clearError
-} from '../../store/gitSlice';
-import './main-page-git.css';
-import { LoadingModal } from '../../../../shared/components/LoadingModal';
+} from '../../store/gitSlice'
+import './main-page-git.css'
+import { LoadingModal } from '../../../../shared/components/LoadingModal'
 
 export const MainPageGit = () => {
-  const [newBranchName, setNewBranchName] = useState('');
-  const [activeTab, setActiveTab] = useState('main'); // 'main', 'graph', or 'files'
-  const error = useSelector((state) => state.git.error);
-  
+  const [newBranchName, setNewBranchName] = useState('')
+  const [activeTab, setActiveTab] = useState('main') // 'main', 'graph', or 'files'
+  const error = useSelector((state) => state.git.error)
+
   // Get state from Redux
-  const showFooter = useSelector((state) => state.git.showFooter);
-  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress);
-  const branches = useSelector((state) => state.git.branches);
-  const remoteBranches = useSelector((state) => state.git.remoteBranches);
-  const currentBranch = useSelector((state) => state.git.currentBranch);
-  const fileStatus = useSelector((state) => state.git.fileStatus);
-  const loading = useSelector((state) => state.git.loading);
-  const loadingMessage = useSelector((state) => state.git.loadingMessage);
-  const repoPath = useSelector((state) => state.git.repoPath);
-  const mergeStatus = useSelector((state) => state.git.mergeStatus);
-  
-  const dispatch = useDispatch();
+  const showFooter = useSelector((state) => state.git.showFooter)
+  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
+  const branches = useSelector((state) => state.git.branches)
+  const remoteBranches = useSelector((state) => state.git.remoteBranches)
+  const currentBranch = useSelector((state) => state.git.currentBranch)
+  const fileStatus = useSelector((state) => state.git.fileStatus)
+  const loading = useSelector((state) => state.git.loading)
+  const loadingMessage = useSelector((state) => state.git.loadingMessage)
+  const repoPath = useSelector((state) => state.git.repoPath)
+  const mergeStatus = useSelector((state) => state.git.mergeStatus)
+
+  const dispatch = useDispatch()
 
   useEffect(() => {
     // Debug: Check if window.git is available
-    console.log('window.git available:', !!window.git);
+    console.log('window.git available:', !!window.git)
     if (window.git) {
-      console.log('Available git methods:', Object.keys(window.git));
+      console.log('Available git methods:', Object.keys(window.git))
     }
-  }, []);
+  }, [])
 
   const handleSelectRepository = async () => {
-    const result = await dispatch(selectRepository());
+    const result = await dispatch(selectRepository())
     if (selectRepository.fulfilled.match(result)) {
-      dispatch(updateCommandHistory());
+      dispatch(updateCommandHistory())
     }
-  };
+  }
 
   useEffect(() => {
     if (repoPath) {
-      dispatch(loadBranches());
-      dispatch(loadFileStatus());
-      dispatch(updateCommandHistory());
+      dispatch(loadBranches())
+      dispatch(loadFileStatus())
+      dispatch(updateCommandHistory())
     }
-  }, [repoPath, dispatch]);
+  }, [repoPath, dispatch])
 
   const getStatusText = (file) => {
     if (file.statusType) {
-      const { staged, working } = file.statusType;
-      if (staged === 'M') return 'Staged Changes';
-      if (staged === 'A') return 'Staged Addition';
-      if (staged === 'D') return 'Staged Deletion';
-      if (staged === 'R') return 'Staged Rename';
-      if (staged === 'C') return 'Staged Copy';
-      if (working === 'M') return 'Working Changes';
-      if (working === 'A') return 'Working Addition';
-      if (working === 'D') return 'Working Deletion';
-      if (working === '?') return 'Untracked';
+      const { staged, working } = file.statusType
+      if (staged === 'M') return 'Staged Changes'
+      if (staged === 'A') return 'Staged Addition'
+      if (staged === 'D') return 'Staged Deletion'
+      if (staged === 'R') return 'Staged Rename'
+      if (staged === 'C') return 'Staged Copy'
+      if (working === 'M') return 'Working Changes'
+      if (working === 'A') return 'Working Addition'
+      if (working === 'D') return 'Working Deletion'
+      if (working === '?') return 'Untracked'
     }
-    return 'Unknown';
-  };
+    return 'Unknown'
+  }
 
   const getStatusIcon = (file) => {
-    const { staged, working } = file.statusType;
-    if (staged === 'M' || working === 'M') return '📝';
-    if (staged === 'A' || working === 'A') return '➕';
-    if (staged === 'D' || working === 'D') return '🗑️';
-    if (staged === 'R') return '🔄';
-    if (staged === 'C') return '📋';
-    if (staged === '?' || working === '?') return '❓';
-    return '📄';
-  };
+    const { staged, working } = file.statusType
+    if (staged === 'M' || working === 'M') return '📝'
+    if (staged === 'A' || working === 'A') return '➕'
+    if (staged === 'D' || working === 'D') return '🗑️'
+    if (staged === 'R') return '🔄'
+    if (staged === 'C') return '📋'
+    if (staged === '?' || working === '?') return '❓'
+    return '📄'
+  }
 
   // Update merge status when repo changes
   useEffect(() => {
     if (repoPath) {
-      dispatch(checkMergeInProgress());
+      dispatch(checkMergeInProgress())
     }
-  }, [repoPath, dispatch]);
+  }, [repoPath, dispatch])
 
   return (
     <div className="git-ui">
-      <AppToolbar />
-      <LoadingModal message={loadingMessage} />
-      <ErrorModal 
-        error={error}
-        show={!!error}
-        onClose={() => dispatch(clearError())}
-      />
-
-      <div className="main-layout">
-        <div className="content-area">
-          <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
-          <div className="main-content">
+      <div className="toolbar-container">
+        <AppToolbar />
         <div className="repository-selector">
           <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
             {repoPath ? 'Change Repository' : 'Select Repository'}
@@ -138,121 +128,129 @@ export const MainPageGit = () => {
         {repoPath && (
           <Toolbar
             onFetch={async (pruneBranches) => {
-              const result = await dispatch(fetchFromRemote(pruneBranches));
+              const result = await dispatch(fetchFromRemote(pruneBranches))
               if (fetchFromRemote.fulfilled.match(result)) {
-                dispatch(loadBranches());
-                dispatch(updateCommandHistory());
+                dispatch(loadBranches())
+                dispatch(updateCommandHistory())
               }
             }}
             onPush={async (forcePush) => {
-              const result = await dispatch(pushToRemote(forcePush));
+              const result = await dispatch(pushToRemote(forcePush))
               if (pushToRemote.fulfilled.match(result)) {
-                dispatch(loadBranches());
-                dispatch(updateCommandHistory());
+                dispatch(loadBranches())
+                dispatch(updateCommandHistory())
               }
             }}
             onCommit={async (commitMessage) => {
-              const result = await dispatch(commitChanges(commitMessage));
+              const result = await dispatch(commitChanges(commitMessage))
               if (commitChanges.fulfilled.match(result)) {
-                dispatch(loadFileStatus());
-                dispatch(updateCommandHistory());
+                dispatch(loadFileStatus())
+                dispatch(updateCommandHistory())
               }
             }}
             loading={loading}
           />
         )}
+      </div>
 
-        {repoPath && (
-          <>
-            {activeTab === 'main' && (
-              <BranchList
-                branches={branches}
-                remoteBranches={remoteBranches}
-                currentBranch={currentBranch}
-                loading={loading}
-                onCheckout={async (branchName) => {
-                  const result = await dispatch(checkoutBranch(branchName));
-                  if (checkoutBranch.fulfilled.match(result)) {
-                    dispatch(loadBranches());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                onDelete={async (branchName) => {
-                  const result = await dispatch(deleteBranch(branchName));
-                  if (deleteBranch.fulfilled.match(result)) {
-                    dispatch(loadBranches());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                onDeleteRemote={async (branchName) => {
-                  const result = await dispatch(deleteRemoteBranch(branchName));
-                  if (deleteRemoteBranch.fulfilled.match(result)) {
-                    dispatch(loadBranches());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                onRefresh={() => {
-                  dispatch(loadBranches());
-                  dispatch(updateCommandHistory());
-                }}
-                newBranchName={newBranchName}
-                onBranchNameChange={(e) => setNewBranchName(e.target.value)}
-                onCreateBranch={async () => {
-                  if (!newBranchName.trim()) return;
-                  const result = await dispatch(createBranch(newBranchName));
-                  if (createBranch.fulfilled.match(result)) {
-                    setNewBranchName('');
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-              />
+      <LoadingModal message={loadingMessage} />
+      <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
+
+      <div className="main-layout">
+        <div className="content-area">
+          <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="main-content">
+            {repoPath && (
+              <>
+                {activeTab === 'main' && (
+                  <BranchList
+                    branches={branches}
+                    remoteBranches={remoteBranches}
+                    currentBranch={currentBranch}
+                    loading={loading}
+                    onCheckout={async (branchName) => {
+                      const result = await dispatch(checkoutBranch(branchName))
+                      if (checkoutBranch.fulfilled.match(result)) {
+                        dispatch(loadBranches())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    onDelete={async (branchName) => {
+                      const result = await dispatch(deleteBranch(branchName))
+                      if (deleteBranch.fulfilled.match(result)) {
+                        dispatch(loadBranches())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    onDeleteRemote={async (branchName) => {
+                      const result = await dispatch(deleteRemoteBranch(branchName))
+                      if (deleteRemoteBranch.fulfilled.match(result)) {
+                        dispatch(loadBranches())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    onRefresh={() => {
+                      dispatch(loadBranches())
+                      dispatch(updateCommandHistory())
+                    }}
+                    newBranchName={newBranchName}
+                    onBranchNameChange={(e) => setNewBranchName(e.target.value)}
+                    onCreateBranch={async () => {
+                      if (!newBranchName.trim()) return
+                      const result = await dispatch(createBranch(newBranchName))
+                      if (createBranch.fulfilled.match(result)) {
+                        setNewBranchName('')
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                  />
+                )}
+
+                {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
+
+                {activeTab === 'files' && (
+                  <FileStatus
+                    fileStatus={fileStatus}
+                    onStageFile={async (file) => {
+                      const result = await dispatch(stageFile(file))
+                      if (stageFile.fulfilled.match(result)) {
+                        dispatch(loadFileStatus())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    onUnstageFile={async (file) => {
+                      const result = await dispatch(unstageFile(file))
+                      if (unstageFile.fulfilled.match(result)) {
+                        dispatch(loadFileStatus())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    getStatusIcon={getStatusIcon}
+                    getStatusText={getStatusText}
+                    onDiscardChanges={async (file) => {
+                      const result = await dispatch(discardFileChanges(file))
+                      if (discardFileChanges.fulfilled.match(result)) {
+                        dispatch(loadFileStatus())
+                        dispatch(updateCommandHistory())
+                      }
+                    }}
+                    onRefresh={() => {
+                      dispatch(loadFileStatus())
+                      dispatch(updateCommandHistory())
+                    }}
+                    loading={loading}
+                    loadingMessage={loadingMessage}
+                  />
+                )}
+              </>
             )}
-
-            {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
-
-            {activeTab === 'files' && (
-              <FileStatus
-                fileStatus={fileStatus}
-                onStageFile={async (file) => {
-                  const result = await dispatch(stageFile(file));
-                  if (stageFile.fulfilled.match(result)) {
-                    dispatch(loadFileStatus());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                onUnstageFile={async (file) => {
-                  const result = await dispatch(unstageFile(file));
-                  if (unstageFile.fulfilled.match(result)) {
-                    dispatch(loadFileStatus());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                getStatusIcon={getStatusIcon}
-                getStatusText={getStatusText}
-                onDiscardChanges={async (file) => {
-                  const result = await dispatch(discardFileChanges(file));
-                  if (discardFileChanges.fulfilled.match(result)) {
-                    dispatch(loadFileStatus());
-                    dispatch(updateCommandHistory());
-                  }
-                }}
-                onRefresh={() => {
-                  dispatch(loadFileStatus());
-                  dispatch(updateCommandHistory());
-                }}
-                loading={loading}
-                loadingMessage={loadingMessage}
-              />
-            )}
-          </>
-        )}
           </div>
         </div>
-        
+
         <div style={{ display: showFooter ? 'block' : 'none' }}>
           <FooterArea />
         </div>
       </div>
     </div>
-  );
-}; 
+  )
+}

@@ -1,6 +1,6 @@
 .footer-area {
   width: 100%;
-  background-color: #1e1e2d;
+  /* background-color: #1a1ab3; */
   border-top: 1px solid #2d3748;
   padding: 0;
   display: flex;
@@ -64,35 +64,31 @@
 
 .command-history-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background-color: #16162a;
-  border-bottom: 1px solid #2d3748;
+  background-color: var(--bg-secondary);
   flex-shrink: 0;
 }
 
 .command-history-header h3 {
   margin: 0;
-  color: #e2e8f0;
-  font-size: 0.9em;
+  color: var(--text-color);
 }
 
 .clear-history-btn {
-  padding: 4px 12px;
-  font-size: 0.85em;
-  background-color: #4f46e5;
-  color: #ffffff;
-  border: none;
+  margin: 0.5rem;
+  padding: 4px 8px;
+  font-size: 0.9em;
+  background-color: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .clear-history-btn:hover {
-  background-color: #4338ca;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+  background-color: var(--bg-secondary);
 }
 
 .command-list {
