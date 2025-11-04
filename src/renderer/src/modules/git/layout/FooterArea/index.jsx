@@ -6,7 +6,10 @@ import { clearCommandHistory } from '../../store/gitSlice';
 
 export const FooterArea = () => {
   const dispatch = useDispatch();
-  const commandHistory = useSelector((state) => state.git.commandHistory);
+  const { commandHistory, gitPreviousHistoryIndex } = useSelector((state) => ({
+    commandHistory: state.git.commandHistory,
+    gitPreviousHistoryIndex: state.git.gitPreviousHistoryIndex
+  }));
   const [activeCommandTab, setActiveCommandTab] = useState('history');
   const [height, setHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
@@ -104,7 +107,12 @@ export const FooterArea = () => {
               .slice()
               .reverse()
               .map((command, index) => (
-                <div key={commandHistory.length - 1 - index} className="command-item">
+                <div 
+                  key={commandHistory.length - 1 - index} 
+                  className={`command-item ${
+                    (commandHistory.length - 1 - index) === gitPreviousHistoryIndex ? 'previous-command' : ''
+                  }`}
+                >
                   <span className="command-number">{commandHistory.length - index}.</span>
                   <span className="command-text">{command}</span>
                   <button 

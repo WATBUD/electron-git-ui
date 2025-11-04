@@ -360,6 +360,29 @@ export function setupGitHandlers() {
     }
   });
 
+  ipcMain.handle('git:discardFileChanges', async (_, file) => {
+    if (!currentRepoPath) {
+      throw new Error('No repository selected');
+    }
+    try {
+      // First unstage the file if it's staged
+      const unstageCmd = `git reset HEAD -- "${file}"`;
+      // Then discard changes in working directory
+      const discardCmd = `git checkout -- "${file}"`;
+      
+      commandHistory.push(unstageCmd);
+      commandHistory.push(discardCmd);
+      
+      await execAsync(unstageCmd, { cwd: currentRepoPath });
+      await execAsync(discardCmd, { cwd: currentRepoPath });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error discarding file changes:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle('git:commit', async (_, message) => {
     if (!currentRepoPath) {
       throw new Error('No repository selected');

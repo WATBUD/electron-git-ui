@@ -21,6 +21,7 @@ import {
   loadFileStatus,
   stageFile,
   unstageFile,
+  discardFileChanges,
   updateCommandHistory,
   selectRepository,
   clearError
@@ -228,6 +229,13 @@ export const MainPageGit = () => {
                 }}
                 getStatusIcon={getStatusIcon}
                 getStatusText={getStatusText}
+                onDiscardChanges={async (file) => {
+                  const result = await dispatch(discardFileChanges(file));
+                  if (discardFileChanges.fulfilled.match(result)) {
+                    dispatch(loadFileStatus());
+                    dispatch(updateCommandHistory());
+                  }
+                }}
                 onRefresh={() => {
                   dispatch(loadFileStatus());
                   dispatch(updateCommandHistory());

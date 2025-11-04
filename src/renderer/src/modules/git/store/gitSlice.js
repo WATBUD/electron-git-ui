@@ -2,10 +2,15 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 export const refreshTags = createAsyncThunk(
   'git/refreshTags',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.refreshTags();  
@@ -23,10 +28,15 @@ export const refreshTags = createAsyncThunk(
 
 export const abortMerge = createAsyncThunk(
   'git/abortMerge',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.abortMerge();
@@ -44,10 +54,15 @@ export const abortMerge = createAsyncThunk(
 
 export const checkMergeInProgress = createAsyncThunk(
   'git/checkMergeInProgress',
-  async (_, { getState, rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git integration not available');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.checkMergeInProgress();
@@ -65,10 +80,15 @@ export const checkMergeInProgress = createAsyncThunk(
 
 export const deleteBranch = createAsyncThunk(
   'git/deleteBranch',
-  async (branchName, { rejectWithValue }) => {
+  async (branchName, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.deleteBranch(branchName);
@@ -86,10 +106,15 @@ export const deleteBranch = createAsyncThunk(
 
 export const loadBranches = createAsyncThunk(
   'git/loadBranches',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.listBranches();
@@ -116,10 +141,15 @@ export const loadBranches = createAsyncThunk(
 
 export const createBranch = createAsyncThunk(
   'git/createBranch',
-  async (branchName, { rejectWithValue }) => {
+  async (branchName, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.createBranch(branchName);
@@ -137,10 +167,15 @@ export const createBranch = createAsyncThunk(
 
 export const checkoutBranch = createAsyncThunk(
   'git/checkoutBranch',
-  async (branchName, { rejectWithValue }) => {
+  async (branchName, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.checkoutBranch(branchName);
@@ -160,10 +195,15 @@ export const checkoutBranch = createAsyncThunk(
 
 export const deleteRemoteBranch = createAsyncThunk(
   'git/deleteRemoteBranch',
-  async (branchName, { rejectWithValue }) => {
+  async (branchName, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.deleteRemoteBranch(branchName);
@@ -181,10 +221,15 @@ export const deleteRemoteBranch = createAsyncThunk(
 
 export const fetchFromRemote = createAsyncThunk(
   'git/fetchFromRemote',
-  async (pruneBranches = false, { rejectWithValue }) => {
+  async (pruneBranches = false, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.fetch(pruneBranches);
@@ -202,10 +247,15 @@ export const fetchFromRemote = createAsyncThunk(
 
 export const pushToRemote = createAsyncThunk(
   'git/pushToRemote',
-  async (forcePush = false, { rejectWithValue }) => {
+  async (forcePush = false, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.push(forcePush);
@@ -223,10 +273,15 @@ export const pushToRemote = createAsyncThunk(
 
 export const commitChanges = createAsyncThunk(
   'git/commitChanges',
-  async (commitMessage, { rejectWithValue }) => {
+  async (commitMessage, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.commit(commitMessage);
@@ -244,11 +299,15 @@ export const commitChanges = createAsyncThunk(
 
 export const loadFileStatus = createAsyncThunk(
   'git/loadFileStatus',
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
 
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
     try {
       const result = await window.git.getStatus();
       
@@ -265,10 +324,15 @@ export const loadFileStatus = createAsyncThunk(
 
 export const stageFile = createAsyncThunk(
   'git/stageFile',
-  async (file, { rejectWithValue }) => {
+  async (file, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.stageFile(file);
@@ -286,10 +350,15 @@ export const stageFile = createAsyncThunk(
 
 export const unstageFile = createAsyncThunk(
   'git/unstageFile',
-  async (file, { rejectWithValue }) => {
+  async (file, { getState, rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.unstageFile(file);
@@ -298,6 +367,32 @@ export const unstageFile = createAsyncThunk(
         return { success: true, file };
       } else {
         return rejectWithValue(result.error || 'Failed to unstage file');
+      }
+    } catch (err) {
+      return rejectWithValue(err.message || 'Error unstaging file');
+    }
+  }
+);
+
+export const discardFileChanges = createAsyncThunk(
+  'git/discardFileChanges',
+  async (file, { getState, rejectWithValue, dispatch }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized');
+    }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
+
+    try {
+      const result = await window.git.discardFileChanges(file);
+      
+      if (result.success) {
+        return { success: true, file };
+      } else {
+        return rejectWithValue(result.error || 'Failed to discard file changes');
       }
     } catch (err) {
       return rejectWithValue(err.message || 'Error unstaging file');
@@ -339,10 +434,15 @@ export const clearCommandHistory = createAsyncThunk(
 
 export const selectRepository = createAsyncThunk(
   'git/selectRepository',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch, getState }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized');
     }
+
+    // Update previous history index in the state
+    const state = getState();
+    const lastIndex = state.git.commandHistory.length;
+    dispatch(gitSlice.actions.updatePreviousHistoryIndex(lastIndex));
 
     try {
       const result = await window.git.selectRepository();
@@ -369,6 +469,7 @@ const initialState = {
   loading: false,
   loadingMessage: '',
   commandHistory: [],
+  gitPreviousHistoryIndex: -1, // Tracks the index of the previous command in commandHistory
   repoPath: null,
   mergeStatus: { isInProgress: false, message: '' },
 };
@@ -377,6 +478,9 @@ const gitSlice = createSlice({
   name: 'git',
   initialState,
   reducers: {
+    updatePreviousHistoryIndex: (state, action) => {
+      state.gitPreviousHistoryIndex = action.payload !== undefined ? action.payload : -1;
+    },
     toggleFooter: (state) => {
       state.showFooter = !state.showFooter;
     },
@@ -580,6 +684,21 @@ const gitSlice = createSlice({
         state.loadingMessage = '';
       })
       .addCase(unstageFile.rejected, (state, action) => {
+        state.loading = false;
+        state.loadingMessage = '';
+        state.error = action.payload;
+      })
+      // discardFileChanges
+      .addCase(discardFileChanges.pending, (state) => {
+        state.loading = true;
+        state.loadingMessage = 'Discarding file changes...';
+        state.error = null;
+      })
+      .addCase(discardFileChanges.fulfilled, (state) => {
+        state.loading = false;
+        state.loadingMessage = '';
+      })
+      .addCase(discardFileChanges.rejected, (state, action) => {
         state.loading = false;
         state.loadingMessage = '';
         state.error = action.payload;

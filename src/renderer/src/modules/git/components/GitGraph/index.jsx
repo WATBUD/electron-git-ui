@@ -19,6 +19,7 @@ export const GitGraph = ({ repoPath }) => {
       setError(null);
       if (!window.git) {
         throw new Error('Git API not initialized');
+        
       }
       const result = await window.git.getCommitHistory();
       console.log('Git history result:', result);

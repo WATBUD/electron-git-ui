@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('git', {
   getStatus: () => ipcRenderer.invoke('git:getStatus'),
   stageFile: (file) => ipcRenderer.invoke('git:stageFile', file),
   unstageFile: (file) => ipcRenderer.invoke('git:unstageFile', file),
+  discardFileChanges: (file) => ipcRenderer.invoke('git:discardFileChanges', file),
   commit: (message) => ipcRenderer.invoke('git:commit', message),
   getCommitHistory: () => ipcRenderer.invoke('git:getCommitHistory'),
   checkoutCommit: (commitHash) => ipcRenderer.invoke('git:checkoutCommit', commitHash),

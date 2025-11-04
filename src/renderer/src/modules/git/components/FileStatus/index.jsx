@@ -7,6 +7,7 @@ export const FileStatus = ({
   fileStatus, 
   onStageFile, 
   onUnstageFile,
+  onDiscardChanges,
   getStatusIcon,
   getStatusText,
   onRefresh,
@@ -63,14 +64,24 @@ export const FileStatus = ({
                     <span className="file-name">{file.file}</span>
                     <span className="file-status">{getStatusText(file)}</span>
                   </div>
-                  <button
-                    onClick={() => onStageFile(file.file)}
-                    className="stage-btn"
-                    title="Stage file"
-                    disabled={loading}
-                  >
-                    ➜
-                  </button>
+                  <div className="file-actions">
+                    <button
+                      onClick={() => onStageFile(file.file)}
+                      className="stage-btn"
+                      title="Stage file"
+                      disabled={loading}
+                    >
+                      ➜
+                    </button>
+                    <button
+                      onClick={() => onDiscardChanges(file.file)}
+                      className="discard-btn"
+                      title="Discard changes"
+                      disabled={loading}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               ))}
           </div>

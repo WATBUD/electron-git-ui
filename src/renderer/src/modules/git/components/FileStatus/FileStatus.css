@@ -88,8 +88,14 @@
   color: var(--text-secondary);
 }
 
+.file-actions {
+  display: flex;
+  gap: 8px;
+}
+
 .stage-btn,
-.unstage-btn {
+.unstage-btn,
+.discard-btn {
   padding: 6px 10px;
   font-size: 1.2em;
   background: none;
