@@ -32,7 +32,6 @@
 }
 
 .menu-label {
-  padding: 0.5rem 0.75rem;
   cursor: pointer;
   color: var(--text-color);
   font-size: 0.875rem;
