@@ -37,12 +37,62 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.file-status-section h3 {
-  margin: 0 0 16px 0;
-  color: var(--text-color);
-  font-size: 1.1rem;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.select-all-btn,
+.delete-selected-btn {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.select-all-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.select-all-btn:hover:not(:disabled) {
+  background-color: var(--surface-color);
+  border-color: var(--primary-color);
+}
+
+.delete-selected-btn {
+  background-color: var(--danger-color);
+  border: 1px solid var(--danger-color);
+  color: white;
+}
+
+.delete-selected-btn:hover:not(:disabled) {
+  background-color: #dc3546;
+  border-color: #dc3546;
+}
+
+.delete-selected-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .file-list {
@@ -54,9 +104,31 @@
 .file-item {
   display: flex;
   align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid #eee;
-  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  gap: 10px;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+  background-color: var(--bg-color);
+  cursor: pointer;
+}
+
+.file-item:hover {
+  background-color: var(--surface-color);
+}
+
+.file-item.selected {
+  background-color: var(--active-bg);
+  border-color: var(--primary-color);
+}
+
+.file-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+  margin-right: 4px;
 }
 
 .file-item:last-child {

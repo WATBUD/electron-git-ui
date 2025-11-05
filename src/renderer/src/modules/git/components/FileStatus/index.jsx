@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LoadingModal } from '../../../../shared/components/LoadingModal';
 import { RefreshButton } from '../../../../shared/components/RefreshButton';
 import './FileStatus.css';
@@ -14,6 +14,53 @@ export const FileStatus = ({
   loading,
   loadingMessage
 }) => {
+  const [selectedFiles, setSelectedFiles] = useState(new Set());
+
+  const toggleFileSelection = (filePath) => {
+    const newSelection = new Set(selectedFiles);
+    if (selectedFiles.has(filePath)) {
+      newSelection.delete(filePath);
+    } else {
+      newSelection.add(filePath);
+    }
+    setSelectedFiles(newSelection);
+  };
+
+  const handleDiscardSelected = async () => {
+    // Create an array from the Set to maintain order
+    const filesToDiscard = Array.from(selectedFiles);
+    
+    // Process files sequentially
+    for (const filePath of filesToDiscard) {
+      try {
+        await new Promise((resolve, reject) => {
+          // Wrap the onDiscardChanges in a promise
+          const result = onDiscardChanges(filePath);
+          // If it returns a promise, wait for it
+          if (result && typeof result.then === 'function') {
+            result.then(resolve).catch(reject);
+          } else {
+            resolve();
+          }
+        });
+      } catch (error) {
+        console.error(`Error discarding changes for ${filePath}:`, error);
+        // Continue with next file even if one fails
+        continue;
+      }
+    }
+    
+    // Clear selection after all operations
+    setSelectedFiles(new Set());
+  };
+
+  const handleSelectAll = (files) => {
+    if (selectedFiles.size === files.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(files.map(file => file.file)));
+    }
+  };
   return (
     <div className="file-status-panel">
       <LoadingModal message={loadingMessage} />
@@ -27,21 +74,59 @@ export const FileStatus = ({
         />
       </div>
       <div className="file-status-content">
-
         <div className="file-status-section">
-          <h3>Staging Area</h3>
+          <div className="section-header">
+            <h3>Staging Area</h3>
+            {fileStatus.some(f => f.isStaged) && (
+              <div className="selection-actions">
+                <button 
+                  onClick={() => handleSelectAll(fileStatus.filter(f => f.isStaged))}
+                  className="select-all-btn"
+                  disabled={loading}
+                >
+                  {selectedFiles.size === fileStatus.filter(f => f.isStaged).length ? 'Deselect All' : 'Select All'}
+                </button>
+                {selectedFiles.size > 0 && (
+                  <button 
+                    onClick={handleDiscardSelected}
+                    className="delete-selected-btn"
+                    disabled={loading}
+                    title="Discard selected changes"
+                  >
+                    Discard Selected ({selectedFiles.size})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <div className="file-list">
             {fileStatus
               .filter(file => file.isStaged)
               .map((file, index) => (
-                <div key={`staged-${index}`} className="file-item">
+                <div 
+                  key={`staged-${index}`} 
+                  className={`file-item ${selectedFiles.has(file.file) ? 'selected' : ''}`}
+                  onClick={(e) => {
+                    if (!e.target.closest('button, input')) {
+                      toggleFileSelection(file.file);
+                  }}}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFiles.has(file.file)}
+                    onChange={() => toggleFileSelection(file.file)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="file-checkbox"
+                  />
                   <span className="file-icon">{getStatusIcon(file)}</span>
                   <div className="file-info">
                     <span className="file-name">{file.file}</span>
                     <span className="file-status">{getStatusText(file)}</span>
                   </div>
                   <button
-                    onClick={() => onUnstageFile(file.file)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUnstageFile(file.file);
+                    }}
                     className="unstage-btn"
                     title="Unstage file"
                     disabled={loading}
@@ -53,12 +138,48 @@ export const FileStatus = ({
           </div>
         </div>
         <div className="file-status-section">
-          <h3>Working Directory</h3>
+          <div className="section-header">
+            <h3>Working Directory</h3>
+            {fileStatus.some(f => !f.isStaged) && (
+              <div className="selection-actions">
+                <button 
+                  onClick={() => handleSelectAll(fileStatus.filter(f => !f.isStaged))}
+                  className="select-all-btn"
+                  disabled={loading}
+                >
+                  {selectedFiles.size === fileStatus.filter(f => !f.isStaged).length ? 'Deselect All' : 'Select All'}
+                </button>
+                {selectedFiles.size > 0 && (
+                  <button 
+                    onClick={handleDiscardSelected}
+                    className="delete-selected-btn"
+                    disabled={loading}
+                    title="Discard selected changes"
+                  >
+                    Discard Selected ({selectedFiles.size})
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <div className="file-list">
             {fileStatus
               .filter(file => !file.isStaged)
               .map((file, index) => (
-                <div key={`working-${index}`} className="file-item">
+                <div 
+                  key={`working-${index}`} 
+                  className={`file-item ${selectedFiles.has(file.file) ? 'selected' : ''}`}
+                  onClick={(e) => {
+                    if (!e.target.closest('button, input')) {
+                      toggleFileSelection(file.file);
+                  }}}>
+                  <input
+                    type="checkbox"
+                    checked={selectedFiles.has(file.file)}
+                    onChange={() => toggleFileSelection(file.file)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="file-checkbox"
+                  />
                   <span className="file-icon">{getStatusIcon(file)}</span>
                   <div className="file-info">
                     <span className="file-name">{file.file}</span>
@@ -66,7 +187,10 @@ export const FileStatus = ({
                   </div>
                   <div className="file-actions">
                     <button
-                      onClick={() => onStageFile(file.file)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStageFile(file.file);
+                      }}
                       className="stage-btn"
                       title="Stage file"
                       disabled={loading}
@@ -74,7 +198,10 @@ export const FileStatus = ({
                       ➜
                     </button>
                     <button
-                      onClick={() => onDiscardChanges(file.file)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDiscardChanges(file.file);
+                      }}
                       className="discard-btn"
                       title="Discard changes"
                       disabled={loading}
