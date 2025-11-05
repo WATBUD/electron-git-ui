@@ -1,64 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { 
+  loadCommitHistory, 
+  checkoutCommit, 
+  mergeBranch,
+} from '../../store/gitSlice';
 import { RefreshButton } from '../../../../shared/components/RefreshButton';
 import './GitGraph.css';
 
 export const GitGraph = ({ repoPath }) => {
-  const [commits, setCommits] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [currentHead, setCurrentHead] = useState(null);
-  const [currentBranch, setCurrentBranch] = useState(null);
-  const [unpushedCount, setUnpushedCount] = useState(0);
-  const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, targetCommit: null });
+  const dispatch = useDispatch();
+  const {
+    commits,
+    currentHead,
+    currentBranch,
+    unpushedCount,
+  } = useSelector((state) => state.git);
+
+  const [contextMenu, setContextMenu] = useState({ 
+    show: false, 
+    x: 0, 
+    y: 0, 
+    targetCommit: null 
+  });
   const contextMenuRef = useRef(null);
 
-  const loadCommitHistory = async () => {
-    if (!repoPath) return;
-    try {
-      setLoading(true);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-        
-      }
-      const result = await window.git.getCommitHistory();
-      console.log('Git history result:', result);
-      
-      if (result.success) {
-        setCommits(result.commits);
-        setCurrentHead(result.currentHead);
-        setCurrentBranch(result.currentBranch);
-        setUnpushedCount(result.unpushedCount || 0);
-      } else {
-        throw new Error(result.error || 'Failed to get commit history');
-      }
-    } catch (err) {
-      console.error('Error loading commit history:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCheckoutCommit = async (commitHash) => {
-    try {
-      setLoading(true);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.checkoutCommit(commitHash);
-      if (result.success) {
-        await loadCommitHistory();
-      } else {
-        throw new Error(result.error || 'Failed to checkout commit');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error checking out commit:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleCheckout = async (commitHash) => {
+    await dispatch(checkoutCommit(commitHash));
   };
 
   const handleContextMenu = (e, commit) => {
@@ -72,32 +40,16 @@ export const GitGraph = ({ repoPath }) => {
   };
 
   const handleMerge = async (sourceBranch) => {
-    try {
-      setLoading(true);
-      setError(null);
-      if (!window.git) {
-        throw new Error('Git API not initialized');
-      }
-      const result = await window.git.mergeBranch(sourceBranch);
-      if (result.success) {
-        await loadCommitHistory();
-      } else {
-        throw new Error(result.error || 'Failed to merge branch');
-      }
-    } catch (err) {
-      setError(err.message);
-      console.error('Error merging branch:', err);
-    } finally {
-      setLoading(false);
+    if (sourceBranch && sourceBranch !== currentBranch) {
+      await dispatch(mergeBranch(sourceBranch));
       setContextMenu({ show: false, x: 0, y: 0, targetCommit: null });
     }
   };
-
   useEffect(() => {
     if (repoPath) {
-      loadCommitHistory();
+      dispatch(loadCommitHistory());
     }
-  }, [repoPath]);
+  }, [repoPath, dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -133,85 +85,69 @@ export const GitGraph = ({ repoPath }) => {
               </span>
             )}
           </h3>
-          {currentBranch && (
-            <span className="current-branch">
-              {currentBranch}
-            </span>
-          )}
+          {currentBranch && <span className="current-branch">{currentBranch}</span>}
         </div>
         <RefreshButton
-          onClick={loadCommitHistory}
-          disabled={loading}
+          onClick={() => dispatch(loadCommitHistory())}
           title="Refresh commit history"
           text="Commit History Refresh"
         />
       </div>
-
-      {error && <div className="error">{error}</div>}
-
-      {loading ? (
-        <div className="loading">Loading commit history...</div>
-      ) : (
-        <div className="commit-list">
-          {commits.map((commit, index) => (
-            <div 
-              key={commit.hash} 
-              className={`commit-item ${commit.isCurrent ? 'current-commit' : ''}`}
-              onContextMenu={(e) => handleContextMenu(e, commit)}
-            >
-              <div className="commit-graph">
-                {commit.branches.map((branch, i) => (
-                  <div key={i} className={`branch-line ${branch === 'current' ? 'current' : ''}`} />
-                ))}
-                <div className={`commit-node ${commit.isCurrent ? 'current' : ''}`} />
+      <div className="commit-list">
+        {commits.map((commit, index) => (
+          <div
+            key={commit.hash}
+            className={`commit-item ${commit.isCurrent ? 'current-commit' : ''}`}
+            onContextMenu={(e) => handleContextMenu(e, commit)}
+          >
+            <div className="commit-graph">
+              {commit.branches.map((branch, i) => (
+                <div key={i} className={`branch-line ${branch === 'current' ? 'current' : ''}`} />
+              ))}
+              <div className={`commit-node ${commit.isCurrent ? 'current' : ''}`} />
+            </div>
+            <div className="commit-info">
+              <div className="commit-header">
+                <div className="commit-hash-container">
+                  <span className="commit-hash">{commit.hash.substring(0, 7)}</span>
+                  {commit.branches.length > 0 && (
+                    <div className="branch-tags">
+                      {commit.branches.map((branch, i) => (
+                        <span
+                          key={i}
+                          className={`branch-tag ${branch.startsWith('origin/') ? 'remote' : ''} ${branch.includes('HEAD') ? 'head' : ''}`}
+                        >
+                          {branch}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {commit.isCurrent && <span className="current-tag">Current</span>}
+                {commit.isUnpushed && <span className="unpushed-tag">Unpushed</span>}
               </div>
-              <div className="commit-info">
-                <div className="commit-header">
-                  <div className="commit-hash-container">
-                    <span className="commit-hash">{commit.hash.substring(0, 7)}</span>
-                    {commit.branches.length > 0 && (
-                      <div className="branch-tags">
-                        {commit.branches.map((branch, i) => (
-                          <span 
-                            key={i} 
-                            className={`branch-tag ${branch.startsWith('origin/') ? 'remote' : ''} ${branch.includes('HEAD') ? 'head' : ''}`}
-                          >
-                            {branch}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {commit.isCurrent && (
-                    <span className="current-tag">Current</span>
-                  )}
-                  {commit.isUnpushed && (
-                    <span className="unpushed-tag">Unpushed</span>
-                  )}
-                </div>
-                <div className="commit-message">{commit.message}</div>
-                <div className="commit-meta">
-                  <span className="commit-author">{commit.author}</span>
-                  <span className="commit-date">{formatDate(commit.date)}</span>
-                  <button
-                    onClick={() => handleCheckoutCommit(commit.hash)}
-                    className="checkout-btn"
-                    disabled={commit.isCurrent}
-                  >
-                    Checkout
-                  </button>
-                </div>
+              <div className="commit-message">{commit.message}</div>
+              <div className="commit-meta">
+                <span className="commit-author">{commit.author}</span>
+                <span className="commit-date">{formatDate(commit.date)}</span>
+                <button
+                  onClick={() => handleCheckout(commit.hash)}
+                  className="checkout-btn"
+                  disabled={commit.isCurrent}
+                >
+                  Checkout
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {contextMenu.show && (
-        <div 
+        <div
           ref={contextMenuRef}
           className="context-menu"
-          style={{ 
+          style={{
             position: 'fixed',
             top: contextMenu.y,
             left: contextMenu.x
@@ -221,9 +157,12 @@ export const GitGraph = ({ repoPath }) => {
             Merge {contextMenu.targetCommit?.branches[0] || 'branch'} into {currentBranch}
           </div>
           <div className="context-menu-content">
-            <button 
+            <button
               onClick={() => handleMerge(contextMenu.targetCommit?.branches[0])}
-              disabled={!contextMenu.targetCommit?.branches[0] || contextMenu.targetCommit?.branches[0] === currentBranch}
+              disabled={
+                !contextMenu.targetCommit?.branches[0] ||
+                contextMenu.targetCommit?.branches[0] === currentBranch
+              }
             >
               Merge
             </button>
@@ -231,5 +170,5 @@ export const GitGraph = ({ repoPath }) => {
         </div>
       )}
     </div>
-  );
+  )
 }; 

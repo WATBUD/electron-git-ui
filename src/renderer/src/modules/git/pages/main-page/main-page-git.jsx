@@ -22,7 +22,6 @@ import {
   stageFile,
   unstageFile,
   discardFileChanges,
-  updateCommandHistory,
   selectRepository,
   clearError
 } from '../../store/gitSlice'
@@ -58,16 +57,12 @@ export const MainPageGit = () => {
 
   const handleSelectRepository = async () => {
     const result = await dispatch(selectRepository())
-    if (selectRepository.fulfilled.match(result)) {
-      dispatch(updateCommandHistory())
-    }
   }
 
   useEffect(() => {
     if (repoPath) {
       dispatch(loadBranches())
       dispatch(loadFileStatus())
-      dispatch(updateCommandHistory())
     }
   }, [repoPath, dispatch])
 
@@ -131,21 +126,18 @@ export const MainPageGit = () => {
               const result = await dispatch(fetchFromRemote(pruneBranches))
               if (fetchFromRemote.fulfilled.match(result)) {
                 dispatch(loadBranches())
-                dispatch(updateCommandHistory())
               }
             }}
             onPush={async (forcePush) => {
               const result = await dispatch(pushToRemote(forcePush))
               if (pushToRemote.fulfilled.match(result)) {
                 dispatch(loadBranches())
-                dispatch(updateCommandHistory())
               }
             }}
             onCommit={async (commitMessage) => {
               const result = await dispatch(commitChanges(commitMessage))
               if (commitChanges.fulfilled.match(result)) {
                 dispatch(loadFileStatus())
-                dispatch(updateCommandHistory())
               }
             }}
             loading={loading}
@@ -153,8 +145,6 @@ export const MainPageGit = () => {
         )}
       </div>
 
-      <LoadingModal message={loadingMessage} />
-      <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
 
       <div className="main-layout">
         <div className="content-area">
@@ -172,26 +162,22 @@ export const MainPageGit = () => {
                       const result = await dispatch(checkoutBranch(branchName))
                       if (checkoutBranch.fulfilled.match(result)) {
                         dispatch(loadBranches())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     onDelete={async (branchName) => {
                       const result = await dispatch(deleteBranch(branchName))
                       if (deleteBranch.fulfilled.match(result)) {
                         dispatch(loadBranches())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     onDeleteRemote={async (branchName) => {
                       const result = await dispatch(deleteRemoteBranch(branchName))
                       if (deleteRemoteBranch.fulfilled.match(result)) {
                         dispatch(loadBranches())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     onRefresh={() => {
                       dispatch(loadBranches())
-                      dispatch(updateCommandHistory())
                     }}
                     newBranchName={newBranchName}
                     onBranchNameChange={(e) => setNewBranchName(e.target.value)}
@@ -200,7 +186,6 @@ export const MainPageGit = () => {
                       const result = await dispatch(createBranch(newBranchName))
                       if (createBranch.fulfilled.match(result)) {
                         setNewBranchName('')
-                        dispatch(updateCommandHistory())
                       }
                     }}
                   />
@@ -215,14 +200,12 @@ export const MainPageGit = () => {
                       const result = await dispatch(stageFile(file))
                       if (stageFile.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     onUnstageFile={async (file) => {
                       const result = await dispatch(unstageFile(file))
                       if (unstageFile.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     getStatusIcon={getStatusIcon}
@@ -231,15 +214,11 @@ export const MainPageGit = () => {
                       const result = await dispatch(discardFileChanges(file))
                       if (discardFileChanges.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
-                        dispatch(updateCommandHistory())
                       }
                     }}
                     onRefresh={() => {
                       dispatch(loadFileStatus())
-                      dispatch(updateCommandHistory())
                     }}
-                    loading={loading}
-                    loadingMessage={loadingMessage}
                   />
                 )}
               </>
@@ -251,6 +230,8 @@ export const MainPageGit = () => {
           <FooterArea />
         </div>
       </div>
+      <LoadingModal message={loadingMessage} />
+      <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
     </div>
   )
 }

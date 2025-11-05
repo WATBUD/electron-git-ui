@@ -19,12 +19,12 @@
   cursor: pointer;
   transition: all 0.2s;
 }
-}
 
 .refresh-button:hover:not(:disabled) {
   background-color: var(--active-bg);
   border-color: var(--primary-color);
   color: var(--text-hover);
+}
 
 .refresh-button:disabled {
   opacity: 0.5;
@@ -40,4 +40,4 @@
 
 .refresh-text {
   white-space: nowrap;
-} 
+}

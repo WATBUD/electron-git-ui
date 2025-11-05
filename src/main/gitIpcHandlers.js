@@ -360,23 +360,38 @@ export function setupGitHandlers() {
     }
   });
 
-  ipcMain.handle('git:discardFileChanges', async (_, file) => {
+  ipcMain.handle('git:discardFileChanges', async (_, files) => {
     if (!currentRepoPath) {
       throw new Error('No repository selected');
     }
+    
+    if (!Array.isArray(files)) {
+      files = [files]; // Support both single file and array of files
+    }
+    
     try {
-      // First unstage the file if it's staged
-      const unstageCmd = `git reset HEAD -- "${file}"`;
-      // Then discard changes in working directory
-      const discardCmd = `git checkout -- "${file}"`;
+      // Process each file individually to avoid path parsing issues
+      for (const file of files) {
+        const unstageCmd = `git reset HEAD -- "${file}"`;
+        const discardCmd = `git checkout -- "${file}"`;
+        
+        commandHistory.push(unstageCmd);
+        commandHistory.push(discardCmd);
+        
+        try {
+          await execAsync(unstageCmd, { cwd: currentRepoPath });
+          await execAsync(discardCmd, { cwd: currentRepoPath });
+        } catch (error) {
+          // If unstage fails, still try to discard changes
+          if (!error.message.includes('fatal: ambiguous argument')) {
+            console.error(`Error processing file ${file}:`, error);
+            // Continue with next file even if one fails
+            continue;
+          }
+        }
+      }
       
-      commandHistory.push(unstageCmd);
-      commandHistory.push(discardCmd);
-      
-      await execAsync(unstageCmd, { cwd: currentRepoPath });
-      await execAsync(discardCmd, { cwd: currentRepoPath });
-      
-      return { success: true };
+      return { success: true, count: files.length };
     } catch (error) {
       console.error('Error discarding file changes:', error);
       return { success: false, error: error.message };
@@ -422,7 +437,7 @@ export function setupGitHandlers() {
         unpushedCount = parseInt(unpushedOutput);
       } catch (err) {
         // 如果沒有上游分支，unpushedCount 保持為 0
-        console.log('No upstream branch found');
+        console.log('No upstream branch found',err.message);
       }
 
       // 修改 git log 命令以包含分支信息

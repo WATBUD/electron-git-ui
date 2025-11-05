@@ -12,7 +12,6 @@ export const FileStatus = ({
   getStatusText,
   onRefresh,
   loading,
-  loadingMessage
 }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
 
@@ -30,28 +29,15 @@ export const FileStatus = ({
     // Create an array from the Set to maintain order
     const filesToDiscard = Array.from(selectedFiles);
     
-    // Process files sequentially
-    for (const filePath of filesToDiscard) {
-      try {
-        await new Promise((resolve, reject) => {
-          // Wrap the onDiscardChanges in a promise
-          const result = onDiscardChanges(filePath);
-          // If it returns a promise, wait for it
-          if (result && typeof result.then === 'function') {
-            result.then(resolve).catch(reject);
-          } else {
-            resolve();
-          }
-        });
-      } catch (error) {
-        console.error(`Error discarding changes for ${filePath}:`, error);
-        // Continue with next file even if one fails
-        continue;
-      }
+    try {
+      // Pass all files to discard at once
+      await onDiscardChanges(filesToDiscard);
+    } catch (error) {
+      console.error('Error discarding changes:', error);
+    } finally {
+      // Always clear the selection
+      setSelectedFiles(new Set());
     }
-    
-    // Clear selection after all operations
-    setSelectedFiles(new Set());
   };
 
   const handleSelectAll = (files) => {
@@ -63,7 +49,6 @@ export const FileStatus = ({
   };
   return (
     <div className="file-status-panel">
-      <LoadingModal message={loadingMessage} />
       <div className="file-status-header">
         <h3></h3>
         <RefreshButton
