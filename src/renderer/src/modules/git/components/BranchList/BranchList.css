@@ -5,10 +5,55 @@
   color: var(--text-color);
 }
 
+.branch-prefix {
+  margin-bottom: 0.75rem;
+}
+
+.branch-prefix input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 0.375rem;
+  color: var(--text-color);
+  font-size: 0.875rem;
+  transition: border-color 0.2s;
+}
+
+.branch-prefix input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
 .create-branch {
   display: flex;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.branch-name-input {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
+.prefix-preview {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.branch-name-input input {
+  width: 100%;
+  padding-left: 2rem;
+}
+
+.branch-name-input input.with-prefix {
+  padding-left: calc(2rem + 1.5rem);
 }
 
 .create-branch input {
@@ -158,6 +203,7 @@
 
 .branch-section li:hover .branch-actions {
   opacity: 1;
+}
 
 .branch-section li.active-branch .branch-actions {
   opacity: 1;
@@ -174,22 +220,31 @@
 .branch-actions button {
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
-  border: none;
-  background: none;
-  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  background-color: var(--button-bg);
+  color: var(--text-color);
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  position: relative;
+  gap: 0.25rem;
 }
 
 .branch-actions button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-color);
+  background-color: var(--button-hover-bg);
+  border-color: var(--primary-color);
+}
+
+.branch-actions .create-from-btn {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.branch-actions .create-from-btn:hover {
+  background-color: #4a5568;
+  border-color: #718096;
 }
 
 .branch-actions button:active {
