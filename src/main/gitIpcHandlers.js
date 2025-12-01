@@ -1,72 +1,95 @@
-import { ipcMain, dialog } from 'electron';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { join } from 'path';
+import { ipcMain, dialog } from 'electron'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+import { join } from 'path'
 
-const execAsync = promisify(exec);
+const execAsync = promisify(exec)
 
-let currentRepoPath = null;
-let commandHistory = [];
+let currentRepoPath = null
+let commandHistory = []
 
 export function setupGitHandlers() {
+  ipcMain.handle('git:exec', async (_, rawCommand) => {
+    if (!currentRepoPath) {
+      return { success: false, error: 'Repository path not set' }
+    }
+
+    try {
+      const { stdout, stderr } = await exec(rawCommand, {
+        cwd: currentRepoPath
+      })
+
+      return {
+        success: true,
+        output: stdout || stderr
+      }
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message
+      }
+    }
+  })
   ipcMain.handle('git:selectRepository', async () => {
     try {
       const result = await dialog.showOpenDialog({
         properties: ['openDirectory'],
         title: 'Select Git Repository'
-      });
+      })
 
       if (!result.canceled && result.filePaths.length > 0) {
-        currentRepoPath = result.filePaths[0];
+        currentRepoPath = result.filePaths[0]
         // Verify if it's a git repository
         try {
-          const command = 'git rev-parse --is-inside-work-tree';
-          commandHistory.push(command);
-          await execAsync(command, { cwd: currentRepoPath });
-          return { success: true, path: currentRepoPath, command };
+          const command = 'git rev-parse --is-inside-work-tree'
+          commandHistory.push(command)
+          await execAsync(command, { cwd: currentRepoPath })
+          return { success: true, path: currentRepoPath, command }
         } catch (error) {
-          currentRepoPath = null;
-          throw new Error('Selected folder is not a Git repository');
+          currentRepoPath = null
+          throw new Error('Selected folder is not a Git repository')
         }
       }
-      return null;
+      return null
     } catch (error) {
-      console.error('Error selecting repository:', error);
-      throw error;
+      console.error('Error selecting repository:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:listBranches', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = 'git branch';
-      const remoteCommand = 'git branch -r';
-      commandHistory.push(command);
-      commandHistory.push(remoteCommand);
-      
+      const command = 'git branch'
+      const remoteCommand = 'git branch -r'
+      commandHistory.push(command)
+      commandHistory.push(remoteCommand)
+
       const [{ stdout: localOutput }, { stdout: remoteOutput }] = await Promise.all([
         execAsync(command, { cwd: currentRepoPath }),
         execAsync(remoteCommand, { cwd: currentRepoPath })
-      ]);
+      ])
 
-      const localBranches = localOutput.split('\n')
-        .map(branch => branch.trim())
-        .filter(branch => branch.length > 0)
-        .map(branch => branch.replace('* ', ''));
+      const localBranches = localOutput
+        .split('\n')
+        .map((branch) => branch.trim())
+        .filter((branch) => branch.length > 0)
+        .map((branch) => branch.replace('* ', ''))
 
-      const remoteBranches = remoteOutput.split('\n')
-        .map(branch => branch.trim())
-        .filter(branch => branch.length > 0)
-        .map(branch => {
+      const remoteBranches = remoteOutput
+        .split('\n')
+        .map((branch) => branch.trim())
+        .filter((branch) => branch.length > 0)
+        .map((branch) => {
           // 如果是 HEAD 引用，只返回 origin/HEAD
           if (branch.includes('HEAD ->')) {
-            return 'origin/HEAD';
+            return 'origin/HEAD'
           }
           // 否則移除 "origin/" 前綴
-          return branch.replace('origin/', '');
-        });
+          return branch.replace('origin/', '')
+        })
 
       return {
         success: true,
@@ -75,187 +98,194 @@ export function setupGitHandlers() {
         command: {
           output: localOutput
         }
-      };
+      }
     } catch (error) {
-      console.error('Error listing branches:', error);
-      throw error;
+      console.error('Error listing branches:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:createBranch', async (_, branchName) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git branch ${branchName}`;
-      commandHistory.push(command);
-      await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, command };
+      const command = `git branch ${branchName}`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, command }
     } catch (error) {
-      console.error('Error creating branch:', error);
-      throw error;
+      console.error('Error creating branch:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:checkoutBranch', async (_, branchName) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // 如果是 origin/HEAD，直接檢出它指向的提交
       if (branchName === 'origin/HEAD') {
-        const command = 'git checkout origin/HEAD';
-        commandHistory.push(command);
-        await execAsync(command, { cwd: currentRepoPath });
+        const command = 'git checkout origin/HEAD'
+        commandHistory.push(command)
+        await execAsync(command, { cwd: currentRepoPath })
       }
       // 如果是其他遠程分支，使用 git checkout -b 創建本地分支
       else if (branchName.includes('origin/')) {
-        const localBranchName = branchName.replace('origin/', '');
-        const command = `git checkout -b ${localBranchName} ${branchName}`;
-        commandHistory.push(command);
-        await execAsync(command, { cwd: currentRepoPath });
+        const localBranchName = branchName.replace('origin/', '')
+        const command = `git checkout -b ${localBranchName} ${branchName}`
+        commandHistory.push(command)
+        await execAsync(command, { cwd: currentRepoPath })
       } else {
-        const command = `git checkout ${branchName}`;
-        commandHistory.push(command);
-        await execAsync(command, { cwd: currentRepoPath });
+        const command = `git checkout ${branchName}`
+        commandHistory.push(command)
+        await execAsync(command, { cwd: currentRepoPath })
       }
-      return { success: true };
+      return { success: true }
     } catch (error) {
-      console.error('Error checking out branch:', error);
-      throw error;
+      console.error('Error checking out branch:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:deleteBranch', async (_, branchName) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git branch -d ${branchName}`;
-      commandHistory.push(command);
-      await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, command };
+      const command = `git branch -d ${branchName}`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, command }
     } catch (error) {
-      console.error('Error deleting branch:', error);
-      throw error;
+      console.error('Error deleting branch:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:deleteRemoteBranch', async (_, branchName) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // 不允許刪除 origin/HEAD
       if (branchName === 'origin/HEAD') {
-        throw new Error('Cannot delete origin/HEAD reference');
+        throw new Error('Cannot delete origin/HEAD reference')
       }
       // 移除可能的 "origin/" 前綴
-      const cleanBranchName = branchName.replace('origin/', '');
-      const command = `git push origin --delete ${cleanBranchName}`;
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      const cleanBranchName = branchName.replace('origin/', '')
+      const command = `git push origin --delete ${cleanBranchName}`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, output: stdout || stderr }
     } catch (error) {
-      console.error('Error deleting remote branch:', error);
-      return { success: false, error: error.message };
+      console.error('Error deleting remote branch:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:getCommandHistory', () => {
-    return commandHistory;
-  });
+    return commandHistory
+  })
 
   ipcMain.handle('git:clearCommandHistory', () => {
-    commandHistory = [];
-    return true;
-  });
+    commandHistory = []
+    return true
+  })
 
   ipcMain.handle('git:fetch', async (event, prune) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = prune ? 'git fetch --prune' : 'git fetch';
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      const command = prune ? 'git fetch --prune' : 'git fetch'
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, output: stdout || stderr }
     } catch (error) {
-      console.error('Error fetching:', error);
-      return { success: false, error: error.message };
+      console.error('Error fetching:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:push', async (event, force) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // 先嘗試獲取當前分支名稱
-      const { stdout: currentBranch } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: currentRepoPath });
-      const branchName = currentBranch.trim();
+      const { stdout: currentBranch } = await execAsync('git rev-parse --abbrev-ref HEAD', {
+        cwd: currentRepoPath
+      })
+      const branchName = currentBranch.trim()
 
       // 檢查分支是否有上游分支
       try {
-        await execAsync(`git rev-parse --abbrev-ref ${branchName}@{upstream}`, { cwd: currentRepoPath });
+        await execAsync(`git rev-parse --abbrev-ref ${branchName}@{upstream}`, {
+          cwd: currentRepoPath
+        })
         // 如果有上游分支，使用普通的 push
-        const command = force ? 'git push -f' : 'git push';
-        commandHistory.push(command);
-        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-        return { success: true, output: stdout || stderr };
+        const command = force ? 'git push -f' : 'git push'
+        commandHistory.push(command)
+        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+        return { success: true, output: stdout || stderr }
       } catch (err) {
         // 如果沒有上游分支，使用 --set-upstream
-        const command = force ? `git push -f --set-upstream origin ${branchName}` : `git push --set-upstream origin ${branchName}`;
-        commandHistory.push(command);
-        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-        return { success: true, output: stdout || stderr };
+        const command = force
+          ? `git push -f --set-upstream origin ${branchName}`
+          : `git push --set-upstream origin ${branchName}`
+        commandHistory.push(command)
+        const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+        return { success: true, output: stdout || stderr }
       }
     } catch (error) {
-      console.error('Error pushing:', error);
-      return { success: false, error: error.message };
+      console.error('Error pushing:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:refreshTags', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // Clear local tags
-      const clearTagsCommand = 'git tag -l | xargs git tag -d';
-      commandHistory.push(clearTagsCommand);
-      await execAsync(clearTagsCommand, { cwd: currentRepoPath });
-      
+      const clearTagsCommand = 'git tag -l | xargs git tag -d'
+      commandHistory.push(clearTagsCommand)
+      await execAsync(clearTagsCommand, { cwd: currentRepoPath })
+
       // Fetch latest tags from remote
-      const fetchTagsCommand = 'git fetch --tags';
-      commandHistory.push(fetchTagsCommand);
-      await execAsync(fetchTagsCommand, { cwd: currentRepoPath });
-      
-      return { success: true, commands: [clearTagsCommand, fetchTagsCommand] };
+      const fetchTagsCommand = 'git fetch --tags'
+      commandHistory.push(fetchTagsCommand)
+      await execAsync(fetchTagsCommand, { cwd: currentRepoPath })
+
+      return { success: true, commands: [clearTagsCommand, fetchTagsCommand] }
     } catch (error) {
-      console.error('Error refreshing tags:', error);
-      throw error;
+      console.error('Error refreshing tags:', error)
+      throw error
     }
-  });
+  })
 
   ipcMain.handle('git:getStatus', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = 'git status --porcelain';
-      commandHistory.push(command);
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath });
-      
-      const files = stdout.split('\n')
-        .filter(line => line.trim())
-        .map(line => {
-          const status = line.substring(0, 2);
-          const file = line.substring(3);
-          
+      const command = 'git status --porcelain'
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+
+      const files = stdout
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => {
+          const status = line.substring(0, 2)
+          const file = line.substring(3)
+
           // 處理重命名和複製的情況
           if (status[0] === 'R' || status[0] === 'C') {
-            const [oldFile, newFile] = file.split(' -> ');
+            const [oldFile, newFile] = file.split(' -> ')
             return {
               status,
               file: newFile,
@@ -266,12 +296,12 @@ export function setupGitHandlers() {
                 staged: status[0],
                 working: ' '
               }
-            };
+            }
           }
 
           // 創建兩個條目：一個用於暫存區，一個用於工作目錄
-          const entries = [];
-          
+          const entries = []
+
           // 如果有暫存的更改
           if (status[0] !== ' ' && status[0] !== '?') {
             entries.push({
@@ -283,9 +313,9 @@ export function setupGitHandlers() {
                 staged: status[0],
                 working: ' '
               }
-            });
+            })
           }
-          
+
           // 如果有工作目錄的更改
           if (status[1] !== ' ' && status[1] !== '?') {
             entries.push({
@@ -297,19 +327,22 @@ export function setupGitHandlers() {
                 staged: ' ',
                 working: status[1]
               }
-            });
+            })
           }
 
-          return entries;
+          return entries
         })
-        .flat(); // 將嵌套數組展平
+        .flat() // 將嵌套數組展平
 
       // 添加未追蹤的檔案
-      const untrackedCommand = 'git ls-files --others --exclude-standard';
-      const { stdout: untrackedOutput } = await execAsync(untrackedCommand, { cwd: currentRepoPath });
-      const untrackedFiles = untrackedOutput.split('\n')
-        .filter(line => line.trim())
-        .map(file => ({
+      const untrackedCommand = 'git ls-files --others --exclude-standard'
+      const { stdout: untrackedOutput } = await execAsync(untrackedCommand, {
+        cwd: currentRepoPath
+      })
+      const untrackedFiles = untrackedOutput
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((file) => ({
           status: '??',
           file,
           isStaged: false,
@@ -318,171 +351,179 @@ export function setupGitHandlers() {
             staged: '?',
             working: '?'
           }
-        }));
+        }))
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         files: [...files, ...untrackedFiles]
-      };
+      }
     } catch (error) {
-      console.error('Error getting status:', error);
-      return { success: false, error: error.message };
+      console.error('Error getting status:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:stageFile', async (_, file) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git add "${file}"`;
-      commandHistory.push(command);
-      await execAsync(command, { cwd: currentRepoPath });
-      return { success: true };
+      const command = `git add "${file}"`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return { success: true }
     } catch (error) {
-      console.error('Error staging file:', error);
-      return { success: false, error: error.message };
+      console.error('Error staging file:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:unstageFile', async (_, file) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git reset HEAD "${file}"`;
-      commandHistory.push(command);
-      await execAsync(command, { cwd: currentRepoPath });
-      return { success: true };
+      const command = `git reset HEAD "${file}"`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return { success: true }
     } catch (error) {
-      console.error('Error unstaging file:', error);
-      return { success: false, error: error.message };
+      console.error('Error unstaging file:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:discardFileChanges', async (_, files) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
-    
+
     if (!Array.isArray(files)) {
-      files = [files]; // Support both single file and array of files
+      files = [files] // Support both single file and array of files
     }
-    
+
     try {
       // Process each file individually to avoid path parsing issues
       for (const file of files) {
-        const unstageCmd = `git reset HEAD -- "${file}"`;
-        const discardCmd = `git checkout -- "${file}"`;
-        
-        commandHistory.push(unstageCmd);
-        commandHistory.push(discardCmd);
-        
+        const unstageCmd = `git reset HEAD -- "${file}"`
+        const discardCmd = `git checkout -- "${file}"`
+
+        commandHistory.push(unstageCmd)
+        commandHistory.push(discardCmd)
+
         try {
-          await execAsync(unstageCmd, { cwd: currentRepoPath });
-          await execAsync(discardCmd, { cwd: currentRepoPath });
+          await execAsync(unstageCmd, { cwd: currentRepoPath })
+          await execAsync(discardCmd, { cwd: currentRepoPath })
         } catch (error) {
           // If unstage fails, still try to discard changes
           if (!error.message.includes('fatal: ambiguous argument')) {
-            console.error(`Error processing file ${file}:`, error);
+            console.error(`Error processing file ${file}:`, error)
             // Continue with next file even if one fails
-            continue;
+            continue
           }
         }
       }
-      
-      return { success: true, count: files.length };
+
+      return { success: true, count: files.length }
     } catch (error) {
-      console.error('Error discarding file changes:', error);
-      return { success: false, error: error.message };
+      console.error('Error discarding file changes:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:commit', async (_, message) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git commit -m "${message}"`;
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      const command = `git commit -m "${message}"`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, output: stdout || stderr }
     } catch (error) {
-      console.error('Error committing:', error);
-      return { success: false, error: error.message };
+      console.error('Error committing:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:getCommitHistory', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // 獲取當前 HEAD 信息
-      const headCommand = 'git rev-parse HEAD';
-      commandHistory.push(headCommand);
-      const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath });
-      
+      const headCommand = 'git rev-parse HEAD'
+      commandHistory.push(headCommand)
+      const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath })
+
       // 獲取當前分支名稱或 detached HEAD 狀態
-      const branchCommand = 'git rev-parse --abbrev-ref HEAD';
-      commandHistory.push(branchCommand);
-      const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath });
+      const branchCommand = 'git rev-parse --abbrev-ref HEAD'
+      commandHistory.push(branchCommand)
+      const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath })
 
       // 獲取未推送的提交數量
-      const unpushedCommand = 'git rev-list @{push}..HEAD --count';
-      commandHistory.push(unpushedCommand);
-      let unpushedCount = 0;
+      const unpushedCommand = 'git rev-list @{push}..HEAD --count'
+      commandHistory.push(unpushedCommand)
+      let unpushedCount = 0
       try {
-        const { stdout: unpushedOutput } = await execAsync(unpushedCommand, { cwd: currentRepoPath });
-        unpushedCount = parseInt(unpushedOutput);
+        const { stdout: unpushedOutput } = await execAsync(unpushedCommand, {
+          cwd: currentRepoPath
+        })
+        unpushedCount = parseInt(unpushedOutput)
       } catch (err) {
         // 如果沒有上游分支，unpushedCount 保持為 0
-        console.log('No upstream branch found',err.message);
+        console.log('No upstream branch found', err.message)
       }
 
       // 修改 git log 命令以包含分支信息
-      const command = 'git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --graph --all';
-      commandHistory.push(command);
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath });
-      
+      const command = 'git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --graph --all'
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+
       // 解析提交歷史
-      const commits = stdout.split('\n')
-        .filter(line => line.trim())
-        .map(line => {
+      const commits = stdout
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => {
           // 分離圖形和提交信息
-          const match = line.match(/^([\s\/*\\|]+)(.+)$/);
-          if (!match) return null;
-          
-          const [, graph, info] = match;
-          const [hash, author, date, message, refs] = info.trim().split('|');
-          
+          const match = line.match(/^([\s\/*\\|]+)(.+)$/)
+          if (!match) return null
+
+          const [, graph, info] = match
+          const [hash, author, date, message, refs] = info.trim().split('|')
+
           // 解析分支信息
           const branchNames = refs
             ? refs
                 .replace(/[()]/g, '') // 移除括號
                 .split(',')
-                .map(ref => ref.trim())
-                .filter(ref => ref) // 移除空字符串
-            : [];
+                .map((ref) => ref.trim())
+                .filter((ref) => ref) // 移除空字符串
+            : []
 
           // 解析圖形信息
           const graphLines = graph
             .replace(/[^\/*\\|]/g, '')
             .split('')
-            .map(char => {
+            .map((char) => {
               switch (char) {
-                case '*': return 'current';
-                case '/': return 'branch1';
-                case '\\': return 'branch2';
-                case '|': return 'main';
-                default: return null;
+                case '*':
+                  return 'current'
+                case '/':
+                  return 'branch1'
+                case '\\':
+                  return 'branch2'
+                case '|':
+                  return 'main'
+                default:
+                  return null
               }
             })
-            .filter(Boolean);
+            .filter(Boolean)
 
-          const isCurrent = hash.trim() === headHash.trim();
-          const branchName = currentBranch.trim();
-          const isDetached = branchName === 'HEAD';
+          const isCurrent = hash.trim() === headHash.trim()
+          const branchName = currentBranch.trim()
+          const isDetached = branchName === 'HEAD'
 
           return {
             hash: hash.trim(),
@@ -494,78 +535,78 @@ export function setupGitHandlers() {
             isCurrent,
             currentBranch: isDetached ? `HEAD -> ${hash.trim().substring(0, 7)}` : branchName,
             isUnpushed: unpushedCount > 0 && isCurrent
-          };
+          }
         })
-        .filter(Boolean); // 移除可能的 null 值
+        .filter(Boolean) // 移除可能的 null 值
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         commits,
         currentHead: headHash.trim(),
         currentBranch: currentBranch.trim(),
         unpushedCount
-      };
+      }
     } catch (error) {
-      console.error('Error getting commit history:', error);
-      return { success: false, error: error.message };
+      console.error('Error getting commit history:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:checkoutCommit', async (_, commitHash) => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = `git checkout ${commitHash}`;
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      const command = `git checkout ${commitHash}`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, output: stdout || stderr }
     } catch (error) {
-      console.error('Error checking out commit:', error);
-      return { success: false, error: error.message };
+      console.error('Error checking out commit:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:mergeAbort', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
-      const command = 'git merge --abort';
-      commandHistory.push(command);
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath });
-      return { success: true, output: stdout || stderr };
+      const command = 'git merge --abort'
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return { success: true, output: stdout || stderr }
     } catch (error) {
-      console.error('Error aborting merge:', error);
-      return { success: false, error: error.message };
+      console.error('Error aborting merge:', error)
+      return { success: false, error: error.message }
     }
-  });
+  })
 
   ipcMain.handle('git:checkMergeInProgress', async () => {
     if (!currentRepoPath) {
-      throw new Error('No repository selected');
+      throw new Error('No repository selected')
     }
     try {
       // Check for .git/MERGE_HEAD file
-      const { stdout = '', stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', { 
-        cwd: currentRepoPath 
-      }).catch(() => ({ stdout: '', stderr: '' })); // Ignore error if MERGE_HEAD doesn't exist
-      
-      const mergeHeadHash = stdout.trim();
-      const isMergeInProgress = mergeHeadHash.length > 0;
-      return { 
-        success: true, 
+      const { stdout = '', stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', {
+        cwd: currentRepoPath
+      }).catch(() => ({ stdout: '', stderr: '' })) // Ignore error if MERGE_HEAD doesn't exist
+
+      const mergeHeadHash = stdout.trim()
+      const isMergeInProgress = mergeHeadHash.length > 0
+      return {
+        success: true,
         isMergeInProgress,
         output: isMergeInProgress ? `Merge in progress (${mergeHeadHash})` : 'No merge in progress',
         mergeHeadHash: isMergeInProgress ? mergeHeadHash : null
-      };
+      }
     } catch (error) {
-      console.error('Error checking merge status:', error);
-      return { 
-        success: false, 
+      console.error('Error checking merge status:', error)
+      return {
+        success: false,
         isMergeInProgress: false,
-        error: error.message 
-      };
+        error: error.message
+      }
     }
-  });
-} 
+  })
+}

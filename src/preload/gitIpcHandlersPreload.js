@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('git', {
   checkMergeInProgress: () => ipcRenderer.invoke('git:checkMergeInProgress'),
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
+  exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand)
 });
 
 // Debug log to verify git object is exposed
