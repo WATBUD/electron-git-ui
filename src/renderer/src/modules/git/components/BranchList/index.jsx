@@ -18,14 +18,20 @@ const BranchList = ({
   handleCreateFromBranchWithPrefix
 }) => {
   const sortBranches = (branches) => {
-    return [...branches].sort((a, b) => {
-      if (b === currentBranch) return 1;
-      return a.localeCompare(b);
-    });
+    return [...branches]
+      .filter(branch => 
+        searchTerm === '' || 
+        branch.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (b === currentBranch) return 1;
+        return a.localeCompare(b);
+      });
   };
 
   const [copiedBranch, setCopiedBranch] = useState(null);
-  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2511/');
+  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2512/');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleCopyBranchName = (branch) => {
     const branchName = branch.replace('refs/heads/', '');
@@ -64,6 +70,15 @@ const BranchList = ({
       </div>
 
       <div className="branch-list">
+        <div className="search-branches">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search branches..."
+            className="search-input"
+          />
+        </div>
         <div className="branch-list-header">
           <h3>Branches: <span className="current-branch">{currentBranch}</span></h3>
           <button 
