@@ -102,7 +102,11 @@ const BranchList = ({
                   {sortBranches(branches).map((branch) => (
                     <li
                       key={`local-${branch}`}
-                      onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
+                      onDoubleClick={(e) => {
+                        if (e.target.tagName !== 'BUTTON') {
+                          branch !== currentBranch && onCheckout(branch);
+                        }
+                      }}
                       className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
                       title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
                       onContextMenu={(e) => e.preventDefault()}
@@ -127,14 +131,10 @@ const BranchList = ({
                           onClick={(e) => {
                             e.stopPropagation();  
                             const branchName = branch.replace('refs/heads/', '');
-                            // Extract the last part of the branch name (e.g., PT-6450 from feature/PT-6450)
                             const lastPart = branchName.split('/').pop();
-                            
-                            // If branchPrefix contains commas, create multiple branch names
                             const branchNames = branchPrefix 
                               ? branchPrefix.split(',').map(prefix => `${prefix.trim()}${lastPart}`)
                               : [lastPart];
-                            
                             handleCreateFromBranchWithPrefix(branchNames.join(','));
                           }}
                           className="create-from-btn"
@@ -165,7 +165,11 @@ const BranchList = ({
                     {sortBranches(remoteBranches).map((branch) => (
                       <li
                         key={`remote-${branch}`}
-                        onDoubleClick={() => branch !== currentBranch && onCheckout(branch)}
+                        onDoubleClick={(e) => {
+                          if (e.target.tagName !== 'BUTTON') {
+                            branch !== currentBranch && onCheckout(branch);
+                          }
+                        }}
                         className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
                         title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
                         onContextMenu={(e) => e.preventDefault()}
