@@ -30,7 +30,7 @@ const BranchList = ({
   };
 
   const [copiedBranch, setCopiedBranch] = useState(null);
-  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2512/');
+  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2601/');
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleCopyBranchName = (branch) => {
