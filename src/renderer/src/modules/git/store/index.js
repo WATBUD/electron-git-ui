@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import gitReducer from './gitSlice';
+import gitReducer from './git/gitSlice';
 
 export const store = configureStore({
   reducer: {

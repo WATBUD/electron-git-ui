@@ -2,14 +2,18 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import './FooterArea.css';
 import { Copy } from 'lucide-react';
-import { clearCommandHistory } from '../../store/gitSlice';
+import { clearCommandHistory } from '../../store/git';
 
 export const FooterArea = () => {
   const dispatch = useDispatch();
-  const { commandHistory, gitPreviousHistoryIndex } = useSelector((state) => ({
+  const { commandHistory, previousHistoryIndex } = useSelector((state) => ({
     commandHistory: state.git.commandHistory,
-    gitPreviousHistoryIndex: state.git.gitPreviousHistoryIndex
+    previousHistoryIndex: state.git.previousHistoryIndex
   }));
+  const gitState = useSelector((state) => state.git);
+  // console.log('gitState:', gitState);
+  // console.log('commandHistory:', commandHistory);
+  // console.log('previousHistoryIndex:', previousHistoryIndex);
   const [activeCommandTab, setActiveCommandTab] = useState('history');
   const [height, setHeight] = useState(200);
   const [isResizing, setIsResizing] = useState(false);
@@ -110,7 +114,7 @@ export const FooterArea = () => {
                 <div 
                   key={commandHistory.length - 1 - index} 
                   className={`command-item ${
-                    (commandHistory.length - 1 - index) === gitPreviousHistoryIndex ? 'previous-command' : ''
+                    (commandHistory.length - 1 - index) === previousHistoryIndex ? 'previous-command' : ''
                   }`}
                 >
                   <span className="command-number">{commandHistory.length - index}.</span>

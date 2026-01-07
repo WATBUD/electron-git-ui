@@ -4,7 +4,7 @@ import {
   loadCommitHistory, 
   checkoutCommit, 
   mergeBranch,
-} from '../../store/gitSlice';
+} from '../../store/git';
 import { RefreshButton } from '../../../../shared/components/RefreshButton';
 import './GitGraph.css';
 
@@ -45,11 +45,6 @@ export const GitGraph = ({ repoPath }) => {
       setContextMenu({ show: false, x: 0, y: 0, targetCommit: null });
     }
   };
-  useEffect(() => {
-    if (repoPath) {
-      dispatch(loadCommitHistory());
-    }
-  }, [repoPath, dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

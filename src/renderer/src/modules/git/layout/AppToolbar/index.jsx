@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
+  toggleFooter,
   refreshTags, 
-  toggleFooter, 
   abortMerge,
   checkMergeInProgress
-} from '../../store/gitSlice';
+} from '../../store/git';
 import './AppToolbar.css';
 
 export const AppToolbar = () => {

@@ -11,7 +11,7 @@ let commandHistory = []
 export function setupGitHandlers() {
   ipcMain.handle('git:exec', async (_, rawCommand) => {
     if (!currentRepoPath) {
-      return { success: false, error: 'Repository path not set' }
+      return { success: false, data: null, message: 'Repository path not set' }
     }
 
     try {
@@ -21,12 +21,14 @@ export function setupGitHandlers() {
 
       return {
         success: true,
-        output: stdout || stderr
+        data: stdout || stderr,
+        message: 'ok'
       }
     } catch (err) {
       return {
         success: false,
-        error: err.message
+        data: null,
+        message: err.message
       }
     }
   })
@@ -44,16 +46,19 @@ export function setupGitHandlers() {
           const command = 'git rev-parse --is-inside-work-tree'
           commandHistory.push(command)
           await execAsync(command, { cwd: currentRepoPath })
-          return { success: true, path: currentRepoPath, command }
+          return {
+            success: true,
+            data: { repoPath: currentRepoPath, command: command },
+            message: 'ok'
+          }
         } catch (error) {
           currentRepoPath = null
           throw new Error('Selected folder is not a Git repository')
         }
       }
-      return null
     } catch (error) {
       console.error('Error selecting repository:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -90,18 +95,17 @@ export function setupGitHandlers() {
           // 否則移除 "origin/" 前綴
           return branch.replace('origin/', '')
         })
+      const currentBranch = exec('git branch --show-current').stdout.trim()
 
       return {
         success: true,
-        branches: localBranches,
-        remoteBranches,
-        command: {
-          output: localOutput
-        }
+        data: { branches: localBranches, remoteBranches, command: { output: localOutput } },
+        currentBranch,
+        message: 'ok'
       }
     } catch (error) {
       console.error('Error listing branches:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -113,10 +117,10 @@ export function setupGitHandlers() {
       const command = `git branch ${branchName}`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, command }
+      return { success: true, data: { command }, message: 'ok' }
     } catch (error) {
       console.error('Error creating branch:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -142,10 +146,10 @@ export function setupGitHandlers() {
         commandHistory.push(command)
         await execAsync(command, { cwd: currentRepoPath })
       }
-      return { success: true }
+      return { success: true, data: null, message: 'ok' }
     } catch (error) {
       console.error('Error checking out branch:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -157,10 +161,10 @@ export function setupGitHandlers() {
       const command = `git branch -d ${branchName}`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, command }
+      return { success: true, data: null, message: 'ok' }
     } catch (error) {
       console.error('Error deleting branch:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -178,20 +182,20 @@ export function setupGitHandlers() {
       const command = `git push origin --delete ${cleanBranchName}`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, output: stdout || stderr }
+      return { success: true, data: { output: stdout || stderr }, message: 'ok' }
     } catch (error) {
       console.error('Error deleting remote branch:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
   ipcMain.handle('git:getCommandHistory', () => {
-    return commandHistory
+    return { success: true, data: commandHistory, message: 'ok' }
   })
 
   ipcMain.handle('git:clearCommandHistory', () => {
     commandHistory = []
-    return true
+    return { success: true, data: null, message: 'ok' }
   })
 
   ipcMain.handle('git:fetch', async (event, prune) => {
@@ -202,10 +206,10 @@ export function setupGitHandlers() {
       const command = prune ? 'git fetch --prune' : 'git fetch'
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, output: stdout || stderr }
+      return { success: true, data: { output: stdout || stderr }, message: 'ok' }
     } catch (error) {
       console.error('Error fetching:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -229,7 +233,7 @@ export function setupGitHandlers() {
         const command = force ? 'git push -f' : 'git push'
         commandHistory.push(command)
         const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-        return { success: true, output: stdout || stderr }
+        return { success: true, data: { output: stdout || stderr }, message: 'ok' }
       } catch (err) {
         // 如果沒有上游分支，使用 --set-upstream
         const command = force
@@ -237,11 +241,11 @@ export function setupGitHandlers() {
           : `git push --set-upstream origin ${branchName}`
         commandHistory.push(command)
         const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-        return { success: true, output: stdout || stderr }
+        return { success: true, data: { output: stdout || stderr }, message: 'ok' }
       }
     } catch (error) {
       console.error('Error pushing:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -260,10 +264,14 @@ export function setupGitHandlers() {
       commandHistory.push(fetchTagsCommand)
       await execAsync(fetchTagsCommand, { cwd: currentRepoPath })
 
-      return { success: true, commands: [clearTagsCommand, fetchTagsCommand] }
+      return {
+        success: true,
+        data: { commands: [clearTagsCommand, fetchTagsCommand] },
+        message: 'ok'
+      }
     } catch (error) {
       console.error('Error refreshing tags:', error)
-      throw error
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -355,11 +363,12 @@ export function setupGitHandlers() {
 
       return {
         success: true,
-        files: [...files, ...untrackedFiles]
+        data: { files: [...files, ...untrackedFiles] },
+        message: 'ok'
       }
     } catch (error) {
       console.error('Error getting status:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -371,10 +380,10 @@ export function setupGitHandlers() {
       const command = `git add "${file}"`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
-      return { success: true }
+      return { success: true, data: null, message: 'ok' }
     } catch (error) {
       console.error('Error staging file:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -386,10 +395,10 @@ export function setupGitHandlers() {
       const command = `git reset HEAD "${file}"`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
-      return { success: true }
+      return { success: true, data: null, message: 'ok' }
     } catch (error) {
       console.error('Error unstaging file:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -424,10 +433,10 @@ export function setupGitHandlers() {
         }
       }
 
-      return { success: true, count: files.length }
+      return { success: true, data: { count: files.length }, message: 'ok' }
     } catch (error) {
       console.error('Error discarding file changes:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -439,14 +448,14 @@ export function setupGitHandlers() {
       const command = `git commit -m "${message}"`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, output: stdout || stderr }
+      return { success: true, data: { output: stdout || stderr }, message: 'ok' }
     } catch (error) {
       console.error('Error committing:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
-  ipcMain.handle('git:getCommitHistory', async () => {
+  ipcMain.handle('git:loadCommitHistory', async () => {
     if (!currentRepoPath) {
       throw new Error('No repository selected')
     }
@@ -541,14 +550,17 @@ export function setupGitHandlers() {
 
       return {
         success: true,
-        commits,
-        currentHead: headHash.trim(),
-        currentBranch: currentBranch.trim(),
-        unpushedCount
+        data: {
+          commits,
+          currentHead: headHash.trim(),
+          currentBranch: currentBranch.trim(),
+          unpushedCount
+        },
+        message: 'ok'
       }
     } catch (error) {
       console.error('Error getting commit history:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -560,10 +572,10 @@ export function setupGitHandlers() {
       const command = `git checkout ${commitHash}`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, output: stdout || stderr }
+      return { success: true, data: { output: stdout || stderr }, message: 'ok' }
     } catch (error) {
       console.error('Error checking out commit:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -575,10 +587,10 @@ export function setupGitHandlers() {
       const command = 'git merge --abort'
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return { success: true, output: stdout || stderr }
+      return { success: true, data: { output: stdout || stderr }, message: 'ok' }
     } catch (error) {
       console.error('Error aborting merge:', error)
-      return { success: false, error: error.message }
+      return { success: false, data: null, message: error.message }
     }
   })
 
@@ -596,17 +608,18 @@ export function setupGitHandlers() {
       const isMergeInProgress = mergeHeadHash.length > 0
       return {
         success: true,
-        isMergeInProgress,
-        output: isMergeInProgress ? `Merge in progress (${mergeHeadHash})` : 'No merge in progress',
-        mergeHeadHash: isMergeInProgress ? mergeHeadHash : null
+        data: {
+          isMergeInProgress,
+          output: isMergeInProgress
+            ? `Merge in progress (${mergeHeadHash})`
+            : 'No merge in progress',
+          mergeHeadHash: isMergeInProgress ? mergeHeadHash : null
+        },
+        message: 'ok'
       }
     } catch (error) {
       console.error('Error checking merge status:', error)
-      return {
-        success: false,
-        isMergeInProgress: false,
-        error: error.message
-      }
+      return { success: false, data: { isMergeInProgress: false }, message: error.message }
     }
   })
 }

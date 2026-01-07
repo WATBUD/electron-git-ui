@@ -24,7 +24,7 @@ import {
   discardFileChanges,
   selectRepository,
   clearError
-} from '../../store/gitSlice'
+} from '../../store/git'
 import './main-page-git.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
 
@@ -44,7 +44,7 @@ export const MainPageGit = () => {
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
   const repoPath = useSelector((state) => state.git.repoPath)
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
-
+  console.log('main-page-git+currentBranch:', currentBranch);
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -123,22 +123,13 @@ export const MainPageGit = () => {
         {repoPath && (
           <Toolbar
             onFetch={async (pruneBranches) => {
-              const result = await dispatch(fetchFromRemote(pruneBranches))
-              if (fetchFromRemote.fulfilled.match(result)) {
-                dispatch(loadBranches())
-              }
+              await dispatch(fetchFromRemote(pruneBranches))
             }}
             onPush={async (forcePush) => {
-              const result = await dispatch(pushToRemote(forcePush))
-              if (pushToRemote.fulfilled.match(result)) {
-                dispatch(loadBranches())
-              }
+              await dispatch(pushToRemote(forcePush))
             }}
             onCommit={async (commitMessage) => {
-              const result = await dispatch(commitChanges(commitMessage))
-              if (commitChanges.fulfilled.match(result)) {
-                dispatch(loadFileStatus())
-              }
+              await dispatch(commitChanges(commitMessage))
             }}
             loading={loading}
           />
@@ -159,22 +150,13 @@ export const MainPageGit = () => {
                     currentBranch={currentBranch}
                     loading={loading}
                     onCheckout={async (branchName) => {
-                      const result = await dispatch(checkoutBranch(branchName))
-                      if (checkoutBranch.fulfilled.match(result)) {
-                        dispatch(loadBranches())
-                      }
+                      await dispatch(checkoutBranch(branchName))
                     }}
                     onDelete={async (branchName) => {
-                      const result = await dispatch(deleteBranch(branchName))
-                      if (deleteBranch.fulfilled.match(result)) {
-                        dispatch(loadBranches())
-                      }
+                      await dispatch(deleteBranch(branchName))
                     }}
                     onDeleteRemote={async (branchName) => {
                       const result = await dispatch(deleteRemoteBranch(branchName))
-                      if (deleteRemoteBranch.fulfilled.match(result)) {
-                        dispatch(loadBranches())
-                      }
                     }}
                     onRefresh={() => {
                       dispatch(loadBranches())
