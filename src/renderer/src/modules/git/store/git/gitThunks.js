@@ -6,7 +6,7 @@ async function callGit(fn, rejectWithValue, fallbackError, fnName) {
     const result = await fn()
     console.log(`%c callGit ${fnName} result:`, 'color: blue;', result)
     if (!result.success) {
-      return rejectWithValue(result.error ?? fallbackError)
+      return rejectWithValue(result.message ?? fallbackError)
     }
 
     return result
