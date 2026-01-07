@@ -69,11 +69,9 @@ const gitSlice = createSlice({
         state.error = null;
       })
       .addCase(loadCommitHistory.fulfilled, (state, action) => {
-        console.log('loadCommitHistory fulfilled:', action);
         state.loadingMessage = '';
         state.commits = action.payload.commits;
         state.currentHead = action.payload.currentHead;
-        state.currentBranch = action.payload.currentBranch;
         state.unpushedCount = action.payload.unpushedCount;
       })
       .addCase(loadCommitHistory.rejected, (state, action) => {
@@ -97,194 +95,190 @@ const gitSlice = createSlice({
     // Existing reducers
     builder
       .addCase(refreshTags.pending, (state) => {
-        state.isRefreshingTags = true;
-        state.error = null;
+        state.isRefreshingTags = true
+        state.error = null
       })
       .addCase(refreshTags.fulfilled, (state) => {
-        state.isRefreshingTags = false;
+        state.isRefreshingTags = false
       })
       .addCase(refreshTags.rejected, (state, action) => {
-        state.isRefreshingTags = false;
-        state.error = action.payload;
+        state.isRefreshingTags = false
+        state.error = action.payload
       })
       .addCase(abortMerge.fulfilled, (state) => {
-        state.hasMergeInProgress = false;
+        state.hasMergeInProgress = false
       })
       .addCase(abortMerge.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       .addCase(checkMergeInProgress.fulfilled, (state, action) => {
-        state.hasMergeInProgress = action.payload.data?.isMergeInProgress || false;
+        state.hasMergeInProgress = action.payload.data?.hasMergeInProgress || false
       })
       .addCase(checkMergeInProgress.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       .addCase(deleteBranch.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       // loadBranches
       .addCase(loadBranches.pending, (state) => {
-        state.loadingMessage = 'Loading branches...';
-        state.error = null;
+        state.loadingMessage = 'Loading branches...'
+        state.error = null
       })
       .addCase(loadBranches.fulfilled, (state, action) => {
-        console.log('loadBranches.fulfilled', action.payload);
-        state.loadingMessage = '';
-        state.branches = action.payload.branches;
-        state.remoteBranches = action.payload.remoteBranches;
+        state.loadingMessage = ''
+        state.currentBranch = action.payload?.currentBranch
+        state.branches = action.payload?.branches
+        state.remoteBranches = action.payload?.remoteBranches
       })
       .addCase(loadBranches.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // createBranch
       .addCase(createBranch.pending, (state, action) => {
-        state.loadingMessage = `Creating branch...`;
-        state.error = null;
+        state.loadingMessage = `Creating branch...`
+        state.error = null
       })
       .addCase(createBranch.fulfilled, (state, action) => {
-        state.loadingMessage = '';
-        state.branches.push(action.payload.branchName);
+        state.loadingMessage = ''
+        state.branches.push(action.payload.branchName)
       })
       .addCase(createBranch.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       .addCase(checkoutBranch.pending, (state) => {
-        state.loadingMessage = 'Checking out branch...';
-        state.error = null;
+        state.loadingMessage = 'Checking out branch...'
+        state.error = null
       })
       .addCase(checkoutBranch.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(checkoutBranch.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // deleteRemoteBranch
       .addCase(deleteRemoteBranch.pending, (state) => {
-        state.loadingMessage = 'Deleting remote branch...';
-        state.error = null;
+        state.loadingMessage = 'Deleting remote branch...'
+        state.error = null
       })
       .addCase(deleteRemoteBranch.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(deleteRemoteBranch.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // fetchFromRemote
       .addCase(fetchFromRemote.pending, (state) => {
-        state.loadingMessage = 'Fetching from remote...';
-        state.error = null;
+        state.loadingMessage = 'Fetching from remote...'
+        state.error = null
       })
       .addCase(fetchFromRemote.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(fetchFromRemote.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       .addCase(pushToRemote.pending, (state) => {
-        state.loadingMessage = 'Pushing to remote...';
-        state.error = null;
+        state.loadingMessage = 'Pushing to remote...'
+        state.error = null
       })
       .addCase(pushToRemote.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(pushToRemote.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       .addCase(commitChanges.pending, (state) => {
-        state.loadingMessage = 'Committing changes...';
-        state.error = null;
+        state.loadingMessage = 'Committing changes...'
+        state.error = null
       })
       .addCase(commitChanges.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(commitChanges.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       .addCase(loadFileStatus.pending, (state) => {
-        state.loadingMessage = 'Loading file status...';
-        state.error = null;
+        state.loadingMessage = 'Loading file status...'
+        state.error = null
       })
       .addCase(loadFileStatus.fulfilled, (state, action) => {
-        state.loadingMessage = '';
-        state.fileStatus = action.payload;
+        state.loadingMessage = ''
+        state.fileStatus = action.payload
       })
       .addCase(loadFileStatus.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // stageFile
       .addCase(stageFile.pending, (state) => {
-        state.loadingMessage = 'Staging file...';
-        state.error = null;
+        state.loadingMessage = 'Staging file...'
+        state.error = null
       })
       .addCase(stageFile.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(stageFile.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // unstageFile
       .addCase(unstageFile.pending, (state) => {
-        state.loadingMessage = 'Unstaging file...';
-        state.error = null;
+        state.loadingMessage = 'Unstaging file...'
+        state.error = null
       })
       .addCase(unstageFile.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(unstageFile.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       // discardFileChanges
       .addCase(discardFileChanges.pending, (state) => {
-        state.loadingMessage = 'Discarding file changes...';
-        state.error = null;
+        state.loadingMessage = 'Discarding file changes...'
+        state.error = null
       })
       .addCase(discardFileChanges.fulfilled, (state) => {
-        state.loadingMessage = '';
+        state.loadingMessage = ''
       })
       .addCase(discardFileChanges.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
+        state.loadingMessage = ''
+        state.error = action.payload
       })
       .addCase(updateCommandHistory.fulfilled, (state, action) => {
-        
-        console.log('updateCommandHistory.fulfilled:', action);
-        console.log('updateCommandHistory.fulfilled - state:', state);
-        state.commandHistory = action.payload.data;
+        state.commandHistory = action.payload.data
       })
       .addCase(updateCommandHistory.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       // clearCommandHistory
       .addCase(clearCommandHistory.fulfilled, (state) => {
-        state.commandHistory = [];
+        state.commandHistory = []
       })
       .addCase(clearCommandHistory.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       // selectRepository
       .addCase(selectRepository.pending, (state) => {
-        state.loadingMessage = 'Selecting repository...';
-        state.error = null;
+        state.loadingMessage = 'Selecting repository...'
+        state.error = null
       })
       .addCase(selectRepository.fulfilled, (state, action) => {
-        state.loadingMessage = '';
-        console.log('selectRepository.fulfilled:', action);
-        state.repoPath = action.payload.data.repoPath;
+        state.loadingMessage = ''
+        state.repoPath = action.payload.data.repoPath
       })
       .addCase(selectRepository.rejected, (state, action) => {
-        state.loadingMessage = '';
-        state.error = action.payload;
-      });
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
   }
 });
 

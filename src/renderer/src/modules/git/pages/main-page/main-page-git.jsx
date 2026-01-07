@@ -44,7 +44,7 @@ export const MainPageGit = () => {
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
   const repoPath = useSelector((state) => state.git.repoPath)
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
-  console.log('main-page-git+currentBranch:', currentBranch);
+  // console.log('main-page-git+currentBranch:', currentBranch);
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -62,7 +62,9 @@ export const MainPageGit = () => {
   useEffect(() => {
     if (repoPath) {
       dispatch(loadBranches())
-      dispatch(loadFileStatus())
+      dispatch(loadFileStatus())      
+      dispatch(checkMergeInProgress())
+
     }
   }, [repoPath, dispatch])
 
@@ -93,12 +95,7 @@ export const MainPageGit = () => {
     return '📄'
   }
 
-  // Update merge status when repo changes
-  useEffect(() => {
-    if (repoPath) {
-      dispatch(checkMergeInProgress())
-    }
-  }, [repoPath, dispatch])
+
 
   return (
     <div className="git-ui">

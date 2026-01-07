@@ -62,7 +62,7 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:listBranches', async () => {
+  ipcMain.handle('git:loadBranches', async () => {
     if (!currentRepoPath) {
       throw new Error('No repository selected')
     }
@@ -95,12 +95,11 @@ export function setupGitHandlers() {
           // 否則移除 "origin/" 前綴
           return branch.replace('origin/', '')
         })
-      const currentBranch = exec('git branch --show-current').stdout.trim()
+      const currentBranch = (await execAsync('git branch --show-current', { cwd: currentRepoPath })).stdout.trim();
 
       return {
         success: true,
-        data: { branches: localBranches, remoteBranches, command: { output: localOutput } },
-        currentBranch,
+        data: { currentBranch,branches: localBranches, remoteBranches, command: { output: localOutput } },
         message: 'ok'
       }
     } catch (error) {
@@ -605,21 +604,21 @@ export function setupGitHandlers() {
       }).catch(() => ({ stdout: '', stderr: '' })) // Ignore error if MERGE_HEAD doesn't exist
 
       const mergeHeadHash = stdout.trim()
-      const isMergeInProgress = mergeHeadHash.length > 0
+      const hasMergeInProgress = mergeHeadHash.length > 0
       return {
         success: true,
         data: {
-          isMergeInProgress,
-          output: isMergeInProgress
+          hasMergeInProgress,
+          output: hasMergeInProgress
             ? `Merge in progress (${mergeHeadHash})`
             : 'No merge in progress',
-          mergeHeadHash: isMergeInProgress ? mergeHeadHash : null
+          mergeHeadHash: hasMergeInProgress ? mergeHeadHash : null
         },
         message: 'ok'
       }
     } catch (error) {
       console.error('Error checking merge status:', error)
-      return { success: false, data: { isMergeInProgress: false }, message: error.message }
+      return { success: false, data: { hasMergeInProgress: false }, message: error.message }
     }
   })
 }

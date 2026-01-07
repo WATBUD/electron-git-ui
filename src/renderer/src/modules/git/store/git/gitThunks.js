@@ -1,16 +1,17 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import { updatePreviousHistoryIndex } from '../../store/git'
 // Generic async function to handle Git API calls with error handling
-async function callGit(fn, rejectWithValue, fallbackError) {
+async function callGit(fn, rejectWithValue, fallbackError, fnName) {
   try {
     const result = await fn()
-    console.log('%c callGit result:', 'color: blue;', result)
+    console.log(`%c callGit ${fnName} result:`, 'color: blue;', result)
     if (!result.success) {
       return rejectWithValue(result.error ?? fallbackError)
     }
 
     return result
   } catch (err) {
+    console.error(`Error in ${fnName}:`, err)
     return rejectWithValue(err?.message ?? fallbackError)
   }
 }
@@ -39,17 +40,10 @@ export const loadCommitHistory = createAsyncThunk(
     const result = await callGit(
       () => window.git.loadCommitHistory(),
       rejectWithValue,
-      'Failed to load commit history'
+      'Failed to load commit history',
+      'loadCommitHistory'
     )
     const { commits = [], currentHead, currentBranch, unpushedCount = 0 } = result.data ?? {}
-
-    console.log('%c Thunk loadCommitHistory data:', 'color: red;font-size: 24px;', {
-      commits,
-      currentHead,
-      currentBranch,
-      unpushedCount
-    })
-
     return {
       commits,
       currentHead,
@@ -70,7 +64,8 @@ export const refreshTags = createAsyncThunk(
     const result = await callGit(
       () => window.git.refreshTags(),
       rejectWithValue,
-      'Failed to refresh tags'
+      'Failed to refresh tags',
+      'refreshTags'
     )
     return result
   }
@@ -87,7 +82,8 @@ export const abortMerge = createAsyncThunk(
     const result = await callGit(
       () => window.git.abortMerge(),
       rejectWithValue,
-      'Failed to abort merge'
+      'Failed to abort merge',
+      'abortMerge'
     )
     return result
   }
@@ -104,7 +100,8 @@ export const checkMergeInProgress = createAsyncThunk(
     const result = await callGit(
       () => window.git.checkMergeInProgress(),
       rejectWithValue,
-      'Failed to check merge status'
+      'Failed to check merge status',
+      'checkMergeInProgress'
     )
     return result
   }
@@ -121,7 +118,8 @@ export const deleteBranch = createAsyncThunk(
     const result = await callGit(
       () => window.git.deleteBranch(branchName),
       rejectWithValue,
-      'Failed to delete branch'
+      'Failed to delete branch',
+      'deleteBranch'
     )
     await dispatch(updateCommandHistory())
     await dispatch(loadBranches())
@@ -138,24 +136,16 @@ export const loadBranches = createAsyncThunk(
     updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
-      () => window.git.listBranches(),
+      () => window.git.loadBranches(),
       rejectWithValue,
-      'Failed to load branches'
+      'Failed to load branches',
+      'loadBranches'
     )
-
-    const rawOutput = result.data?.output || ''
-    const current = rawOutput.split('\n').find((line) => line.trim().startsWith('* '))
-    const currentBranch = current ? current.trim().replace('* ', '') : ''
-    console.log('%c Thunk branch data:', 'color: red;font-size: 24px;', {
-      result
-    })
-
     await dispatch(updateCommandHistory())
-
     return {
       branches: result.data?.branches,
       remoteBranches: result.data?.remoteBranches,
-      currentBranch: currentBranch
+      currentBranch: result.data?.currentBranch
     }
   }
 )
@@ -171,7 +161,8 @@ export const createBranch = createAsyncThunk(
     const result = await callGit(
       () => window.git.createBranch(branchName),
       rejectWithValue,
-      'Failed to create branch'
+      'Failed to create branch',
+      'createBranch'
     )
 
     await dispatch(updateCommandHistory())
@@ -191,7 +182,8 @@ export const mergeBranch = createAsyncThunk(
     const result = await callGit(
       () => window.git.mergeBranch(sourceBranch),
       rejectWithValue,
-      'Failed to merge branch'
+      'Failed to merge branch',
+      'mergeBranch'
     )
 
     // Reload branches, status and commit history after merge
@@ -216,7 +208,8 @@ export const checkoutCommit = createAsyncThunk(
     const result = await callGit(
       () => window.git.checkoutCommit(commitHash),
       rejectWithValue,
-      'Failed to checkout commit'
+      'Failed to checkout commit',
+      'checkoutCommit'
     )
 
     await Promise.all([
@@ -241,7 +234,8 @@ export const checkoutBranch = createAsyncThunk(
     const result = await callGit(
       () => window.git.checkoutBranch(branchName),
       rejectWithValue,
-      'Failed to checkout branch'
+      'Failed to checkout branch',
+      'checkoutBranch'
     )
     await dispatch(loadBranches())
     return result
@@ -261,7 +255,8 @@ export const deleteRemoteBranch = createAsyncThunk(
     const result = await callGit(
       () => window.git.deleteRemoteBranch(branchName),
       rejectWithValue,
-      'Failed to delete remote branch'
+      'Failed to delete remote branch',
+      'deleteRemoteBranch'
     )
     await dispatch(loadBranches())
     return result
@@ -281,7 +276,8 @@ export const fetchFromRemote = createAsyncThunk(
     const result = await callGit(
       () => window.git.fetch(pruneBranches),
       rejectWithValue,
-      'Failed to fetch from remote'
+      'Failed to fetch from remote',
+      'fetchFromRemote'
     )
     await dispatch(loadBranches())
     return result
@@ -301,7 +297,8 @@ export const pushToRemote = createAsyncThunk(
     const result = await callGit(
       () => window.git.push(forcePush),
       rejectWithValue,
-      'Failed to push to remote'
+      'Failed to push to remote',
+      'pushToRemote'
     )
     await dispatch(loadBranches())
     return result
@@ -320,7 +317,8 @@ export const commitChanges = createAsyncThunk(
     const result = await callGit(
       () => window.git.commit(commitMessage),
       rejectWithValue,
-      'Failed to commit changes'
+      'Failed to commit changes',
+      'commitChanges'
     )
     await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory())])
     return result
@@ -341,7 +339,8 @@ export const discardFileChanges = createAsyncThunk(
     const result = await callGit(
       () => window.git.discardFileChanges(Array.isArray(files) ? files : [files]),
       rejectWithValue,
-      'Failed to discard file changes'
+      'Failed to discard file changes',
+      'discardFileChanges'
     )
 
     // Update the status after successful discard
@@ -364,7 +363,8 @@ export const stageFile = createAsyncThunk(
     const result = await callGit(
       () => window.git.stageFile(file),
       rejectWithValue,
-      'Failed to stage file'
+      'Failed to stage file',
+      'stageFile'
     )
 
     await dispatch(loadFileStatus())
@@ -382,7 +382,8 @@ export const unstageFile = createAsyncThunk(
     const result = await callGit(
       () => window.git.unstageFile(file),
       rejectWithValue,
-      'Failed to unstage file'
+      'Failed to unstage file',
+      'unstageFile'
     )
 
     // Refresh the file status after unstaging
@@ -401,7 +402,8 @@ export const loadFileStatus = createAsyncThunk(
     const result = await callGit(
       () => window.git.getStatus(),
       rejectWithValue,
-      'Failed to load file status'
+      'Failed to load file status',
+      'getStatus'
     )
 
     await dispatch(updateCommandHistory())
@@ -419,10 +421,9 @@ export const updateCommandHistory = createAsyncThunk(
     const result = await callGit(
       () => window.git.getCommandHistory(),
       rejectWithValue,
-      'Error updating command history'
+      'Error updating command history',
+      'getCommandHistory'
     )
-
-    console.log('%c updateCommandHistory result:', 'color: purple;', result)
     return result
   }
 )
@@ -437,7 +438,8 @@ export const clearCommandHistory = createAsyncThunk(
     const result = await callGit(
       () => window.git.clearCommandHistory(),
       rejectWithValue,
-      'Error clearing command history'
+      'Error clearing command history',
+      'clearCommandHistory'
     )
 
     return { success: true }
@@ -457,7 +459,8 @@ export const selectRepository = createAsyncThunk(
     const result = await callGit(
       () => window.git.selectRepository(),
       rejectWithValue,
-      'Error selecting repository'
+      'Error selecting repository',
+      'selectRepository'
     )
     await dispatch(loadCommitHistory())
     await dispatch(updateCommandHistory())
