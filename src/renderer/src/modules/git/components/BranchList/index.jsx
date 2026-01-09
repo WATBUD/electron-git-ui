@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { message } from 'antd';
 import { Copy } from 'lucide-react';
+import { CopyButton } from '../../../../shared/components/CopyButton';
 import './BranchList.css';
 
 const BranchList = ({
@@ -116,17 +117,12 @@ const BranchList = ({
                         {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
                       </span>
                       <div className="branch-actions">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopyBranchName(branch);
-                          }}
-                          className={`copy-button ${copiedBranch === branch ? 'copied' : ''}`}
+                        <CopyButton 
+                          textToCopy={branch}
                           title="Copy branch name"
-                        >
-                          <Copy size={14} />
-                          {copiedBranch === branch && <span className="copied-text">Copied!</span>}
-                        </button>
+                          size={14}
+                          showCopiedText={true}
+                        />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();  

@@ -94,7 +94,7 @@ export function setupGitHandlers() {
         command: { output: localOutput }
       })
     } catch (error) {
-      return fail('Error listing branches:'+error.message)
+      return fail('Error listing branches:' + error.message)
     }
   })
 
@@ -137,7 +137,7 @@ export function setupGitHandlers() {
       }
       return success()
     } catch (error) {
-      return fail('Error checking out branch:'+error.message)
+      return fail('Error checking out branch:' + error.message)
     }
   })
 
@@ -347,7 +347,8 @@ export function setupGitHandlers() {
       return success({ files: [...files, ...untrackedFiles] })
     } catch (error) {
       console.error('Error getting status:', error)
-  return fail(error.message)    }
+      return fail(error.message)
+    }
   })
 
   ipcMain.handle('git:stageFile', async (_, file) => {
@@ -433,109 +434,77 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:loadCommitHistory', async () => {
-    if (!currentRepoPath) {
-      return fail('No repository selected')
-    }
+ipcMain.handle('git:loadCommitHistory', async () => {
+  if (!currentRepoPath) {
+    return fail('No repository selected')
+  }
+
+  try {
+    // 1️⃣ 取得當前 HEAD
+    const { stdout: headHash } = await execAsync('git rev-parse HEAD', { cwd: currentRepoPath })
+    const head = headHash.trim()
+
+    // 2️⃣ 取得當前分支名稱
+    const { stdout: currentBranchRaw } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: currentRepoPath })
+    const currentBranch = currentBranchRaw.trim()
+    const isDetached = currentBranch === 'HEAD'
+
+    // 3️⃣ 取得未 push commit 的 hash
+    let unpushedHashes = []
     try {
-      // 獲取當前 HEAD 信息
-      const headCommand = 'git rev-parse HEAD'
-      commandHistory.push(headCommand)
-      const { stdout: headHash } = await execAsync(headCommand, { cwd: currentRepoPath })
-
-      // 獲取當前分支名稱或 detached HEAD 狀態
-      const branchCommand = 'git rev-parse --abbrev-ref HEAD'
-      commandHistory.push(branchCommand)
-      const { stdout: currentBranch } = await execAsync(branchCommand, { cwd: currentRepoPath })
-
-      // 獲取未推送的提交數量
-      const unpushedCommand = 'git rev-list @{push}..HEAD --count'
-      commandHistory.push(unpushedCommand)
-      let unpushedCount = 0
- try {
-  const { stdout: unpushedOutput } = await execAsync(unpushedCommand, {
-    cwd: currentRepoPath
-  })
-  unpushedCount = parseInt(unpushedOutput)
-} catch {
-  // 若尚未設定 upstream（新分支），視為尚未有未推送提交
-  unpushedCount = 0
-}
-
-      // 修改 git log 命令以包含分支信息
-      const command = 'git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --graph --all'
-      commandHistory.push(command)
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
-
-      // 解析提交歷史
-      const commits = stdout
-        .split('\n')
-        .filter((line) => line.trim())
-        .map((line) => {
-          // 分離圖形和提交信息
-          const match = line.match(/^([\s\/*\\|]+)(.+)$/)
-          if (!match) return null
-
-          const [, graph, info] = match
-          const [hash, author, date, message, refs] = info.trim().split('|')
-
-          // 解析分支信息
-          const branchNames = refs
-            ? refs
-                .replace(/[()]/g, '') // 移除括號
-                .split(',')
-                .map((ref) => ref.trim())
-                .filter((ref) => ref) // 移除空字符串
-            : []
-
-          // 解析圖形信息
-          const graphLines = graph
-            .replace(/[^\/*\\|]/g, '')
-            .split('')
-            .map((char) => {
-              switch (char) {
-                case '*':
-                  return 'current'
-                case '/':
-                  return 'branch1'
-                case '\\':
-                  return 'branch2'
-                case '|':
-                  return 'main'
-                default:
-                  return null
-              }
-            })
-            .filter(Boolean)
-
-          const isCurrent = hash.trim() === headHash.trim()
-          const branchName = currentBranch.trim()
-          const isDetached = branchName === 'HEAD'
-
-          return {
-            hash: hash.trim(),
-            author,
-            date,
-            message,
-            branches: branchNames,
-            graphLines,
-            isCurrent,
-            currentBranch: isDetached ? `HEAD -> ${hash.trim().substring(0, 7)}` : branchName,
-            isUnpushed: unpushedCount > 0 && isCurrent
-          }
-        })
-        .filter(Boolean) // 移除可能的 null 值
-
-      return success({
-        commits,
-        currentHead: headHash.trim(),
-        currentBranch: currentBranch.trim(),
-        unpushedCount
-      })
-    } catch (error) {
-      return fail(error.message)
+      const { stdout: unpushedOutput } = await execAsync('git rev-list @{push}..HEAD', { cwd: currentRepoPath })
+      unpushedHashes = unpushedOutput.split('\n').filter(Boolean)
+    } catch (e) {
+      // 尚未設定 upstream
+      unpushedHashes = []
     }
-  })
+
+    // 4️⃣ 取得所有 commit
+    const { stdout } = await execAsync('git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --all', { cwd: currentRepoPath })
+
+    const commits = stdout
+      .split('\n')
+      .filter(line => line.trim())
+      .map(line => {
+        const parts = line.split('|')
+        if (parts.length < 4) return null
+
+        const hash = parts[0].trim()
+        const author = parts[1].trim()
+        const date = parts[2].trim()
+        const message = parts.slice(3, parts.length - 1).join('|').trim() // 避免 message 裡有 '|'
+        const refsRaw = parts[parts.length - 1].trim()
+        const branches = refsRaw
+          ? refsRaw.replace(/[()]/g, '').split(',').map(r => r.trim()).filter(Boolean)
+          : []
+
+        const isCurrent = hash === head
+        const isUnpushed = unpushedHashes.includes(hash)
+
+        return {
+          hash,
+          author,
+          date,
+          message,
+          branches,
+          isCurrent,
+          currentBranch: isDetached ? `HEAD -> ${hash.substring(0, 7)}` : currentBranch,
+          isUnpushed
+        }
+      })
+      .filter(Boolean)
+
+    return success({
+      commits,
+      currentHead: head,
+      currentBranch,
+      unpushedCount: unpushedHashes.length
+    })
+  } catch (error) {
+    return fail(error.message)
+  }
+})
+
 
   ipcMain.handle('git:checkoutCommit', async (_, commitHash) => {
     if (!currentRepoPath) {

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ErrorModal } from '../../../../shared/components/ErrorModal'
-import { GitGraph } from '../../components/GitGraph'
 import { Toolbar } from '../../components/Toolbar'
 import { FileStatus } from '../../components/FileStatus'
 import { FooterArea } from '../../layout/FooterArea'
 import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
+import { GitGraphContainer } from './GitGraphContainer'
 import {
   checkMergeInProgress,
   deleteBranch,
@@ -62,9 +62,8 @@ export const MainPageGit = () => {
   useEffect(() => {
     if (repoPath) {
       dispatch(loadBranches())
-      dispatch(loadFileStatus())      
+      dispatch(loadFileStatus())
       dispatch(checkMergeInProgress())
-
     }
   }, [repoPath, dispatch])
 
@@ -94,8 +93,6 @@ export const MainPageGit = () => {
     if (staged === '?' || working === '?') return '❓'
     return '📄'
   }
-
-
 
   return (
     <div className="git-ui">
@@ -133,7 +130,6 @@ export const MainPageGit = () => {
         )}
       </div>
 
-
       <div className="main-layout">
         <div className="content-area">
           <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
@@ -168,27 +164,30 @@ export const MainPageGit = () => {
                       }
                     }}
                     handleCreateFromBranchWithPrefix={async (branchNames) => {
-                      console.log('handleCreateFromBranchWithPrefix+branchNames', branchNames);
-                      if (!branchNames.trim()) return;
-                      
-                      const names = branchNames.split(',').map(name => name.trim()).filter(Boolean);
-                      
+                      console.log('handleCreateFromBranchWithPrefix+branchNames', branchNames)
+                      if (!branchNames.trim()) return
+
+                      const names = branchNames
+                        .split(',')
+                        .map((name) => name.trim())
+                        .filter(Boolean)
+
                       for (const name of names) {
-                        console.log('Creating branch:', name);
-                        const result = await dispatch(createBranch(name));
+                        console.log('Creating branch:', name)
+                        const result = await dispatch(createBranch(name))
                         if (!createBranch.fulfilled.match(result)) {
-                          console.error('Failed to create branch:', name);
-                          break; // Stop if any branch creation fails
+                          console.error('Failed to create branch:', name)
+                          break // Stop if any branch creation fails
                         }
                       }
-                      
+
                       // Refresh branches after all creations are done
-                      dispatch(loadBranches());
+                      dispatch(loadBranches())
                     }}
                   />
                 )}
 
-                {activeTab === 'graph' && <GitGraph repoPath={repoPath} />}
+                {activeTab === 'graph' && <GitGraphContainer repoPath={repoPath} />}
 
                 {activeTab === 'files' && (
                   <FileStatus
