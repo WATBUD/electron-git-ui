@@ -453,8 +453,6 @@ export const selectRepository = createAsyncThunk(
       return rejectWithValue('Git API not initialized')
     }
 
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.selectRepository(),
@@ -462,6 +460,8 @@ export const selectRepository = createAsyncThunk(
       'Error selecting repository',
       'selectRepository'
     )
+        // Update previous history index in the state
+    updateHistoryIndex(getState, dispatch)
     await dispatch(loadCommitHistory())
     await dispatch(updateCommandHistory())
     return result

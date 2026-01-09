@@ -266,7 +266,6 @@ const gitSlice = createSlice({
       .addCase(clearCommandHistory.rejected, (state, action) => {
         state.error = action.payload
       })
-      // selectRepository
       .addCase(selectRepository.pending, (state) => {
         state.loadingMessage = 'Selecting repository...'
         state.error = null

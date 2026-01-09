@@ -91,7 +91,7 @@ export const GitGraph = ({ repoPath }) => {
       <div className="commit-list">
         {commits.map((commit, index) => (
           <div
-            key={commit.hash}
+            key={commit.hash+index}
             className={`commit-item ${commit.isCurrent ? 'current-commit' : ''}`}
             onContextMenu={(e) => handleContextMenu(e, commit)}
           >
