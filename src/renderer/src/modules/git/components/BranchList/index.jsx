@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { message } from 'antd';
 import { Copy } from 'lucide-react';
 import { CopyButton } from '../../../../shared/components/CopyButton';
+import { SearchInput } from '../../../../shared/components/SearchInput';
 import './BranchList.css';
 
 const BranchList = ({
@@ -71,15 +72,11 @@ const BranchList = ({
       </div>
 
       <div className="branch-list">
-        <div className="search-branches">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search branches..."
-            className="search-input"
-          />
-        </div>
+        <SearchInput
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search branches..."
+        />
         <div className="branch-list-header">
           <h3>Branches: <span className="current-branch">{currentBranch}</span></h3>
           <button 

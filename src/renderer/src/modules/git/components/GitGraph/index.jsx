@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import './GitGraph.css'
 import { CopyButton } from '../../../../shared/components/CopyButton'
+import { SearchInput } from '../../../../shared/components/SearchInput'
 
 export const GitGraph = ({
   repoPath,
@@ -18,6 +19,7 @@ export const GitGraph = ({
     y: 0,
     targetCommit: null
   })
+  const [searchTerm, setSearchTerm] = useState('')
   const contextMenuRef = useRef(null)
 
   const handleContextMenu = (e, commit) => {
@@ -52,14 +54,24 @@ export const GitGraph = ({
   // 先排序，把有 HEAD 的 commit 放最上面
   const sortedCommits = React.useMemo(() => {
     if (!commits) return []
-    return [...commits].sort((a, b) => {
-      const aHasHead = a.branches.some((branch) => branch.includes('HEAD'))
-      const bHasHead = b.branches.some((branch) => branch.includes('HEAD'))
-      if (aHasHead && !bHasHead) return -1
-      if (!aHasHead && bHasHead) return 1
-      return 0 // 其他保持原順序
-    })
-  }, [commits])
+    return [...commits]
+      .filter(commit => {
+        if (!searchTerm) return true
+        const searchLower = searchTerm.toLowerCase()
+        return (
+          commit.hash.toLowerCase().includes(searchLower) ||
+          commit.message.toLowerCase().includes(searchLower) ||
+          commit.author.toLowerCase().includes(searchLower)
+        )
+      })
+      .sort((a, b) => {
+        const aHasHead = a.branches.some((branch) => branch.includes('HEAD'))
+        const bHasHead = b.branches.some((branch) => branch.includes('HEAD'))
+        if (aHasHead && !bHasHead) return -1
+        if (!aHasHead && bHasHead) return 1
+        return 0 // 其他保持原順序
+      })
+  }, [commits, searchTerm])
 
   return (
     <div className="git-graph">
@@ -80,6 +92,12 @@ export const GitGraph = ({
           text="Commit History Refresh"
         />
       </div>
+
+      <SearchInput
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search commits by hash, message, or author..."
+      />
 
       <div className="commit-list">
         {sortedCommits.map((commit, index) => (
