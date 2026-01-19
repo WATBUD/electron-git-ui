@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { message } from 'antd';
-import { Copy } from 'lucide-react';
-import { CopyButton } from '../../../../shared/components/CopyButton';
-import { SearchInput } from '../../../../shared/components/SearchInput';
-import './BranchList.css';
+import React, { useState } from 'react'
+import { message } from 'antd'
+import { Copy, ChevronDown } from 'lucide-react'
+import { CopyButton } from '../../../../shared/components/CopyButton'
+import { SearchInput } from '../../../../shared/components/SearchInput'
+import styles from './BranchList.module.css'
 
 const BranchList = ({
   branches = [],
@@ -21,100 +21,105 @@ const BranchList = ({
 }) => {
   const sortBranches = (branches) => {
     return [...branches]
-      .filter(branch => 
-        searchTerm === '' || 
-        branch.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter(
+        (branch) => searchTerm === '' || branch.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .sort((a, b) => {
-        if (b === currentBranch) return 1;
-        return a.localeCompare(b);
-      });
-  };
+        if (b === currentBranch) return 1
+        return a.localeCompare(b)
+      })
+  }
 
-  const [copiedBranch, setCopiedBranch] = useState(null);
-  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2601/');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const handleCopyBranchName = (branch) => {
-    const branchName = branch.replace('refs/heads/', '');
-    navigator.clipboard.writeText(branchName).then(() => {
-      setCopiedBranch(branch);
-      setTimeout(() => setCopiedBranch(null), 2000);
-    });
-  };
-
-
-
+  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2601/')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
+  const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
 
   return (
-    <div className="branch-management">
-      <div className="branch-prefix">
+    <div className={styles.branchManagement}>
+      <div className={styles.branchPrefix}>
         <input
           type="text"
           value={branchPrefix}
           onChange={(e) => setBranchPrefix(e.target.value)}
           placeholder="Branch prefix (e.g., t1-)"
-          className="prefix-input"
+          className={styles.prefixInput}
         />
       </div>
-      <div className="create-branch">
-        <button 
+      <div className={styles.createBranch}>
+        <button
           onClick={() => {
-            const fullBranchName = branchPrefix ? `${branchPrefix}${newBranchName}` : newBranchName;
-            setNewBranchName({ target: { value: fullBranchName } });
-            createBranchByNewBranchName();
+            const fullBranchName = branchPrefix ? `${branchPrefix}${newBranchName}` : newBranchName
+            setNewBranchName({ target: { value: fullBranchName } })
+            createBranchByNewBranchName()
           }}
           disabled={loading || !newBranchName.trim()}
-          className="create-btn"
+          className={styles.createBtn}
         >
           Create Branch
         </button>
       </div>
 
-      <div className="branch-list">
+      <div className={styles.branchList}>
         <SearchInput
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search branches..."
         />
-        <div className="branch-list-header">
-          <h3>Branches: <span className="current-branch">{currentBranch}</span></h3>
-          <button 
-            onClick={onRefresh} 
+        <div className={styles.branchListHeader}>
+          <h3>
+            Branches: <span className={styles.currentBranch}>{currentBranch}</span>
+          </h3>
+          <button
+            onClick={onRefresh}
             disabled={loading}
-            className="refresh-btn"
+            className={styles.refreshBtn}
             title="Refresh branches"
           >
             Refresh
           </button>
         </div>
 
-        <div className="branch-list-container">
+        <div className={styles.branchListContainer}>
           {loading ? (
-            <div className="loading">Loading branches...</div>
+            <div className={styles.loading}>Loading branches...</div>
           ) : (
             <>
-              <div className="branch-section">
-                <h4>Local Branches</h4>
-                <ul>
+              <div className={styles.branchSection}>
+                <div
+                  className={styles.sectionHeader}
+                  onClick={() => setIsLocalBranchesCollapsed(!isLocalBranchesCollapsed)}
+                >
+                  <ChevronDown
+                    className={`${styles.chevronIcon} ${isLocalBranchesCollapsed ? styles.collapsed : ''}`}
+                    size={16}
+                  />
+                  <span>Local Branches</span>
+                </div>
+                {!isLocalBranchesCollapsed && (
+                  <ul>
                   {sortBranches(branches).map((branch) => (
                     <li
                       key={`local-${branch}`}
                       onDoubleClick={(e) => {
                         if (e.target.tagName !== 'BUTTON') {
-                          branch !== currentBranch && onCheckout(branch);
+                          branch !== currentBranch && onCheckout(branch)
                         }
                       }}
-                      className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
-                      title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
+                      className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
+                      title={
+                        branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
+                      }
                       onContextMenu={(e) => e.preventDefault()}
                     >
                       <span>
                         {branch}
-                        {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
+                        {branch === currentBranch && (
+                          <span className={styles.currentBranchIndicator}> (current)</span>
+                        )}
                       </span>
-                      <div className="branch-actions">
-                        <CopyButton 
+                      <div className={styles.branchActions}>
+                        <CopyButton
                           textToCopy={branch}
                           title="Copy branch name"
                           size={14}
@@ -122,25 +127,27 @@ const BranchList = ({
                         />
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();  
-                            const branchName = branch.replace('refs/heads/', '');
-                            const lastPart = branchName.split('/').pop();
-                            const branchNames = branchPrefix 
-                              ? branchPrefix.split(',').map(prefix => `${prefix.trim()}${lastPart}`)
-                              : [lastPart];
-                            handleCreateFromBranchWithPrefix(branchNames.join(','));
+                            e.stopPropagation()
+                            const branchName = branch.replace('refs/heads/', '')
+                            const lastPart = branchName.split('/').pop()
+                            const branchNames = branchPrefix
+                              ? branchPrefix
+                                  .split(',')
+                                  .map((prefix) => `${prefix.trim()}${lastPart}`)
+                              : [lastPart]
+                            handleCreateFromBranchWithPrefix(branchNames.join(','))
                           }}
-                          className="create-from-btn"
+                          className={styles.createFromBtn}
                           title={`Create branch from ${branch.split('/').pop()} with prefix ${branchPrefix}`}
                         >
                           Create from with prefix
                         </button>
                         <button
                           onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(branch);
+                            e.stopPropagation()
+                            onDelete(branch)
                           }}
-                          className="delete-btn"
+                          className={styles.deleteBtn}
                           title="Delete branch"
                         >
                           Delete
@@ -149,54 +156,65 @@ const BranchList = ({
                     </li>
                   ))}
                 </ul>
+                )}
               </div>
 
               {remoteBranches.length > 0 && (
-                <div className="branch-section">
-                  <h4>Remote Branches</h4>
-                  <ul>
-                    {sortBranches(remoteBranches).map((branch) => (
-                      <li
-                        key={`remote-${branch}`}
-                        onDoubleClick={(e) => {
-                          if (e.target.tagName !== 'BUTTON') {
-                            branch !== currentBranch && onCheckout(branch);
+                <div className={styles.branchSection}>
+                  <div
+                    className={styles.sectionHeader}
+                    onClick={() => setIsRemoteBranchesCollapsed(!isRemoteBranchesCollapsed)}
+                  >
+                    <ChevronDown
+                      className={`${styles.chevronIcon} ${isRemoteBranchesCollapsed ? styles.collapsed : ''}`}
+                      size={16}
+                    />
+                    <span>Remote Branches</span>
+                  </div>
+                  {!isRemoteBranchesCollapsed && (
+                    <ul>
+                      {sortBranches(remoteBranches).map((branch) => (
+                        <li
+                          key={`remote-${branch}`}
+                          onDoubleClick={(e) => {
+                            if (e.target.tagName !== 'BUTTON') {
+                              branch !== currentBranch && onCheckout(branch)
+                            }
+                          }}
+                          className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
+                          title={
+                            branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
                           }
-                        }}
-                        className={`${branch === currentBranch ? 'active-branch' : 'clickable-branch'} no-select`}
-                        title={branch === currentBranch ? 'Current branch' : 'Double-click to checkout'}
-                        onContextMenu={(e) => e.preventDefault()}
-                      >
-                        <span>
-                          {branch}
-                          {branch === currentBranch && <span className="current-branch-indicator"> (current)</span>}
-                        </span>
-                        <div className="branch-actions">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyBranchName(branch);
-                            }}
-                            className={`copy-button ${copiedBranch === branch ? 'copied' : ''}`}
+                          onContextMenu={(e) => e.preventDefault()}
+                        >
+                          <span>
+                            {branch}
+                            {branch === currentBranch && (
+                              <span className={styles.currentBranchIndicator}> (current)</span>
+                            )}
+                          </span>
+                          <div className={styles.branchActions}>
+                            <CopyButton
+                            textToCopy={branch}
                             title="Copy branch name"
-                          >
-                            <Copy size={14} />
-                            {copiedBranch === branch && <span className="copied-text">Copied!</span>}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteRemote(branch);
-                            }}
-                            className="delete-btn"
-                            title="Delete branch"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                            size={14}
+                            showCopiedText={true}
+                          />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDeleteRemote(branch)
+                              }}
+                              className={styles.deleteBtn}
+                              title="Delete branch"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </>
@@ -204,7 +222,7 @@ const BranchList = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default BranchList;
+export default BranchList

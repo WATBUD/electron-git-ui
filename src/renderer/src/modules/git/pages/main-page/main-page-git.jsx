@@ -23,7 +23,8 @@ import {
   unstageFile,
   discardFileChanges,
   selectRepository,
-  clearError
+  clearError,
+  loadCommitHistory
 } from '../../store/git'
 import './main-page-git.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -187,7 +188,7 @@ export const MainPageGit = () => {
                   />
                 )}
 
-                {activeTab === 'graph' && <GitGraphContainer repoPath={repoPath} />}
+                {activeTab === 'graph' && <GitGraphContainer/>}
 
                 {activeTab === 'files' && (
                   <FileStatus

@@ -320,7 +320,7 @@ export const commitChanges = createAsyncThunk(
       'Failed to commit changes',
       'commitChanges'
     )
-    await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory())])
+    await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory()), dispatch(loadCommitHistory())])
     return result
   }
 )

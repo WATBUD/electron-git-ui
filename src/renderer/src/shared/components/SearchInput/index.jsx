@@ -9,13 +9,13 @@ export const  SearchInput = ({
   ...props 
 }) => {
   return (
-    <div className="search-container">
+    <div className="searchContainer">
       <input
         type="text"
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`search-input ${className}`}
+        className={`searchInput ${className}`}
         {...props}
       />
     </div>
