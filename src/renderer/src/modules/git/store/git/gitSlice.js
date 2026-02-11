@@ -1,10 +1,28 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { loadCommitHistory, checkoutCommit, mergeBranch, checkMergeInProgress,
-  refreshTags, abortMerge, deleteBranch, loadBranches, createBranch, checkoutBranch,
-  deleteRemoteBranch, fetchFromRemote, pushToRemote, commitChanges, discardFileChanges,
-  stageFile, unstageFile, loadFileStatus, updateCommandHistory, clearCommandHistory,
-  selectRepository
-} from './gitThunks';
+import { createSlice } from '@reduxjs/toolkit'
+import {
+  loadCommitHistory,
+  checkoutCommit,
+  mergeBranch,
+  checkMergeInProgress,
+  refreshTags,
+  abortMerge,
+  deleteBranch,
+  loadBranches,
+  createBranch,
+  checkoutBranch,
+  deleteRemoteBranch,
+  fetchFromRemote,
+  pushToRemote,
+  commitChanges,
+  discardFileChanges,
+  stageFile,
+  unstageFile,
+  loadFileStatus,
+  updateCommandHistory,
+  clearCommandHistory,
+  selectRepository,
+  getCachedDiff
+} from './gitThunks'
 
 // Initial state for git graph
 const initialGraphState = {
@@ -13,83 +31,87 @@ const initialGraphState = {
   unpushedCount: 0,
   loading: false,
   error: null
-};
+}
 
 const initialState = {
-    ...initialGraphState,
+  ...initialGraphState,
   showFooter: false,
   isRefreshingTags: false,
   hasMergeInProgress: false,
   error: null,
   branches: [],
   remoteBranches: [],
-  currentBranch: "",
+  currentBranch: '',
   fileStatus: [],
   loading: false,
-  loadingMessage:  "",
+  loadingMessage: '',
   commandHistory: [],
   previousHistoryIndex: -1,
   repoPath: null,
-  mergeStatus: { isInProgress: false, message: '' }
-};
+  mergeStatus: { isInProgress: false, message: '' },
+  cachedDiff: null
+}
 
 const gitSlice = createSlice({
   name: 'git',
   initialState,
   reducers: {
     updatePreviousHistoryIndex: (state, action) => {
-      state.previousHistoryIndex = action.payload;
+      state.previousHistoryIndex = action.payload
     },
     toggleFooter: (state) => {
-      state.showFooter = !state.showFooter;
+      state.showFooter = !state.showFooter
     },
     setMergeInProgress: (state, action) => {
-      state.hasMergeInProgress = action.payload;
+      state.hasMergeInProgress = action.payload
     },
     setMergeStatus: (state, action) => {
-      state.mergeStatus = action.payload;
+      state.mergeStatus = action.payload
     },
     setError: (state, action) => {
-      state.error = action.payload;
+      state.error = action.payload
     },
     clearError: (state) => {
-      state.error = null;
+      state.error = null
     },
     setLoading: (state, action) => {
-      state.loadingMessage = action.payload || '';
+      state.loadingMessage = action.payload || ''
     },
     stopLoading: (state) => {
-      state.loadingMessage = '';
+      state.loadingMessage = ''
+    },
+    clearCachedDiff: (state) => {
+      state.cachedDiff = null
     }
   },
   extraReducers: (builder) => {
     builder
       .addCase(loadCommitHistory.pending, (state) => {
-        state.loadingMessage = 'Loading commit history...';
-        state.error = null;
+        state.loadingMessage = 'Loading commit history...'
+        state.error = null
       })
       .addCase(loadCommitHistory.fulfilled, (state, action) => {
-        state.loadingMessage = '';
-        state.commits = action.payload.commits;
-        state.currentHead = action.payload.currentHead;
-        state.unpushedCount = action.payload.unpushedCount;
+        state.loadingMessage = ''
+        state.commits = action.payload.commits
+        state.currentHead = action.payload.currentHead
+        state.unpushedCount = action.payload.unpushedCount
       })
       .addCase(loadCommitHistory.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       .addCase(checkoutCommit.pending, (state) => {
-        state.error = null;
+        state.error = null
       })
       .addCase(checkoutCommit.fulfilled, (state) => {})
       .addCase(checkoutCommit.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
       .addCase(mergeBranch.pending, (state) => {
-        state.error = null;
+        state.error = null
       })
       .addCase(mergeBranch.fulfilled, (state) => {})
       .addCase(mergeBranch.rejected, (state, action) => {
-        state.error = action.payload;
+        state.error = action.payload
       })
 
     // Existing reducers
@@ -278,8 +300,20 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
         state.error = action.payload
       })
+      .addCase(getCachedDiff.pending, (state) => {
+        state.loadingMessage = 'Fetching cached diff...'
+        state.error = null
+      })
+      .addCase(getCachedDiff.fulfilled, (state, action) => {
+        state.loadingMessage = ''
+        state.cachedDiff = action.payload
+      })
+      .addCase(getCachedDiff.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
   }
-});
+})
 
 export const {
   toggleFooter,
@@ -289,7 +323,8 @@ export const {
   setError,
   clearError,
   setLoading,
-  stopLoading
-} = gitSlice.actions;
+  stopLoading,
+  clearCachedDiff
+} = gitSlice.actions
 
-export default gitSlice.reducer;
+export default gitSlice.reducer

@@ -16,6 +16,25 @@
   user-select: none;
 }
 
+.toolbar-btn {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.toolbar-btn:hover {
+  background-color: var(--active-bg);
+  border-color: var(--primary-color);
+  color: var(--text-hover);
+}
+
 .toolbar-section {
   display: flex;
   gap: 0.5rem;
@@ -116,7 +135,7 @@
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 0.6rem 1.25rem;
+  padding: 0.5rem 1rem;
   margin: 0 0.5rem;
   cursor: pointer;
   color: var(--text-color);
@@ -124,9 +143,9 @@
   font-weight: 400;
   user-select: none;
   white-space: nowrap;
-  width: calc(100% - 1rem);
+  width: calc(50% - 0rem);
   box-sizing: border-box;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   background: none;
   border: none;
   text-align: left;
@@ -151,7 +170,6 @@
 .menu-item:hover {
   background-color: var(--active-bg);
   color: var(--text-hover);
-  padding-left: 1.5rem;
 }
 
 .menu-item:hover::before {

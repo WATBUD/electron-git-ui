@@ -320,7 +320,11 @@ export const commitChanges = createAsyncThunk(
       'Failed to commit changes',
       'commitChanges'
     )
-    await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory()), dispatch(loadCommitHistory())])
+    await Promise.all([
+      dispatch(loadFileStatus()),
+      dispatch(updateCommandHistory()),
+      dispatch(loadCommitHistory())
+    ])
     return result
   }
 )
@@ -453,17 +457,35 @@ export const selectRepository = createAsyncThunk(
       return rejectWithValue('Git API not initialized')
     }
 
-
     const result = await callGit(
       () => window.git.selectRepository(),
       rejectWithValue,
       'Error selecting repository',
       'selectRepository'
     )
-        // Update previous history index in the state
+    // Update previous history index in the state
     updateHistoryIndex(getState, dispatch)
     await dispatch(loadCommitHistory())
     await dispatch(updateCommandHistory())
     return result
+  }
+)
+
+export const getCachedDiff = createAsyncThunk(
+  'git/getCachedDiff',
+  async (_, { rejectWithValue }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized')
+    }
+
+    try {
+      const result = await window.git.getCachedDiff()
+      if (result.success) {
+        return result.data
+      }
+      return rejectWithValue(result.message || 'Failed to get cached diff')
+    } catch (err) {
+      return rejectWithValue(err.message || 'Failed to get cached diff')
+    }
   }
 )

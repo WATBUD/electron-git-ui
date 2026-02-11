@@ -1,0 +1,125 @@
+.diff-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.diff-modal-content {
+  background-color: var(--bg-color);
+  width: 90%;
+  max-width: 1000px;
+  max-height: 85vh;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.diff-modal-header {
+  padding: 16px 20px;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diff-modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.copy-btn.copied {
+  background-color: var(--success-color);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+}
+
+.diff-modal-body {
+  padding: 0;
+  overflow-y: auto;
+  background-color: #0d1117; /* Dark background for code */
+  flex: 1;
+}
+
+.diff-text {
+  margin: 0;
+  padding: 20px;
+  font-family: 'Fira Code', 'Roboto Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e6edf3;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Optional: Scrollbar styling */
+.diff-modal-body::-webkit-scrollbar {
+  width: 10px;
+}
+
+.diff-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.diff-modal-body::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+}
+
+.diff-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}

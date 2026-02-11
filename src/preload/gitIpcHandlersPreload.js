@@ -1,7 +1,7 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron')
 
 // Debug log to verify preload script is running
-console.log('Preload script is running');
+console.log('Preload script is running')
 
 // Ensure the git object is properly exposed to the renderer process
 contextBridge.exposeInMainWorld('git', {
@@ -25,8 +25,9 @@ contextBridge.exposeInMainWorld('git', {
   checkMergeInProgress: () => ipcRenderer.invoke('git:checkMergeInProgress'),
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
+  getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand)
-});
+})
 
 // Debug log to verify git object is exposed
-console.log('Git API exposed to renderer'); 
+console.log('Git API exposed to renderer')
