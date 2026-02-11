@@ -83,17 +83,25 @@ const BranchList = ({
           className={styles.branchInput}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && newBranchName.trim() && !loading) {
-              const fullBranchName = branchPrefix
-                ? `${branchPrefix}${newBranchName}`
+              const branchNames = branchPrefix
+                ? branchPrefix
+                    .split(',')
+                    .map((p) => `${p.trim()}${newBranchName}`)
+                    .join(',')
                 : newBranchName
-              createBranchByNewBranchName(fullBranchName)
+              createBranchByNewBranchName(branchNames)
             }
           }}
         />
         <button
           onClick={() => {
-            const fullBranchName = branchPrefix ? `${branchPrefix}${newBranchName}` : newBranchName
-            createBranchByNewBranchName(fullBranchName)
+            const branchNames = branchPrefix
+              ? branchPrefix
+                  .split(',')
+                  .map((p) => `${p.trim()}${newBranchName}`)
+                  .join(',')
+              : newBranchName
+            createBranchByNewBranchName(branchNames)
           }}
           disabled={loading || !newBranchName.trim()}
           className={styles.createBtn}

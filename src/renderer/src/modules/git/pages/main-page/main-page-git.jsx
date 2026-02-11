@@ -163,10 +163,17 @@ export const MainPageGit = () => {
                     createBranchByNewBranchName={async (fullName) => {
                       const nameToCreate = typeof fullName === 'string' ? fullName : newBranchName
                       if (!nameToCreate.trim()) return
-                      const result = await dispatch(createBranch(nameToCreate))
-                      if (createBranch.fulfilled.match(result)) {
-                        setNewBranchName('')
+
+                      const names = nameToCreate
+                        .split(',')
+                        .map((name) => name.trim())
+                        .filter(Boolean)
+
+                      for (const name of names) {
+                        await dispatch(createBranch(name))
                       }
+                      setNewBranchName('')
+                      dispatch(loadBranches())
                     }}
                     handleCreateFromBranchWithPrefix={async (branchNames) => {
                       console.log('handleCreateFromBranchWithPrefix+branchNames', branchNames)
