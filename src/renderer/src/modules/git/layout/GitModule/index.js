@@ -1,2 +1,1 @@
-export * from './GitModule';
-export { default } from './GitModule';
+export { GitModule as default, GitModule } from './GitModule';

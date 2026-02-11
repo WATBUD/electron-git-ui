@@ -1,2 +1,1 @@
-export * from './LeftSideBar';
-export { default } from './LeftSideBar';
+export { default as LeftSideBar, default } from './LeftSideBar';

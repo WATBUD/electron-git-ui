@@ -1,2 +1,1 @@
-export * from './LoadingModal';
-export { default } from './LoadingModal';
+export { LoadingModal as default, LoadingModal } from './LoadingModal';

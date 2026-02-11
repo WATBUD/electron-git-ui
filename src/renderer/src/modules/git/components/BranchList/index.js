@@ -1,2 +1,1 @@
-export * from './BranchList';
-export { default } from './BranchList';
+export { default as BranchList, default } from './BranchList';

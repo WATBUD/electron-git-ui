@@ -55,7 +55,7 @@ export const GitGraph = ({
   const sortedCommits = React.useMemo(() => {
     if (!commits) return []
     return [...commits]
-      .filter(commit => {
+      .filter((commit) => {
         if (!searchTerm) return true
         const searchLower = searchTerm.toLowerCase()
         return (

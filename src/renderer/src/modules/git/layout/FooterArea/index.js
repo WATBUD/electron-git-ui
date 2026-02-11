@@ -1,2 +1,1 @@
-export * from './FooterArea';
-export { default } from './FooterArea';
+export { FooterArea as default, FooterArea } from './FooterArea';

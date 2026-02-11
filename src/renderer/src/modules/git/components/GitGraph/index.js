@@ -1,2 +1,1 @@
-export * from './GitGraph';
-export { default } from './GitGraph';
+export { GitGraph as default, GitGraph } from './GitGraph';

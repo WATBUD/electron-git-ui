@@ -1,2 +1,1 @@
-export * from './CopyButton';
-export { default } from './CopyButton';
+export { CopyButton as default, CopyButton } from './CopyButton';

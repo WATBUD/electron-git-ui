@@ -14,11 +14,39 @@ const BranchList = ({
   onDelete,
   onDeleteRemote,
   onRefresh,
+  onMerge,
   newBranchName,
   setNewBranchName,
   createBranchByNewBranchName,
   handleCreateFromBranchWithPrefix
 }) => {
+  const [contextMenu, setContextMenu] = React.useState({
+    show: false,
+    x: 0,
+    y: 0,
+    branchName: null
+  })
+  const contextMenuRef = React.useRef(null)
+
+  const handleContextMenu = (e, branchName) => {
+    e.preventDefault()
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      branchName: branchName
+    })
+  }
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+        setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const sortBranches = (branches) => {
     return [...branches]
       .filter(
@@ -47,11 +75,25 @@ const BranchList = ({
         />
       </div>
       <div className={styles.createBranch}>
+        <input
+          type="text"
+          value={newBranchName}
+          onChange={setNewBranchName}
+          placeholder="New branch name"
+          className={styles.branchInput}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && newBranchName.trim() && !loading) {
+              const fullBranchName = branchPrefix
+                ? `${branchPrefix}${newBranchName}`
+                : newBranchName
+              createBranchByNewBranchName(fullBranchName)
+            }
+          }}
+        />
         <button
           onClick={() => {
             const fullBranchName = branchPrefix ? `${branchPrefix}${newBranchName}` : newBranchName
-            setNewBranchName({ target: { value: fullBranchName } })
-            createBranchByNewBranchName()
+            createBranchByNewBranchName(fullBranchName)
           }}
           disabled={loading || !newBranchName.trim()}
           className={styles.createBtn}
@@ -98,64 +140,47 @@ const BranchList = ({
                 </div>
                 {!isLocalBranchesCollapsed && (
                   <ul>
-                  {sortBranches(branches).map((branch) => (
-                    <li
-                      key={`local-${branch}`}
-                      onDoubleClick={(e) => {
-                        if (e.target.tagName !== 'BUTTON') {
-                          branch !== currentBranch && onCheckout(branch)
+                    {sortBranches(branches).map((branch) => (
+                      <li
+                        key={`local-${branch}`}
+                        onDoubleClick={(e) => {
+                          if (e.target.tagName !== 'BUTTON') {
+                            branch !== currentBranch && onCheckout(branch)
+                          }
+                        }}
+                        className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
+                        title={
+                          branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
                         }
-                      }}
-                      className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
-                      title={
-                        branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
-                      }
-                      onContextMenu={(e) => e.preventDefault()}
-                    >
-                      <span>
-                        {branch}
-                        {branch === currentBranch && (
-                          <span className={styles.currentBranchIndicator}> (current)</span>
-                        )}
-                      </span>
-                      <div className={styles.branchActions}>
-                        <CopyButton
-                          textToCopy={branch}
-                          title="Copy branch name"
-                          size={14}
-                          showCopiedText={true}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const branchName = branch.replace('refs/heads/', '')
-                            const lastPart = branchName.split('/').pop()
-                            const branchNames = branchPrefix
-                              ? branchPrefix
-                                  .split(',')
-                                  .map((prefix) => `${prefix.trim()}${lastPart}`)
-                              : [lastPart]
-                            handleCreateFromBranchWithPrefix(branchNames.join(','))
-                          }}
-                          className={styles.createFromBtn}
-                          title={`Create branch from ${branch.split('/').pop()} with prefix ${branchPrefix}`}
-                        >
-                          Create from with prefix
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(branch)
-                          }}
-                          className={styles.deleteBtn}
-                          title="Delete branch"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        onContextMenu={(e) => handleContextMenu(e, branch)}
+                      >
+                        <span>
+                          {branch}
+                          {branch === currentBranch && (
+                            <span className={styles.currentBranchIndicator}> (current)</span>
+                          )}
+                        </span>
+                        <div className={styles.branchActions}>
+                          <CopyButton
+                            textToCopy={branch}
+                            title="Copy branch name"
+                            size={14}
+                            showCopiedText={true}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onDelete(branch)
+                            }}
+                            className={styles.deleteBtn}
+                            title="Delete branch"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
 
@@ -185,7 +210,7 @@ const BranchList = ({
                           title={
                             branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
                           }
-                          onContextMenu={(e) => e.preventDefault()}
+                          onContextMenu={(e) => handleContextMenu(e, branch)}
                         >
                           <span>
                             {branch}
@@ -195,11 +220,11 @@ const BranchList = ({
                           </span>
                           <div className={styles.branchActions}>
                             <CopyButton
-                            textToCopy={branch}
-                            title="Copy branch name"
-                            size={14}
-                            showCopiedText={true}
-                          />
+                              textToCopy={branch}
+                              title="Copy branch name"
+                              size={14}
+                              showCopiedText={true}
+                            />
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
@@ -221,6 +246,58 @@ const BranchList = ({
           )}
         </div>
       </div>
+
+      {contextMenu.show && (
+        <div
+          ref={contextMenuRef}
+          className={styles.contextMenu}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x
+          }}
+        >
+          <div className={styles.contextMenuHeader}>
+            Branch: {contextMenu.branchName?.replace('origin/', '')}
+          </div>
+          <div className={styles.contextMenuContent}>
+            <button
+              className={`${styles.contextMenuItem} ${styles.mergeItem}`}
+              onClick={() => {
+                onMerge(contextMenu.branchName)
+                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+              }}
+              disabled={contextMenu.branchName === currentBranch}
+            >
+              <span>Merge into {currentBranch}</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onCheckout(contextMenu.branchName)
+                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+              }}
+              disabled={contextMenu.branchName === currentBranch}
+            >
+              Checkout
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                const branchName = contextMenu.branchName.replace('refs/heads/', '')
+                const lastPart = branchName.split('/').pop()
+                const branchNames = branchPrefix
+                  ? branchPrefix.split(',').map((prefix) => `${prefix.trim()}${lastPart}`)
+                  : [lastPart]
+                handleCreateFromBranchWithPrefix(branchNames.join(','))
+                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+              }}
+              title={`Create branch from ${contextMenu.branchName?.split('/').pop()} with prefix ${branchPrefix}`}
+            >
+              Create from with prefix
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

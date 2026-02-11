@@ -1,2 +1,1 @@
-export * from './ErrorModal';
-export { default } from './ErrorModal';
+export { ErrorModal as default, ErrorModal } from './ErrorModal';

@@ -155,11 +155,15 @@ export const MainPageGit = () => {
                     onRefresh={() => {
                       dispatch(loadBranches())
                     }}
+                    onMerge={async (branchName) => {
+                      await dispatch(mergeBranch(branchName))
+                    }}
                     newBranchName={newBranchName}
                     setNewBranchName={(e) => setNewBranchName(e.target.value)}
-                    createBranchByNewBranchName={async () => {
-                      if (!newBranchName.trim()) return
-                      const result = await dispatch(createBranch(newBranchName))
+                    createBranchByNewBranchName={async (fullName) => {
+                      const nameToCreate = typeof fullName === 'string' ? fullName : newBranchName
+                      if (!nameToCreate.trim()) return
+                      const result = await dispatch(createBranch(nameToCreate))
                       if (createBranch.fulfilled.match(result)) {
                         setNewBranchName('')
                       }
@@ -188,7 +192,7 @@ export const MainPageGit = () => {
                   />
                 )}
 
-                {activeTab === 'graph' && <GitGraphContainer/>}
+                {activeTab === 'graph' && <GitGraphContainer />}
 
                 {activeTab === 'files' && (
                   <FileStatus

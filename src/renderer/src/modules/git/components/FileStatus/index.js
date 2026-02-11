@@ -1,2 +1,1 @@
-export * from './FileStatus';
-export { default } from './FileStatus';
+export { FileStatus as default, FileStatus } from './FileStatus';
