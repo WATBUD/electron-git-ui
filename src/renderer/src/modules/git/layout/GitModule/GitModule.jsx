@@ -1,9 +1,9 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { AppToolbar } from './AppToolbar';
-import { LeftSideBar } from './LeftSideBar';
-import { FooterArea } from './FooterArea';
-import './GitModule.css';
+import React from 'react'
+import { Outlet } from 'react-router-dom'
+import { AppToolbar } from '../AppToolbar'
+import { LeftSideBar } from '../LeftSideBar'
+import { FooterArea } from '../FooterArea'
+import './GitModule.css'
 
 export const GitModule = () => {
   return (
@@ -17,7 +17,7 @@ export const GitModule = () => {
       </div>
       <FooterArea />
     </div>
-  );
-};
+  )
+}
 
-export default GitModule;
+export default GitModule

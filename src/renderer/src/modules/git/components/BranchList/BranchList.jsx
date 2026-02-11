@@ -30,7 +30,7 @@ const BranchList = ({
       })
   }
 
-  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2601/')
+  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2602/')
   const [searchTerm, setSearchTerm] = useState('')
   const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
   const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
