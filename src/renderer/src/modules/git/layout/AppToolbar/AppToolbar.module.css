@@ -1,22 +1,20 @@
-.app-toolbar {
+.appToolbar {
   margin-left: 0.5rem;
   position: relative;
   top: 0;
   left: 0;
   right: 0;
   background-color: var(--bg-color);
-  /* border-bottom: 1px solid var(--border-color); */
   display: flex;
   justify-content: flex-start;
   align-items: center;
   gap: 1.2rem;
   height: 48px;
-  /* box-sizing: border-box; */
   z-index: 1000;
   user-select: none;
 }
 
-.toolbar-btn {
+.toolbarBtn {
   background-color: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-color);
@@ -29,28 +27,29 @@
   white-space: nowrap;
 }
 
-.toolbar-btn:hover {
+.toolbarBtn:hover {
   background-color: var(--active-bg);
   border-color: var(--primary-color);
   color: var(--text-hover);
 }
 
-.toolbar-section {
+.toolbarSection {
   display: flex;
   gap: 0.5rem;
   align-items: center;
   height: 100%;
 }
 
-.toolbar-menu {
+.toolbarMenu {
   position: relative;
   display: flex;
   align-items: center;
   height: 100%;
   padding: 0 0.25rem;
+  cursor: pointer;
 }
 
-.menu-label {
+.menuLabel {
   cursor: pointer;
   color: var(--text-color);
   font-size: 0.875rem;
@@ -64,14 +63,12 @@
   position: relative;
 }
 
-.menu-label:hover {
+.menuLabel:hover {
   background-color: var(--active-bg);
   color: var(--text-hover);
 }
 
-/* Add a subtle indicator for dropdowns */
-
-.menu-label::after {
+.menuLabel::after {
   content: '▼';
   font-size: 0.6em;
   margin-left: 0.5em;
@@ -79,13 +76,12 @@
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* Rotate arrow when menu is active */
-.toolbar-menu.active .menu-label::after {
+.toolbarMenu.active .menuLabel::after {
   transform: rotate(180deg);
   opacity: 1;
 }
 
-.menu-content {
+.menuContent {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
@@ -103,13 +99,7 @@
   pointer-events: none;
 }
 
-.toolbar-menu {
-  position: relative;
-  cursor: pointer;
-}
-
-/* Show menu when parent has active class */
-.toolbar-menu.active .menu-content {
+.toolbarMenu.active .menuContent {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -117,8 +107,7 @@
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
 }
 
-/* Add a small arrow at the top of the dropdown */
-.menu-content::before {
+.menuContent::before {
   content: '';
   position: absolute;
   top: -6px;
@@ -132,7 +121,7 @@
   z-index: -1;
 }
 
-.menu-item {
+.menuItem {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
@@ -143,7 +132,7 @@
   font-weight: 400;
   user-select: none;
   white-space: nowrap;
-  width: calc(50% - 0rem);
+  width: calc(100% - 1rem);
   box-sizing: border-box;
   transition: background-color 0.15s ease, color 0.15s ease;
   background: none;
@@ -154,7 +143,7 @@
   overflow: hidden;
 }
 
-.menu-item::before {
+.menuItem::before {
   content: '';
   position: absolute;
   top: 0;
@@ -167,43 +156,95 @@
   transition: transform 0.2s ease;
 }
 
-.menu-item:hover {
+.menuItem:hover {
   background-color: var(--active-bg);
   color: var(--text-hover);
 }
 
-.menu-item:hover::before {
+.menuItem:hover::before {
   transform: scaleY(1);
 }
 
-/* Disabled state */
-.menu-item:disabled {
+.menuItem:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   background: none !important;
   padding-left: 1.25rem !important;
 }
 
-.menu-item:disabled::before {
+.menuItem:disabled::before {
   display: none;
 }
 
-/* Active state for merge abort button */
-.merge-abort-btn.active {
+.menuItem input[type="checkbox"] {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.menuItem > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mergeAbortBtn {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mergeAbortBtn:hover:not(:disabled) {
+  background-color: var(--active-bg);
+  color: var(--text-hover);
+}
+
+.mergeAbortBtn:disabled,
+.mergeAbortBtn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mergeAbortBtn.active {
   color: var(--error-color);
 }
 
-.merge-abort-btn.active:hover {
+.mergeAbortBtn.active:hover {
   background-color: rgba(239, 68, 68, 0.1);
 }
 
-/* Loading state for refresh button */
-.refresh-tags-btn.refreshing {
+.refreshTagsBtn {
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refreshTagsBtn:hover:not(.disabled) {
+  background-color: var(--active-bg);
+  color: var(--text-hover);
+}
+
+.refreshTagsBtn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refreshTagsBtn.refreshing {
   position: relative;
   color: var(--text-secondary);
 }
 
-.refresh-tags-btn.refreshing::after {
+.refreshTagsBtn.refreshing::after {
   content: '↻';
   display: inline-block;
   margin-left: 0.5rem;
@@ -215,8 +256,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Custom Checkbox Switch for Show Footer */
-.toggle-switch {
+.toggleSwitch {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -225,14 +265,14 @@
   user-select: none;
 }
 
-.toggle-switch input {
+.toggleSwitch input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.toggle-checkbox {
+.toggleCheckbox {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -245,17 +285,17 @@
   transition: all 0.1s ease;
 }
 
-.toggle-checkbox:hover {
+.toggleCheckbox:hover {
   border-color: var(--primary-color);
   background-color: rgba(79, 70, 229, 0.1);
 }
 
-.toggle-switch input:checked + .toggle-checkbox {
+.toggleSwitch input:checked + .toggleCheckbox {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
 }
 
-.toggle-checkbox::after {
+.toggleCheckbox::after {
   content: "";
   position: absolute;
   display: none;
@@ -268,126 +308,17 @@
   transform: rotate(45deg);
 }
 
-.toggle-switch input:checked + .toggle-checkbox::after {
+.toggleSwitch input:checked + .toggleCheckbox::after {
   display: block;
 }
 
-.toggle-label {
+.toggleLabel {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-color);
   transition: color 0.1s ease;
 }
 
-.toggle-switch:hover .toggle-label {
+.toggleSwitch:hover .toggleLabel {
   color: var(--text-hover);
-}
-
-.merge-abort-btn {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.merge-abort-btn:hover:not(:disabled) {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.merge-abort-btn:disabled,
-.merge-abort-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.refresh-tags-btn {
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refresh-tags-btn:hover:not(.disabled) {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.refresh-tags-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.menu-item:hover {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.menu-item input[type="checkbox"] {
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.menu-item > span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.merge-abort-btn {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 0.9em;
-  transition: all 0.2s ease;
-}
-
-.merge-abort-btn.active {
-  color: #f87171;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.merge-abort-btn.active:hover {
-  background-color: rgba(248, 113, 113, 0.1);
-}
-
-.merge-abort-btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.refresh-tags-btn {
-  background-color: var(--primary-color);
-  color: white;
-  border: 1px solid var(--primary-hover);
-  padding: 4px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-}
-
-.refresh-tags-btn:hover:not(:disabled) {
-  background-color: var(--primary-hover);
-}
-
-.refresh-tags-btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-
-.refresh-tags-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }

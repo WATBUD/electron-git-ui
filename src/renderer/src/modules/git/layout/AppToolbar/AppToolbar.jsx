@@ -9,7 +9,7 @@ import {
   clearCachedDiff
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
-import './AppToolbar.css'
+import styles from './AppToolbar.module.css'
 
 export const AppToolbar = () => {
   const [activeMenu, setActiveMenu] = useState(null)
@@ -75,24 +75,27 @@ export const AppToolbar = () => {
   }
 
   return (
-    <div className="app-toolbar">
-      <div className="toolbar-section">
-        <div className="toolbar-menu">
-          <label className="toggle-switch">
+    <div className={styles.appToolbar}>
+      <div className={styles.toolbarSection}>
+        <div className={styles.toolbarMenu}>
+          <label className={styles.toggleSwitch}>
             <input type="checkbox" checked={showFooter} onChange={() => dispatch(toggleFooter())} />
-            <span className="toggle-checkbox"></span>
-            <span className="toggle-label">Show History</span>
+            <span className={styles.toggleCheckbox}></span>
+            <span className={styles.toggleLabel}>Show History</span>
           </label>
         </div>
       </div>
 
-      <div className={`toolbar-menu ${activeMenu === 'view' ? 'active' : ''}`} ref={viewMenuRef}>
-        <span className="menu-label" onClick={() => toggleMenu('view')}>
+      <div
+        className={`${styles.toolbarMenu} ${activeMenu === 'view' ? styles.active : ''}`}
+        ref={viewMenuRef}
+      >
+        <span className={styles.menuLabel} onClick={() => toggleMenu('view')}>
           View
         </span>
-        <div className="menu-content">
+        <div className={styles.menuContent}>
           <button
-            className="menu-item"
+            className={styles.menuItem}
             onClick={(e) => {
               e.stopPropagation()
               handleShowDiff()
@@ -104,13 +107,16 @@ export const AppToolbar = () => {
         </div>
       </div>
 
-      <div className={`toolbar-menu ${activeMenu === 'merge' ? 'active' : ''}`} ref={mergeMenuRef}>
-        <span className="menu-label" onClick={() => toggleMenu('merge')}>
+      <div
+        className={`${styles.toolbarMenu} ${activeMenu === 'merge' ? styles.active : ''}`}
+        ref={mergeMenuRef}
+      >
+        <span className={styles.menuLabel} onClick={() => toggleMenu('merge')}>
           Merge
         </span>
-        <div className="menu-content">
+        <div className={styles.menuContent}>
           <button
-            className={`menu-item merge-abort-btn ${hasMergeInProgress ? 'active' : 'disabled'}`}
+            className={`${styles.menuItem} ${styles.mergeAbortBtn} ${hasMergeInProgress ? styles.active : styles.disabled}`}
             onClick={(e) => {
               e.stopPropagation()
               handleMergeAbort()
@@ -126,13 +132,16 @@ export const AppToolbar = () => {
         </div>
       </div>
 
-      <div className={`toolbar-menu ${activeMenu === 'tags' ? 'active' : ''}`} ref={tagsMenuRef}>
-        <span className="menu-label" onClick={() => toggleMenu('tags')}>
+      <div
+        className={`${styles.toolbarMenu} ${activeMenu === 'tags' ? styles.active : ''}`}
+        ref={tagsMenuRef}
+      >
+        <span className={styles.menuLabel} onClick={() => toggleMenu('tags')}>
           Tags
         </span>
-        <div className="menu-content">
+        <div className={styles.menuContent}>
           <button
-            className={`menu-item refresh-tags-btn ${isRefreshingTags ? 'refreshing' : ''}`}
+            className={`${styles.menuItem} ${styles.refreshTagsBtn} ${isRefreshingTags ? styles.refreshing : ''}`}
             onClick={(e) => {
               e.stopPropagation()
               handleRefreshTags()
