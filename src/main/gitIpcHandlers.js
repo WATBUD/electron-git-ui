@@ -248,7 +248,7 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:gitBranchPull', async () => {
+  ipcMain.handle('git:branchPull', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
@@ -263,7 +263,7 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:push', async (event, force) => {
+  ipcMain.handle('git:branchPush', async (event, force) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }

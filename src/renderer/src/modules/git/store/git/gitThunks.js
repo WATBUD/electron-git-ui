@@ -294,7 +294,7 @@ export const pullFromRemote = createAsyncThunk(
     updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
-      () => window.git.gitBranchPull(),
+      () => window.git.branchPull(),
       rejectWithValue,
       'Failed to pull from remote',
       'pullFromRemote'
@@ -315,7 +315,7 @@ export const pushToRemote = createAsyncThunk(
     updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
-      () => window.git.push(forcePush),
+      () => window.git.branchPush(forcePush),
       rejectWithValue,
       'Failed to push to remote',
       'pushToRemote'
