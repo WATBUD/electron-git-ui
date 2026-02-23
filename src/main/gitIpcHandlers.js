@@ -71,7 +71,7 @@ export function setupGitHandlers() {
       return fail('No repository selected')
     }
     try {
-      const command = 'git branch'
+      const command = 'git branch -vv'
       const remoteCommand = 'git branch -r'
       commandHistory.push(command)
       commandHistory.push(remoteCommand)
@@ -83,25 +83,56 @@ export function setupGitHandlers() {
 
       const localBranches = localOutput
         .split('\n')
-        .map((branch) => branch.trim())
-        .filter((branch) => branch.length > 0)
-        .map((branch) => branch.replace('* ', ''))
+        .filter((line) => line.trim().length > 0)
+        .map((line) => {
+          const isCurrent = line.startsWith('*')
+          const cleanLine = line.substring(2)
+          const nameMatch = cleanLine.match(/^([^\s]+)/)
+          const name = nameMatch ? nameMatch[1] : ''
+
+          const bracketsMatch = line.match(/\[([^\]]+)\]/)
+          let upstream = null
+          let ahead = 0
+          let behind = 0
+
+          if (bracketsMatch) {
+            const content = bracketsMatch[1]
+            const [uName, ...statsParts] = content.split(':')
+            upstream = uName.trim()
+
+            if (statsParts.length > 0) {
+              const stats = statsParts.join(':')
+              const aheadMatch = stats.match(/ahead (\d+)/)
+              const behindMatch = stats.match(/behind (\d+)/)
+              if (aheadMatch) ahead = parseInt(aheadMatch[1], 10)
+              if (behindMatch) behind = parseInt(behindMatch[1], 10)
+            }
+          }
+
+          return {
+            name,
+            isCurrent,
+            upstream,
+            ahead,
+            behind
+          }
+        })
 
       const remoteBranches = remoteOutput
         .split('\n')
         .map((branch) => branch.trim())
         .filter((branch) => branch.length > 0)
         .map((branch) => {
-          // 如果是 HEAD 引用，只返回 origin/HEAD
           if (branch.includes('HEAD ->')) {
             return 'origin/HEAD'
           }
-          // 否則移除 "origin/" 前綴
           return branch.replace('origin/', '')
         })
-      const currentBranch = (
-        await execAsync('git branch --show-current', { cwd: currentRepoPath })
-      ).stdout.trim()
+
+      const currentBranchResult = await execAsync('git branch --show-current', {
+        cwd: currentRepoPath
+      })
+      const currentBranch = currentBranchResult.stdout.trim()
 
       return success({
         currentBranch,

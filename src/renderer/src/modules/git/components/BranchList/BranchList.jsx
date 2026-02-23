@@ -49,12 +49,16 @@ const BranchList = ({
   }, [])
   const sortBranches = (branches) => {
     return [...branches]
-      .filter(
-        (branch) => searchTerm === '' || branch.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      .filter((branch) => {
+        const name = typeof branch === 'string' ? branch : branch.name
+        return searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
+      })
       .sort((a, b) => {
-        if (b === currentBranch) return 1
-        return a.localeCompare(b)
+        const nameA = typeof a === 'string' ? a : a.name
+        const nameB = typeof b === 'string' ? b : b.name
+        if (nameB === currentBranch) return 1
+        if (nameA === currentBranch) return -1
+        return nameA.localeCompare(nameB)
       })
   }
 
@@ -148,46 +152,57 @@ const BranchList = ({
                 </div>
                 {!isLocalBranchesCollapsed && (
                   <ul>
-                    {sortBranches(branches).map((branch) => (
-                      <li
-                        key={`local-${branch}`}
-                        onDoubleClick={(e) => {
-                          if (e.target.tagName !== 'BUTTON') {
-                            branch !== currentBranch && onCheckout(branch)
+                    {sortBranches(branches).map((branchObj) => {
+                      const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
+                      const { ahead = 0, behind = 0 } = branchObj || {}
+
+                      return (
+                        <li
+                          key={`local-${branch}`}
+                          onDoubleClick={(e) => {
+                            if (e.target.tagName !== 'BUTTON' && !e.target.closest('button')) {
+                              branch !== currentBranch && onCheckout(branch)
+                            }
+                          }}
+                          className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
+                          title={
+                            branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
                           }
-                        }}
-                        className={`${branch === currentBranch ? styles.activeBranch : styles.clickableBranch} ${styles.noSelect}`}
-                        title={
-                          branch === currentBranch ? 'Current branch' : 'Double-click to checkout'
-                        }
-                        onContextMenu={(e) => handleContextMenu(e, branch)}
-                      >
-                        <span>
-                          {branch}
-                          {branch === currentBranch && (
-                            <span className={styles.currentBranchIndicator}> (current)</span>
-                          )}
-                        </span>
-                        <div className={styles.branchActions}>
-                          <CopyButton
-                            textToCopy={branch}
-                            title="Copy branch name"
-                            size={14}
-                            showCopiedText={true}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onDelete(branch)
-                            }}
-                            className={styles.deleteBtn}
-                            title="Delete branch"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </li>
-                    ))}
+                          onContextMenu={(e) => handleContextMenu(e, branch)}
+                        >
+                          <div className={styles.branchInfo}>
+                            <span className={styles.branchName}>
+                              {branch}
+                              {branch === currentBranch && (
+                                <span className={styles.currentBranchIndicator}> (current)</span>
+                              )}
+                            </span>
+                            <div className={styles.branchStatus}>
+                              {ahead > 0 && <span className={styles.aheadCount}>↑{ahead}</span>}
+                              {behind > 0 && <span className={styles.behindCount}>↓{behind}</span>}
+                            </div>
+                          </div>
+                          <div className={styles.branchActions}>
+                            <CopyButton
+                              textToCopy={branch}
+                              title="Copy branch name"
+                              size={14}
+                              showCopiedText={true}
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(branch)
+                              }}
+                              className={styles.deleteBtn}
+                              title="Delete branch"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </div>
