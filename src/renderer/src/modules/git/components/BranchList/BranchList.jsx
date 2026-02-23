@@ -18,7 +18,10 @@ const BranchList = ({
   newBranchName,
   setNewBranchName,
   createBranchByNewBranchName,
-  handleCreateFromBranchWithPrefix
+  handleCreateFromBranchWithPrefix,
+  prefixes = [],
+  selectedPrefixes = [],
+  onAddPrefix
 }) => {
   const [contextMenu, setContextMenu] = React.useState({
     show: false,
@@ -43,6 +46,9 @@ const BranchList = ({
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
         setContextMenu({ show: false, x: 0, y: 0, branchName: null })
       }
+      if (prefixInputRef.current && !prefixInputRef.current.contains(event.target)) {
+        setShowPrefixDropdown(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -62,7 +68,20 @@ const BranchList = ({
       })
   }
 
-  const [branchPrefix, setBranchPrefix] = useState('promote-prod/,promote-stg2602/')
+  const branchPrefix = selectedPrefixes.join(',')
+
+  const handleCreateBranch = () => {
+    if (!newBranchName.trim()) return
+
+    const branchNames = branchPrefix
+      ? branchPrefix
+          .split(',')
+          .map((p) => `${p.trim()}${newBranchName}`)
+          .join(',')
+      : newBranchName
+    createBranchByNewBranchName(branchNames)
+  }
+
   const [searchTerm, setSearchTerm] = useState('')
   const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
   const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
@@ -70,13 +89,16 @@ const BranchList = ({
   return (
     <div className={styles.branchManagement}>
       <div className={styles.branchPrefix}>
-        <input
-          type="text"
-          value={branchPrefix}
-          onChange={(e) => setBranchPrefix(e.target.value)}
-          placeholder="Branch prefix (e.g., t1-)"
-          className={styles.prefixInput}
-        />
+        <div className={styles.prefixInputWrapper}>
+          <span className={styles.prefixLabel}>branchPrefix:</span>
+          <input
+            type="text"
+            value={branchPrefix}
+            readOnly
+            placeholder="Select prefixes from toolbar"
+            className={`${styles.prefixInput} ${styles.readOnlyInput}`}
+          />
+        </div>
       </div>
       <div className={styles.createBranch}>
         <input
@@ -87,26 +109,12 @@ const BranchList = ({
           className={styles.branchInput}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && newBranchName.trim() && !loading) {
-              const branchNames = branchPrefix
-                ? branchPrefix
-                    .split(',')
-                    .map((p) => `${p.trim()}${newBranchName}`)
-                    .join(',')
-                : newBranchName
-              createBranchByNewBranchName(branchNames)
+              handleCreateBranch()
             }
           }}
         />
         <button
-          onClick={() => {
-            const branchNames = branchPrefix
-              ? branchPrefix
-                  .split(',')
-                  .map((p) => `${p.trim()}${newBranchName}`)
-                  .join(',')
-              : newBranchName
-            createBranchByNewBranchName(branchNames)
-          }}
+          onClick={handleCreateBranch}
           disabled={loading || !newBranchName.trim()}
           className={styles.createBtn}
         >
@@ -308,6 +316,14 @@ const BranchList = ({
               onClick={() => {
                 const branchName = contextMenu.branchName.replace('refs/heads/', '')
                 const lastPart = branchName.split('/').pop()
+
+                // Record the used prefix string as a whole
+                // (Note: Since branchPrefix is now derived from selectedPrefixes,
+                // recording here is technically redundant but kept for consistency)
+                if (branchPrefix.trim()) {
+                  onAddPrefix(branchPrefix.trim())
+                }
+
                 const branchNames = branchPrefix
                   ? branchPrefix.split(',').map((prefix) => `${prefix.trim()}${lastPart}`)
                   : [lastPart]

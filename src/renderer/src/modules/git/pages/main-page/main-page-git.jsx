@@ -46,6 +46,8 @@ export const MainPageGit = () => {
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
   const repoPath = useSelector((state) => state.git.repoPath)
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
+  const prefixes = useSelector((state) => state.git.prefixes)
+  const selectedPrefixes = useSelector((state) => state.git.selectedPrefixes)
   // console.log('main-page-git+currentBranch:', currentBranch);
   const dispatch = useDispatch()
 
@@ -162,6 +164,9 @@ export const MainPageGit = () => {
                     onMerge={async (branchName) => {
                       await dispatch(mergeBranch(branchName))
                     }}
+                    prefixes={prefixes}
+                    selectedPrefixes={selectedPrefixes}
+                    onAddPrefix={(prefix) => dispatch(addPrefix(prefix))}
                     newBranchName={newBranchName}
                     setNewBranchName={(e) => setNewBranchName(e.target.value)}
                     createBranchByNewBranchName={async (fullName) => {

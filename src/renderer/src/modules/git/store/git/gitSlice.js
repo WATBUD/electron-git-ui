@@ -50,7 +50,9 @@ const initialState = {
   previousHistoryIndex: -1,
   repoPath: null,
   mergeStatus: { isInProgress: false, message: '' },
-  cachedDiff: null
+  cachedDiff: null,
+  prefixes: ['promote-prod/', 'promote-stg2602/'],
+  selectedPrefixes: ['promote-prod/', 'promote-stg2602/']
 }
 
 const gitSlice = createSlice({
@@ -83,6 +85,24 @@ const gitSlice = createSlice({
     },
     clearCachedDiff: (state) => {
       state.cachedDiff = null
+    },
+    addPrefix: (state, action) => {
+      const prefix = action.payload
+      if (prefix && !state.prefixes.includes(prefix)) {
+        state.prefixes.push(prefix)
+      }
+    },
+    removePrefix: (state, action) => {
+      state.prefixes = state.prefixes.filter((p) => p !== action.payload)
+      state.selectedPrefixes = state.selectedPrefixes.filter((p) => p !== action.payload)
+    },
+    toggleSelectedPrefix: (state, action) => {
+      const prefix = action.payload
+      if (state.selectedPrefixes.includes(prefix)) {
+        state.selectedPrefixes = state.selectedPrefixes.filter((p) => p !== prefix)
+      } else {
+        state.selectedPrefixes.push(prefix)
+      }
     }
   },
   extraReducers: (builder) => {
@@ -337,7 +357,10 @@ export const {
   clearError,
   setLoading,
   stopLoading,
-  clearCachedDiff
+  clearCachedDiff,
+  addPrefix,
+  removePrefix,
+  toggleSelectedPrefix
 } = gitSlice.actions
 
 export default gitSlice.reducer

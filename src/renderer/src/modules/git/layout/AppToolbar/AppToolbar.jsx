@@ -6,22 +6,37 @@ import {
   abortMerge,
   checkMergeInProgress,
   getCachedDiff,
-  clearCachedDiff
+  clearCachedDiff,
+  addPrefix,
+  removePrefix,
+  toggleSelectedPrefix
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import styles from './AppToolbar.module.css'
+import { Trash2, Plus } from 'lucide-react'
 
 export const AppToolbar = () => {
   const [activeMenu, setActiveMenu] = useState(null)
   const mergeMenuRef = useRef(null)
   const tagsMenuRef = useRef(null)
   const viewMenuRef = useRef(null)
+  const prefixMenuRef = useRef(null)
+  const [newPrefix, setNewPrefix] = useState('')
   const dispatch = useDispatch()
-  const { showFooter, isRefreshingTags, hasMergeInProgress, cachedDiff } = useSelector((state) => ({
+  const {
+    showFooter,
+    isRefreshingTags,
+    hasMergeInProgress,
+    cachedDiff,
+    prefixes,
+    selectedPrefixes
+  } = useSelector((state) => ({
     showFooter: state.git.showFooter,
     isRefreshingTags: state.git.isRefreshingTags,
     hasMergeInProgress: state.git.hasMergeInProgress,
-    cachedDiff: state.git.cachedDiff
+    cachedDiff: state.git.cachedDiff,
+    prefixes: state.git.prefixes || [],
+    selectedPrefixes: state.git.selectedPrefixes || []
   }))
   const [showDiffModal, setShowDiffModal] = useState(false)
 
@@ -34,7 +49,9 @@ export const AppToolbar = () => {
         tagsMenuRef.current &&
         !tagsMenuRef.current.contains(event.target) &&
         viewMenuRef.current &&
-        !viewMenuRef.current.contains(event.target)
+        !viewMenuRef.current.contains(event.target) &&
+        prefixMenuRef.current &&
+        !prefixMenuRef.current.contains(event.target)
       ) {
         setActiveMenu(null)
       }
@@ -46,7 +63,7 @@ export const AppToolbar = () => {
       // Unbind the event listener on clean up
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [mergeMenuRef, tagsMenuRef, viewMenuRef])
+  }, [mergeMenuRef, tagsMenuRef, viewMenuRef, prefixMenuRef])
 
   const toggleMenu = (menuName) => {
     setActiveMenu(activeMenu === menuName ? null : menuName)
@@ -72,6 +89,18 @@ export const AppToolbar = () => {
   const handleCloseDiff = () => {
     setShowDiffModal(false)
     dispatch(clearCachedDiff())
+  }
+
+  const handleAddPrefix = (e) => {
+    e.preventDefault()
+    if (newPrefix.trim()) {
+      dispatch(addPrefix(newPrefix.trim()))
+      setNewPrefix('')
+    }
+  }
+
+  const handleRemovePrefix = (prefix) => {
+    dispatch(removePrefix(prefix))
   }
 
   return (
@@ -152,6 +181,55 @@ export const AppToolbar = () => {
           >
             {isRefreshingTags ? 'Refreshing...' : 'Refresh Tags'}
           </button>
+        </div>
+      </div>
+      <div
+        className={`${styles.toolbarMenu} ${activeMenu === 'prefixes' ? styles.active : ''}`}
+        ref={prefixMenuRef}
+      >
+        <span className={styles.menuLabel} onClick={() => toggleMenu('prefixes')}>
+          Prefixes
+        </span>
+        <div className={styles.menuContent}>
+          <div className={styles.prefixInputContainer}>
+            <input
+              type="text"
+              value={newPrefix}
+              onChange={(e) => setNewPrefix(e.target.value)}
+              placeholder="Add prefix..."
+              onKeyDown={(e) => e.key === 'Enter' && handleAddPrefix(e)}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button onClick={handleAddPrefix}>
+              <Plus size={14} />
+            </button>
+          </div>
+          <div className={styles.prefixList}>
+            {prefixes.map((prefix) => (
+              <div
+                key={prefix}
+                className={styles.prefixItem}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dispatch(toggleSelectedPrefix(prefix))
+                }}
+              >
+                <div className={styles.prefixCheckRow}>
+                  <input type="checkbox" checked={selectedPrefixes.includes(prefix)} readOnly />
+                  <span className={styles.prefixText}>{prefix}</span>
+                </div>
+                <button
+                  className={styles.removeBtn}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleRemovePrefix(prefix)
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <DiffModal show={showDiffModal} diff={cachedDiff} onClose={handleCloseDiff} />
