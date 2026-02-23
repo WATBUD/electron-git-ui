@@ -284,6 +284,26 @@ export const fetchFromRemote = createAsyncThunk(
   }
 )
 
+export const pullFromRemote = createAsyncThunk(
+  'git/pullFromRemote',
+  async (_, { getState, rejectWithValue, dispatch }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized')
+    }
+
+    updateHistoryIndex(getState, dispatch)
+
+    const result = await callGit(
+      () => window.git.gitBranchPull(),
+      rejectWithValue,
+      'Failed to pull from remote',
+      'pullFromRemote'
+    )
+    await dispatch(loadBranches())
+    return result
+  }
+)
+
 export const pushToRemote = createAsyncThunk(
   'git/pushToRemote',
   async (forcePush = false, { getState, rejectWithValue, dispatch }) => {

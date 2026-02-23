@@ -248,6 +248,21 @@ export function setupGitHandlers() {
     }
   })
 
+  ipcMain.handle('git:gitBranchPull', async () => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = 'git pull'
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      console.error('Error pulling:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:push', async (event, force) => {
     if (!currentRepoPath) {
       return fail('No repository selected')

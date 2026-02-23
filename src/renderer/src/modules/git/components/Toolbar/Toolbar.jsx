@@ -1,44 +1,48 @@
-import React, { useState } from 'react';
-import { ModalPortal } from '../../../../shared/components/ModalPortal';
-import './Toolbar.css';
+import React, { useState } from 'react'
+import { ModalPortal } from '../../../../shared/components/ModalPortal'
+import './Toolbar.css'
 
-export const Toolbar = ({ 
-  onFetch, 
-  onPush, 
-  onCommit, 
-  loading 
-}) => {
-  const [showFetchDialog, setShowFetchDialog] = useState(false);
-  const [showPushDialog, setShowPushDialog] = useState(false);
-  const [showCommitDialog, setShowCommitDialog] = useState(false);
-  const [pruneBranches, setPruneBranches] = useState(false);
-  const [forcePush, setForcePush] = useState(false);
-  const [commitMessage, setCommitMessage] = useState('');
+export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
+  const [showFetchDialog, setShowFetchDialog] = useState(false)
+  const [showPushDialog, setShowPushDialog] = useState(false)
+  const [showCommitDialog, setShowCommitDialog] = useState(false)
+  const [pruneBranches, setPruneBranches] = useState(false)
+  const [forcePush, setForcePush] = useState(false)
+  const [commitMessage, setCommitMessage] = useState('')
 
   const handleFetch = () => {
-    onFetch(pruneBranches);
-    setShowFetchDialog(false);
-  };
+    onFetch(pruneBranches)
+    setShowFetchDialog(false)
+  }
 
   const handlePush = () => {
-    onPush(forcePush);
-    setShowPushDialog(false);
-  };
+    onPush(forcePush)
+    setShowPushDialog(false)
+  }
 
   const handleCommit = () => {
     if (commitMessage.trim()) {
-      onCommit(commitMessage);
-      setCommitMessage('');
-      setShowCommitDialog(false);
+      onCommit(commitMessage)
+      setCommitMessage('')
+      setShowCommitDialog(false)
     }
-  };
+  }
 
   return (
     <>
       <div className="toolbar">
         <div className="toolbar-group">
-          <button 
-            onClick={() => setShowFetchDialog(true)} 
+          <button
+            onClick={onPull}
+            className="toolbar-btn"
+            disabled={loading}
+            title="Pull from remote"
+          >
+            <span className="toolbar-icon">⚓</span>
+            <span className="toolbar-text">Pull</span>
+          </button>
+          <button
+            onClick={() => setShowFetchDialog(true)}
             className="toolbar-btn"
             disabled={loading}
             title="Fetch from remote"
@@ -46,8 +50,8 @@ export const Toolbar = ({
             <span className="toolbar-icon">⬇️</span>
             <span className="toolbar-text">Fetch</span>
           </button>
-          <button 
-            onClick={() => setShowPushDialog(true)} 
+          <button
+            onClick={() => setShowPushDialog(true)}
             className="toolbar-btn"
             disabled={loading}
             title="Push to remote"
@@ -55,8 +59,8 @@ export const Toolbar = ({
             <span className="toolbar-icon">⬆️</span>
             <span className="toolbar-text">Push</span>
           </button>
-          <button 
-            onClick={() => setShowCommitDialog(true)} 
+          <button
+            onClick={() => setShowCommitDialog(true)}
             className="toolbar-btn"
             disabled={loading}
             title="Commit changes"
@@ -146,9 +150,9 @@ export const Toolbar = ({
                 <button onClick={() => setShowCommitDialog(false)} className="cancel-btn">
                   Cancel
                 </button>
-                <button 
-                  onClick={handleCommit} 
-                  disabled={loading || !commitMessage.trim()} 
+                <button
+                  onClick={handleCommit}
+                  disabled={loading || !commitMessage.trim()}
                   className="confirm-btn"
                 >
                   Commit
@@ -159,5 +163,5 @@ export const Toolbar = ({
         </ModalPortal>
       )}
     </>
-  );
-}; 
+  )
+}

@@ -16,6 +16,7 @@ import {
   checkoutBranch,
   deleteRemoteBranch,
   fetchFromRemote,
+  pullFromRemote,
   pushToRemote,
   commitChanges,
   loadFileStatus,
@@ -117,6 +118,9 @@ export const MainPageGit = () => {
 
         {repoPath && (
           <Toolbar
+            onPull={async () => {
+              await dispatch(pullFromRemote())
+            }}
             onFetch={async (pruneBranches) => {
               await dispatch(fetchFromRemote(pruneBranches))
             }}

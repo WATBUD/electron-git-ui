@@ -12,6 +12,7 @@ import {
   checkoutBranch,
   deleteRemoteBranch,
   fetchFromRemote,
+  pullFromRemote,
   pushToRemote,
   commitChanges,
   discardFileChanges,
@@ -202,6 +203,18 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
       })
       .addCase(fetchFromRemote.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // pullFromRemote
+      .addCase(pullFromRemote.pending, (state) => {
+        state.loadingMessage = 'Pulling from remote...'
+        state.error = null
+      })
+      .addCase(pullFromRemote.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(pullFromRemote.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
       })
