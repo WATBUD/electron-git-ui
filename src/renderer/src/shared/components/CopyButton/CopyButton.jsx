@@ -1,40 +1,43 @@
-import React, { useState } from 'react';
-import { Copy } from 'lucide-react';
-import './CopyButton.css';
+import React, { useState } from 'react'
+import { Copy } from 'lucide-react'
+import styles from './CopyButton.module.css'
 
-export const CopyButton = ({ 
-  textToCopy, 
-  title = "Copy", 
+export const CopyButton = ({
+  textToCopy,
+  title = 'Copy',
   size = 14,
-  className = "",
-  showCopiedText = false 
+  className = '',
+  showCopiedText = false
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false)
 
   const handleCopy = async (e) => {
-    e.stopPropagation();
-    
+    e.stopPropagation()
+
     try {
-      await navigator.clipboard.writeText(textToCopy);
-      setCopied(true);
-      
+      await navigator.clipboard.writeText(textToCopy)
+      setCopied(true)
+
       // Reset copied state after 2 seconds
       setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+        setCopied(false)
+      }, 2000)
     } catch (err) {
-      console.error('Failed to copy text:', err);
+      console.error('Failed to copy text:', err)
     }
-  };
+  }
+
+  // Map potential legacy class names from prop to styles
+  const resolvedClassName = className === 'hash-style' ? styles.hashStyle : className
 
   return (
     <button
       onClick={handleCopy}
-      className={`copy-button ${copied ? 'copied' : ''} ${className}`}
+      className={`${styles.copyButton} ${copied ? styles.copied : ''} ${resolvedClassName}`}
       title={title}
     >
       <Copy size={size} />
-      {showCopiedText && copied && <span className="copied-text">Copied!</span>}
+      {showCopiedText && copied && <span className={styles.copiedText}>Copied!</span>}
     </button>
-  );
-};
+  )
+}

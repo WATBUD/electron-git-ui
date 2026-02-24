@@ -1,15 +1,15 @@
-import React from 'react';
-import './LoadingModal.css';
+import React from 'react'
+import styles from './LoadingModal.module.css'
 
 export const LoadingModal = ({ message }) => {
-  if (!message) return null;
+  if (!message) return null
 
   return (
-    <div className="loading-modal">
-      <div className="loading-content">
-        <div className="loading-spinner"></div>
-        <div className="loading-message">{message}</div>
+    <div className={styles.loadingModal}>
+      <div className={styles.loadingContent}>
+        <div className={styles.loadingSpinner}></div>
+        <div className={styles.loadingMessage}>{message}</div>
       </div>
     </div>
-  );
-}; 
+  )
+}

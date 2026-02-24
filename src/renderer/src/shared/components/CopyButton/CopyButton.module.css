@@ -1,4 +1,4 @@
-.copy-button {
+.copyButton {
   position: relative;
   color: var(--text-muted);
   border: 1px solid var(--border-color);
@@ -12,30 +12,30 @@
   gap: 0.25rem;
 }
 
-.copy-button:hover {
+.copyButton:hover {
   background-color: var(--button-hover-bg);
   border-color: var(--primary-color);
   color: var(--text-color);
 }
 
-.copy-button.copied {
+.copyButton.copied {
   background-color: rgba(40, 167, 69, 0.1);
   border-color: #28a745;
   color: #28a745;
 }
 
-.copy-button:active {
+.copyButton:active {
   transform: translateY(1px);
 }
 
-.copied-text {
+.copiedText {
   margin-left: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 /* Alternative style for hash-like buttons */
-.copy-button.hash-style {
+.copyButton.hashStyle {
   background: none;
   border: none;
   color: var(--text-secondary);
@@ -47,18 +47,18 @@
   justify-content: center;
 }
 
-.copy-button.hash-style:hover {
+.copyButton.hashStyle:hover {
   background-color: var(--surface-color);
   color: var(--primary-color);
 }
 
-.copy-button.hash-style.copied {
+.copyButton.hashStyle.copied {
   background: none;
   border: none;
   color: #28a745;
 }
 
-.copy-button.hash-style .copied-text {
+.copyButton.hashStyle .copiedText {
   position: absolute;
   left: 100%;
   margin-left: 0.5rem;

@@ -1,4 +1,4 @@
-.diff-modal-overlay {
+.diffModalOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -12,7 +12,7 @@
   backdrop-filter: blur(4px);
 }
 
-.diff-modal-content {
+.diffModalContent {
   background-color: var(--bg-color);
   width: 90%;
   max-width: 1000px;
@@ -25,7 +25,7 @@
   overflow: hidden;
 }
 
-.diff-modal-header {
+.diffModalHeader {
   padding: 16px 20px;
   background-color: var(--surface-color);
   border-bottom: 1px solid var(--border-color);
@@ -34,20 +34,20 @@
   align-items: center;
 }
 
-.diff-modal-header h3 {
+.diffModalHeader h3 {
   margin: 0;
   font-size: 1.1rem;
   color: var(--text-color);
   font-weight: 600;
 }
 
-.header-actions {
+.headerActions {
   display: flex;
   gap: 12px;
   align-items: center;
 }
 
-.copy-btn {
+.copyBtn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -62,16 +62,16 @@
   transition: all 0.2s;
 }
 
-.copy-btn:hover {
+.copyBtn:hover {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
 }
 
-.copy-btn.copied {
+.copyBtn.copied {
   background-color: var(--success-color);
 }
 
-.close-btn {
+.closeBtn {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -83,19 +83,19 @@
   transition: all 0.2s;
 }
 
-.close-btn:hover {
+.closeBtn:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: var(--text-color);
 }
 
-.diff-modal-body {
+.diffModalBody {
   padding: 0;
   overflow-y: auto;
   background-color: #0d1117; /* Dark background for code */
   flex: 1;
 }
 
-.diff-text {
+.diffText {
   margin: 0;
   padding: 20px;
   font-family: 'Fira Code', 'Roboto Mono', monospace;
@@ -107,19 +107,20 @@
 }
 
 /* Optional: Scrollbar styling */
-.diff-modal-body::-webkit-scrollbar {
+.diffModalBody::-webkit-scrollbar {
   width: 10px;
 }
 
-.diff-modal-body::-webkit-scrollbar-track {
+.diffModalBody::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.diff-modal-body::-webkit-scrollbar-thumb {
+.diffModalBody::-webkit-scrollbar-thumb {
   background: #30363d;
   border-radius: 5px;
 }
 
-.diff-modal-body::-webkit-scrollbar-thumb:hover {
+.diffModalBody::-webkit-scrollbar-thumb:hover {
   background: #484f58;
 }
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
-import './GitGraph.css'
+import styles from './GitGraph.module.css'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 
@@ -74,17 +74,17 @@ export const GitGraph = ({
   }, [commits, searchTerm])
 
   return (
-    <div className="git-graph">
-      <div className="graph-header">
-        <div className="graph-header-left">
+    <div className={styles.gitGraph}>
+      <div className={styles.graphHeader}>
+        <div className={styles.graphHeaderLeft}>
           <h3>
             {unpushedCount > 0 && (
-              <span className="unpushed-badge" title={`${unpushedCount} commits not pushed`}>
+              <span className={styles.unpushedBadge} title={`${unpushedCount} commits not pushed`}>
                 {unpushedCount}
               </span>
             )}
           </h3>
-          {currentBranch && <span className="current-branch">{currentBranch}</span>}
+          {currentBranch && <span className={styles.currentBranch}>{currentBranch}</span>}
         </div>
         <RefreshButton
           onClick={onRefresh}
@@ -99,23 +99,26 @@ export const GitGraph = ({
         placeholder="Search commits by hash, message, or author..."
       />
 
-      <div className="commit-list">
+      <div className={styles.commitList}>
         {sortedCommits.map((commit, index) => (
           <div
             key={commit.hash + index}
-            className={`commit-item ${commit.isCurrent ? 'current-commit' : ''}`}
+            className={`${styles.commitItem} ${commit.isCurrent ? styles.currentCommit : ''}`}
             onContextMenu={(e) => handleContextMenu(e, commit)}
           >
-            <div className="commit-graph">
+            <div className={styles.commitGraph}>
               {commit.branches.map((branch, i) => (
-                <div key={i} className={`branch-line ${branch === 'current' ? 'current' : ''}`} />
+                <div
+                  key={i}
+                  className={`${styles.branchLine} ${branch === 'current' ? styles.current : ''}`}
+                />
               ))}
-              <div className={`commit-node ${commit.isCurrent ? 'current' : ''}`} />
+              <div className={`${styles.commitNode} ${commit.isCurrent ? styles.current : ''}`} />
             </div>
-            <div className="commit-info">
-              <div className="commit-header">
-                <div className="commit-hash-container">
-                  <span className="commit-hash">{commit.hash}</span>
+            <div className={styles.commitInfo}>
+              <div className={styles.commitHeader}>
+                <div className={styles.commitHashContainer}>
+                  <span className={styles.commitHash}>{commit.hash}</span>
                   <CopyButton
                     textToCopy={commit.hash}
                     title="Copy commit hash"
@@ -123,11 +126,11 @@ export const GitGraph = ({
                   />
                   {/* HEAD 標籤放前面 */}
                   {commit.branches.some((b) => b.includes('HEAD')) && (
-                    <div className="branch-tags head-tags">
+                    <div className={`${styles.branchTags} ${styles.headTags}`}>
                       {commit.branches
                         .filter((b) => b.includes('HEAD'))
                         .map((branch, i) => (
-                          <span key={i} className="branch-tag head">
+                          <span key={i} className={`${styles.branchTag} ${styles.head}`}>
                             {branch}
                           </span>
                         ))}
@@ -136,13 +139,13 @@ export const GitGraph = ({
 
                   {/* 其他 branch tags */}
                   {commit.branches.filter((b) => !b.includes('HEAD')).length > 0 && (
-                    <div className="branch-tags">
+                    <div className={styles.branchTags}>
                       {commit.branches
                         .filter((b) => !b.includes('HEAD'))
                         .map((branch, i) => (
                           <span
                             key={i}
-                            className={`branch-tag ${branch.startsWith('origin/') ? 'remote' : ''}`}
+                            className={`${styles.branchTag} ${branch.startsWith('origin/') ? styles.remote : ''}`}
                           >
                             {branch}
                           </span>
@@ -151,17 +154,17 @@ export const GitGraph = ({
                   )}
                 </div>
 
-                {commit.isCurrent && <span className="current-tag">Current</span>}
-                {commit.isUnpushed && <span className="unpushed-tag">Unpushed</span>}
+                {commit.isCurrent && <span className={styles.currentTag}>Current</span>}
+                {commit.isUnpushed && <span className={styles.unpushedTag}>Unpushed</span>}
               </div>
 
-              <div className="commit-message">{commit.message}</div>
-              <div className="commit-meta">
-                <span className="commit-author">{commit.author}</span>
-                <span className="commit-date">{formatDate(commit.date)}</span>
+              <div className={styles.commitMessage}>{commit.message}</div>
+              <div className={styles.commitMeta}>
+                <span className={styles.commitAuthor}>{commit.author}</span>
+                <span className={styles.commitDate}>{formatDate(commit.date)}</span>
                 <button
                   onClick={() => onCheckout(commit.hash)}
-                  className="checkout-btn"
+                  className={styles.checkoutBtn}
                   disabled={commit.isCurrent}
                 >
                   Checkout
@@ -175,17 +178,17 @@ export const GitGraph = ({
       {contextMenu.show && (
         <div
           ref={contextMenuRef}
-          className="context-menu"
+          className={styles.contextMenu}
           style={{
             position: 'fixed',
             top: contextMenu.y,
             left: contextMenu.x
           }}
         >
-          <div className="context-menu-header">
+          <div className={styles.contextMenuHeader}>
             Merge {contextMenu.targetCommit?.branches[0] || 'branch'} into {currentBranch}
           </div>
-          <div className="context-menu-content">
+          <div className={styles.contextMenuContent}>
             <button
               onClick={() => {
                 onMerge(contextMenu.targetCommit?.branches[0])

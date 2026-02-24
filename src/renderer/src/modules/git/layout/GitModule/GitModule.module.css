@@ -1,17 +1,17 @@
-.git-module {
+.gitModule {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
 }
 
-.main-layout {
+.mainLayout {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-.content-area {
+.contentArea {
   flex: 1;
   display: flex;
   flex-direction: column;

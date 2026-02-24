@@ -3,15 +3,15 @@ import { Outlet } from 'react-router-dom'
 import { AppToolbar } from '../AppToolbar'
 import { LeftSideBar } from '../LeftSideBar'
 import { FooterArea } from '../FooterArea'
-import './GitModule.css'
+import styles from './GitModule.module.css'
 
 export const GitModule = () => {
   return (
-    <div className="git-module">
+    <div className={styles.gitModule}>
       <AppToolbar />
-      <div className="main-layout">
+      <div className={styles.mainLayout}>
         <LeftSideBar />
-        <main className="content-area">
+        <main className={styles.contentArea}>
           <Outlet />
         </main>
       </div>

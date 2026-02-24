@@ -1,4 +1,4 @@
-.refresh-button {
+.refreshButton {
   --bg-color: #1e1e2d;
   --text-color: #e2e8f0;
   --text-hover: #ffffff;
@@ -20,13 +20,13 @@
   transition: all 0.2s;
 }
 
-.refresh-button:hover:not(:disabled) {
+.refreshButton:hover:not(:disabled) {
   background-color: var(--active-bg);
   border-color: var(--primary-color);
   color: var(--text-hover);
 }
 
-.refresh-button:disabled {
+.refreshButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background-color: var(--bg-color);
@@ -34,10 +34,10 @@
   color: var(--text-color);
 }
 
-.refresh-icon {
+.refreshIcon {
   font-size: 1.1em;
 }
 
-.refresh-text {
+.refreshText {
   white-space: nowrap;
 }

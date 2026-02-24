@@ -1,4 +1,4 @@
-.error-modal-overlay {
+.errorModalOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -21,7 +21,7 @@
   }
 }
 
-.error-modal-content {
+.errorModalContent {
   background: var(--bg-color);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -45,7 +45,7 @@
   }
 }
 
-.error-modal-header {
+.errorModalHeader {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
   background: linear-gradient(to bottom, var(--bg-color), var(--bg-secondary));
@@ -54,7 +54,7 @@
   align-items: center;
 }
 
-.error-modal-header h3 {
+.errorModalHeader h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
@@ -64,7 +64,7 @@
   gap: 8px;
 }
 
-.copy-error-btn {
+.copyErrorBtn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -79,28 +79,28 @@
   transition: all 0.2s ease;
 }
 
-.copy-error-btn:hover {
+.copyErrorBtn:hover {
   background: var(--primary-color);
   border-color: var(--primary-color);
 }
 
-.copy-error-btn.copied {
+.copyErrorBtn.copied {
   background: var(--success-color);
   color: white;
   border-color: var(--success-color);
 }
 
-.copy-error-btn:active {
+.copyErrorBtn:active {
   transform: scale(0.98);
 }
 
-.error-modal-body {
+.errorModalBody {
   padding: 24px;
   overflow-y: auto;
   flex: 1;
 }
 
-.error-message {
+.errorMessage {
   margin: 0;
   padding: 16px;
   background: var(--error-bg);
@@ -116,7 +116,7 @@
   overflow-y: auto;
 }
 
-.error-modal-footer {
+.errorModalFooter {
   padding: 16px 24px;
   border-top: 1px solid var(--border-color);
   display: flex;
@@ -125,7 +125,7 @@
   border-radius: 0 0 12px 12px;
 }
 
-.error-modal-ok-btn {
+.errorModalOkBtn {
   padding: 10px 24px;
   background: var(--primary-color);
   color: white;
@@ -138,13 +138,14 @@
   box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
 }
 
-.error-modal-ok-btn:hover {
+.errorModalOkBtn:hover {
   background: var(--primary-hover);
   box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
   transform: translateY(-1px);
 }
 
-.error-modal-ok-btn:active {
+.errorModalOkBtn:active {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
 }
+
