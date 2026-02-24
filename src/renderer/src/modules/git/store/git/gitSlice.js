@@ -25,6 +25,29 @@ import {
   getCachedDiff
 } from './gitThunks'
 
+const STORAGE_KEYS = {
+  PREFIXES: 'git_prefixes',
+  SELECTED_PREFIXES: 'git_selected_prefixes'
+}
+
+const loadFromStorage = (key, defaultValue) => {
+  try {
+    const saved = localStorage.getItem(key)
+    return saved ? JSON.parse(saved) : defaultValue
+  } catch (e) {
+    console.error(`Failed to load ${key} from storage:`, e)
+    return defaultValue
+  }
+}
+
+const saveToStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch (e) {
+    console.error(`Failed to save ${key} to storage:`, e)
+  }
+}
+
 // Initial state for git graph
 const initialGraphState = {
   commits: [],
@@ -51,8 +74,11 @@ const initialState = {
   repoPath: null,
   mergeStatus: { isInProgress: false, message: '' },
   cachedDiff: null,
-  prefixes: ['promote-prod/', 'promote-stg2602/'],
-  selectedPrefixes: ['promote-prod/', 'promote-stg2602/']
+  prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, ['promote-prod/', 'promote-stg2602/']),
+  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, [
+    'promote-prod/',
+    'promote-stg2602/'
+  ])
 }
 
 const gitSlice = createSlice({
@@ -90,11 +116,14 @@ const gitSlice = createSlice({
       const prefix = action.payload
       if (prefix && !state.prefixes.includes(prefix)) {
         state.prefixes.push(prefix)
+        saveToStorage(STORAGE_KEYS.PREFIXES, state.prefixes)
       }
     },
     removePrefix: (state, action) => {
       state.prefixes = state.prefixes.filter((p) => p !== action.payload)
       state.selectedPrefixes = state.selectedPrefixes.filter((p) => p !== action.payload)
+      saveToStorage(STORAGE_KEYS.PREFIXES, state.prefixes)
+      saveToStorage(STORAGE_KEYS.SELECTED_PREFIXES, state.selectedPrefixes)
     },
     toggleSelectedPrefix: (state, action) => {
       const prefix = action.payload
@@ -103,6 +132,7 @@ const gitSlice = createSlice({
       } else {
         state.selectedPrefixes.push(prefix)
       }
+      saveToStorage(STORAGE_KEYS.SELECTED_PREFIXES, state.selectedPrefixes)
     }
   },
   extraReducers: (builder) => {
