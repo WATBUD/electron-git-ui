@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import styles from './FileStatus.module.css'
+import { message } from 'antd'
 
 export const FileStatus = ({
   fileStatus,
@@ -14,6 +15,46 @@ export const FileStatus = ({
   loading
 }) => {
   const [selectedFiles, setSelectedFiles] = useState(new Set())
+  const [contextMenu, setContextMenu] = useState({
+    show: false,
+    x: 0,
+    y: 0,
+    fileName: null
+  })
+  const contextMenuRef = React.useRef(null)
+
+  const handleContextMenu = (e, fileName) => {
+    e.preventDefault()
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      fileName: fileName
+    })
+  }
+
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
+        setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleCopyFileName = (path) => {
+    const fileName = path.split('/').pop()
+    navigator.clipboard.writeText(fileName)
+    message.success('File name copied to clipboard')
+    setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
+
+  const handleCopyPath = (path) => {
+    navigator.clipboard.writeText(path)
+    message.success('Full path copied to clipboard')
+    setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
 
   const toggleFileSelection = (filePath) => {
     const newSelection = new Set(selectedFiles)
@@ -104,6 +145,7 @@ export const FileStatus = ({
                       toggleFileSelection(file.file)
                     }
                   }}
+                  onContextMenu={(e) => handleContextMenu(e, file.file)}
                 >
                   <input
                     type="checkbox"
@@ -171,6 +213,7 @@ export const FileStatus = ({
                       toggleFileSelection(fileList.file)
                     }
                   }}
+                  onContextMenu={(e) => handleContextMenu(e, fileList.file)}
                 >
                   <input
                     type="checkbox"
@@ -213,6 +256,32 @@ export const FileStatus = ({
           </div>
         </div>
       </div>
+      {contextMenu.show && (
+        <div
+          ref={contextMenuRef}
+          className={styles.contextMenu}
+          style={{
+            top: contextMenu.y,
+            left: contextMenu.x
+          }}
+        >
+          <div className={styles.contextMenuHeader}>File: {contextMenu.fileName}</div>
+          <div className={styles.contextMenuContent}>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => handleCopyFileName(contextMenu.fileName)}
+            >
+              Copy file name
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => handleCopyPath(contextMenu.fileName)}
+            >
+              Copy full path
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
