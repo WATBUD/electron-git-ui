@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
-import './Toolbar.css'
+import styles from './Toolbar.module.css'
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
@@ -30,54 +30,54 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
   return (
     <>
-      <div className="toolbar">
-        <div className="toolbar-group">
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarGroup}>
           <button
             onClick={onPull}
-            className="toolbar-btn"
+            className={styles.toolbarBtn}
             disabled={loading}
             title="Pull from remote"
           >
-            <span className="toolbar-icon">⚓</span>
-            <span className="toolbar-text">Pull</span>
+            <span className={styles.toolbarIcon}>⚓</span>
+            <span className={styles.toolbarText}>Pull</span>
           </button>
           <button
             onClick={() => setShowFetchDialog(true)}
-            className="toolbar-btn"
+            className={styles.toolbarBtn}
             disabled={loading}
             title="Fetch from remote"
           >
-            <span className="toolbar-icon">⬇️</span>
-            <span className="toolbar-text">Fetch</span>
+            <span className={styles.toolbarIcon}>⬇️</span>
+            <span className={styles.toolbarText}>Fetch</span>
           </button>
           <button
             onClick={() => setShowPushDialog(true)}
-            className="toolbar-btn"
+            className={styles.toolbarBtn}
             disabled={loading}
             title="Push to remote"
           >
-            <span className="toolbar-icon">⬆️</span>
-            <span className="toolbar-text">Push</span>
+            <span className={styles.toolbarIcon}>⬆️</span>
+            <span className={styles.toolbarText}>Push</span>
           </button>
           <button
             onClick={() => setShowCommitDialog(true)}
-            className="toolbar-btn"
+            className={styles.toolbarBtn}
             disabled={loading}
             title="Commit changes"
           >
-            <span className="toolbar-icon">💾</span>
-            <span className="toolbar-text">Commit</span>
+            <span className={styles.toolbarIcon}>💾</span>
+            <span className={styles.toolbarText}>Commit</span>
           </button>
         </div>
       </div>
 
       {showFetchDialog && (
         <ModalPortal>
-          <div className="dialog-overlay">
-            <div className="dialog">
+          <div className={styles.dialogOverlay}>
+            <div className={styles.dialog}>
               <h3>Fetch Options</h3>
-              <div className="dialog-content">
-                <label className="checkbox-label">
+              <div className={styles.dialogContent}>
+                <label className={styles.checkboxLabel}>
                   <input
                     type="checkbox"
                     checked={pruneBranches}
@@ -86,11 +86,11 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
                   Prune tracking branches no longer present on remote(s)
                 </label>
               </div>
-              <div className="dialog-buttons">
-                <button onClick={() => setShowFetchDialog(false)} className="cancel-btn">
+              <div className={styles.dialogButtons}>
+                <button onClick={() => setShowFetchDialog(false)} className={styles.cancelBtn}>
                   Cancel
                 </button>
-                <button onClick={handleFetch} disabled={loading} className="confirm-btn">
+                <button onClick={handleFetch} disabled={loading} className={styles.confirmBtn}>
                   Fetch
                 </button>
               </div>
@@ -101,11 +101,11 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
       {showPushDialog && (
         <ModalPortal>
-          <div className="dialog-overlay">
-            <div className="dialog">
+          <div className={styles.dialogOverlay}>
+            <div className={styles.dialog}>
               <h3>Push Options</h3>
-              <div className="dialog-content">
-                <label className="checkbox-label">
+              <div className={styles.dialogContent}>
+                <label className={styles.checkboxLabel}>
                   <input
                     type="checkbox"
                     checked={forcePush}
@@ -114,16 +114,16 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
                   Force Push
                 </label>
                 {forcePush && (
-                  <div className="warning-message">
+                  <div className={styles.warningMessage}>
                     ⚠️ Warning: Force push will overwrite remote changes. Use with caution!
                   </div>
                 )}
               </div>
-              <div className="dialog-buttons">
-                <button onClick={() => setShowPushDialog(false)} className="cancel-btn">
+              <div className={styles.dialogButtons}>
+                <button onClick={() => setShowPushDialog(false)} className={styles.cancelBtn}>
                   Cancel
                 </button>
-                <button onClick={handlePush} disabled={loading} className="confirm-btn">
+                <button onClick={handlePush} disabled={loading} className={styles.confirmBtn}>
                   Push
                 </button>
               </div>
@@ -134,26 +134,26 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
       {showCommitDialog && (
         <ModalPortal>
-          <div className="dialog-overlay">
-            <div className="dialog">
+          <div className={styles.dialogOverlay}>
+            <div className={styles.dialog}>
               <h3>Commit Changes</h3>
-              <div className="dialog-content">
+              <div className={styles.dialogContent}>
                 <textarea
                   value={commitMessage}
                   onChange={(e) => setCommitMessage(e.target.value)}
                   placeholder="Enter commit message..."
-                  className="commit-message-input"
+                  className={styles.commitMessageInput}
                   rows={4}
                 />
               </div>
-              <div className="dialog-buttons">
-                <button onClick={() => setShowCommitDialog(false)} className="cancel-btn">
+              <div className={styles.dialogButtons}>
+                <button onClick={() => setShowCommitDialog(false)} className={styles.cancelBtn}>
                   Cancel
                 </button>
                 <button
                   onClick={handleCommit}
                   disabled={loading || !commitMessage.trim()}
-                  className="confirm-btn"
+                  className={styles.confirmBtn}
                 >
                   Commit
                 </button>

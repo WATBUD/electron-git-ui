@@ -27,7 +27,7 @@ import {
   clearError,
   loadCommitHistory
 } from '../../store/git'
-import './main-page-git.css'
+import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
 
 export const MainPageGit = () => {
@@ -99,18 +99,18 @@ export const MainPageGit = () => {
   }
 
   return (
-    <div className="git-ui">
-      <div className="toolbar-container">
+    <div className={styles.gitUi}>
+      <div className={styles.toolbarContainer}>
         <AppToolbar />
-        <div className="repository-selector">
-          <button onClick={handleSelectRepository} disabled={loading} className="repo-btn">
+        <div className={styles.repositorySelector}>
+          <button onClick={handleSelectRepository} disabled={loading} className={styles.repoBtn}>
             {repoPath ? 'Change Repository' : 'Select Repository'}
           </button>
           {repoPath && (
-            <div className="repo-info">
-              <span className="repo-path">{repoPath}</span>
+            <div className={styles.repoInfo}>
+              <span className={styles.repoPath}>{repoPath}</span>
               {hasMergeInProgress && mergeStatus?.message && (
-                <span className="merge-warning" title={mergeStatus.message}>
+                <span className={styles.mergeWarning} title={mergeStatus.message}>
                   ⚠️ {mergeStatus.message}
                 </span>
               )}
@@ -137,10 +137,10 @@ export const MainPageGit = () => {
         )}
       </div>
 
-      <div className="main-layout">
-        <div className="content-area">
+      <div className={styles.mainLayout}>
+        <div className={styles.contentArea}>
           <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
-          <div className="main-content">
+          <div className={styles.mainContent}>
             {repoPath && (
               <>
                 {activeTab === 'main' && (

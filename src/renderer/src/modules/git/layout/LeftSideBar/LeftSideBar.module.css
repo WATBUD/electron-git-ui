@@ -22,12 +22,10 @@
   transition: all 0.3s ease;
 }
 
-.sidebar-scroll {
+.sidebarScroll {
   padding-top: 1rem;
   height: 100%;
   display: flex;
-  /* background-color: var(--bg-color); */  
-  /* background-color: rgb(178, 57, 57); */
   flex-direction: column;
 }
 
@@ -40,7 +38,7 @@
   width: 100%;
 }
 
-.menu-item {
+.menuItem {
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem 0.75rem 0rem;
@@ -57,14 +55,15 @@
   box-sizing: border-box;
 }
 
-.menu-item:hover {
+.menuItem:hover {
   background-color: rgba(255, 255, 255, 0.05);
   color: var(--text-hover);
 }
 
-.menu-item.active {
+.menuItem.active {
   background-color: var(--active-bg);
   color: var(--primary-color);
   font-weight: 600;
 }
+
 

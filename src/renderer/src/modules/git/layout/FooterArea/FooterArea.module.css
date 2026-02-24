@@ -1,4 +1,4 @@
-.footer-area {
+.footerArea {
   width: 100%;
   /* background-color: #1a1ab3; */
   border-top: 1px solid #2d3748;
@@ -10,7 +10,7 @@
   flex-shrink: 0;
 }
 
-.resize-handle {
+.resizeHandle {
   width: 100%;
   height: 4px;
   cursor: ns-resize;
@@ -19,11 +19,11 @@
   flex-shrink: 0;
 }
 
-.resize-handle:hover {
+.resizeHandle:hover {
   background-color: #4f46e5;
 }
 
-.command-tabs {
+.commandTabs {
   display: flex;
   background-color: #16162a;
   border-bottom: 1px solid #2d3748;
@@ -31,7 +31,7 @@
   flex-shrink: 0;
 }
 
-.command-tab {
+.commandTab {
   padding: 8px 16px;
   background: none;
   border: none;
@@ -42,17 +42,17 @@
   transition: all 0.2s;
 }
 
-.command-tab:hover {
+.commandTab:hover {
   background-color: rgba(79, 70, 229, 0.1);
   color: #e2e8f0;
 }
 
-.command-tab.active {
+.commandTab.active {
   color: #ffffff;
   background-color: #1e1e2d;
 }
 
-.command-tab.active::after {
+.commandTab.active::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -62,7 +62,7 @@
   background-color: #4f46e5;
 }
 
-.command-history-header {
+.commandHistoryHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -70,12 +70,12 @@
   flex-shrink: 0;
 }
 
-.command-history-header h3 {
+.commandHistoryHeader h3 {
   margin: 0;
   color: var(--text-color);
 }
 
-.clear-history-btn {
+.clearHistoryBtn {
   margin: 0.5rem;
   padding: 4px 8px;
   font-size: 0.9em;
@@ -87,11 +87,11 @@
   transition: all 0.2s;
 }
 
-.clear-history-btn:hover {
+.clearHistoryBtn:hover {
   background-color: var(--bg-secondary);
 }
 
-.command-list {
+.commandList {
   flex: 1;
   overflow-y: auto;
   background-color: #1e1e2d;
@@ -99,7 +99,7 @@
   padding: 8px 12px;
 }
 
-.command-item {
+.commandItem {
   display: flex;
   align-items: center;
   padding: 6px 8px 6px 12px;
@@ -113,17 +113,17 @@
   overflow: hidden;
 }
 
-.command-item:hover {
+.commandItem:hover {
   background-color: rgba(79, 70, 229, 0.05);
 }
 
-.command-item.previous-command {
+.commandItem.previousCommand {
   background-color: rgba(79, 70, 229, 0.08);
   border-left: 4px solid #4f46e5;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.command-item.previous-command::before {
+.commandItem.previousCommand::before {
   content: '';
   position: absolute;
   left: 0;
@@ -140,18 +140,18 @@
   100% { opacity: 0.5; }
 }
 
-.command-item .command-number {
+.commandItem .commandNumber {
   color: #9ca3af;
   min-width: 30px;
   font-feature-settings: 'tnum';
 }
 
-.command-item.previous-command .command-number {
+.commandItem.previousCommand .commandNumber {
   color: #4f46e5;
   font-weight: 500;
 }
 
-.command-item .command-text {
+.commandItem .commandText {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -159,30 +159,30 @@
   margin-right: 8px;
 }
 
-.command-item.previous-command .command-text {
+.commandItem.previousCommand .commandText {
   color: #e5e7eb;
   font-weight: 450;
 }
 
-.command-item:last-child {
+.commandItem:last-child {
   border-bottom: none;
 }
 
-.command-number {
+.commandNumber {
   color: #718096;
   margin-right: 12px;
   min-width: 30px;
   font-size: 0.85em;
 }
 
-.command-text {
+.commandText {
   color: #e2e8f0;
   flex: 1;
   margin-right: 10px;
   word-break: break-all;
 }
 
-.copy-button {
+.copyButton {
   background: none;
   border: 1px solid #4a5568;
   border-radius: 4px;
@@ -197,29 +197,29 @@
   flex-shrink: 0;
 }
 
-.copy-button:hover {
+.copyButton:hover {
   background-color: rgba(79, 70, 229, 0.1);
   border-color: #4f46e5;
   color: #ffffff;
 }
 
-.copy-button:active {
+.copyButton:active {
   transform: scale(0.95);
 }
 
-.copy-button.copied {
+.copyButton.copied {
   background-color: #4f46e5;
   border-color: #4f46e5;
   color: #ffffff;
 }
 
-.copied-text {
+.copiedText {
   margin-left: 4px;
   font-size: 0.8em;
   white-space: nowrap;
 }
 
-.terminal-container {
+.terminalContainer {
   flex: 1;
   background-color: #1e1e2d;
   color: #e2e8f0;
@@ -227,8 +227,9 @@
   overflow: hidden;
 }
 
-.terminal-content {
+.terminalContent {
   padding: 10px;
   white-space: pre-wrap;
   word-break: break-all;
-} 
+}
+ 

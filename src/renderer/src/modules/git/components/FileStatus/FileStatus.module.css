@@ -1,4 +1,4 @@
-.file-status-panel {
+.fileStatusPanel {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -7,20 +7,20 @@
   overflow: hidden;
 }
 
-.file-status-header {
+.fileStatusHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
 }
 
-.file-status-header h3 {
+.fileStatusHeader h3 {
   margin: 0;
   color: var(--text-color);
   font-size: 1.2rem;
 }
 
-.file-status-content {
+.fileStatusContent {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -30,14 +30,14 @@
   overflow-y: auto;
 }
 
-.file-status-section {
+.fileStatusSection {
   background-color: var(--bg-secondary);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.section-header {
+.sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -46,20 +46,20 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.section-header h3 {
+.sectionHeader h3 {
   margin: 0;
   color: var(--text-color);
   font-size: 1.1rem;
 }
 
-.selection-actions {
+.selectionActions {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.select-all-btn,
-.delete-selected-btn {
+.selectAllBtn,
+.deleteSelectedBtn {
   padding: 4px 12px;
   font-size: 0.85rem;
   border-radius: 4px;
@@ -68,40 +68,40 @@
   white-space: nowrap;
 }
 
-.select-all-btn {
+.selectAllBtn {
   background-color: transparent;
   border: 1px solid var(--border-color);
   color: var(--text-color);
 }
 
-.select-all-btn:hover:not(:disabled) {
+.selectAllBtn:hover:not(:disabled) {
   background-color: var(--surface-color);
   border-color: var(--primary-color);
 }
 
-.delete-selected-btn {
+.deleteSelectedBtn {
   background-color: var(--danger-color);
   border: 1px solid var(--danger-color);
   color: white;
 }
 
-.delete-selected-btn:hover:not(:disabled) {
+.deleteSelectedBtn:hover:not(:disabled) {
   background-color: #dc3546;
   border-color: #dc3546;
 }
 
-.delete-selected-btn:disabled {
+.deleteSelectedBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.file-list {
+.fileList {
   max-height: none;
   overflow-y: visible;
   padding: 4px;
 }
 
-.file-item {
+.fileItem {
   display: flex;
   align-items: center;
   padding: 8px 12px;
@@ -114,16 +114,16 @@
   cursor: pointer;
 }
 
-.file-item:hover {
+.fileItem:hover {
   background-color: var(--surface-color);
 }
 
-.file-item.selected {
+.fileItem.selected {
   background-color: var(--active-bg);
   border-color: var(--primary-color);
 }
 
-.file-checkbox {
+.fileCheckbox {
   width: 16px;
   height: 16px;
   cursor: pointer;
@@ -131,43 +131,43 @@
   margin-right: 4px;
 }
 
-.file-item:last-child {
+.fileItem:last-child {
   border-bottom: none;
 }
 
-.file-icon {
+.fileIcon {
   font-size: 1.2em;
   min-width: 24px;
   text-align: center;
 }
 
-.file-info {
+.fileInfo {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.file-name {
+.fileName {
   font-family: monospace;
   font-size: 0.9em;
   color: var(--text-color);
   word-break: break-all;
 }
 
-.file-status {
+.fileStatusText {
   font-size: 0.8em;
   color: var(--text-secondary);
 }
 
-.file-actions {
+.fileActions {
   display: flex;
   gap: 8px;
 }
 
-.stage-btn,
-.unstage-btn,
-.discard-btn {
+.stageBtn,
+.unstageBtn,
+.discardBtn {
   padding: 6px 10px;
   font-size: 1.2em;
   background: none;
@@ -179,15 +179,15 @@
   text-align: center;
 }
 
-.stage-btn:hover {
+.stageBtn:hover {
   color: var(--success-color);
 }
 
-.unstage-btn:hover {
+.unstageBtn:hover {
   color: var(--danger-color);
 }
 
-.file-status-refresh {
+.fileStatusRefresh {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -199,18 +199,18 @@
   cursor: pointer;
 }
 
-.file-status-refresh:hover:not(:disabled) {
+.fileStatusRefresh:hover:not(:disabled) {
   background-color: var(--surface-color);
   border-color: var(--primary-color);
 }
 
-.file-status-refresh:disabled {
+.fileStatusRefresh:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   background-color: var(--bg-secondary);
 }
 
-.refresh-icon {
+.refreshIcon {
   font-size: 1.1em;
   transition: transform 0.2s;
 }
@@ -229,4 +229,5 @@
   padding: 20px;
   color: var(--text-secondary);
   font-size: 0.9em;
-} 
+}
+ 

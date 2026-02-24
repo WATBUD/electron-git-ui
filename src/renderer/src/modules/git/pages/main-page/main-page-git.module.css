@@ -1,25 +1,22 @@
-.git-ui {
+.gitUi {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background-color: #1e1e2d;
   color: #e2e8f0;
-  /* margin: 0 1.2rem 0 1.2rem; */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-.toolbar-container {
+.toolbarContainer {
   display: flex;
   flex-direction: column;
-  /* background-color: #1a1a2e; */
-  /* padding: 8px 20px; */
   margin-bottom: 0.8rem;
   gap: 8px;
 }
 
 /* 主佈局容器 - 包含內容區和底部面板 */
-.main-layout {
+.mainLayout {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -28,7 +25,7 @@
 }
 
 /* 內容區域 - 包含側邊欄和主內容 */
-.content-area {
+.contentArea {
   display: flex;
   flex: 1;
   overflow: hidden;
@@ -36,7 +33,7 @@
 }
 
 /* 主內容區 */
-.main-content {
+.mainContent {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -48,18 +45,18 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .view-toggle-vertical {
+  .viewToggleVertical {
     width: 80px;
     padding: 10px 0;
   }
   
-  .main-content {
+  .mainContent {
     margin-left: 80px;
     padding: 15px;
   }
 }
 
-.repository-selector {
+.repositorySelector {
   display: flex;
   align-items: center;
   background-color: #1a1a2e;
@@ -67,19 +64,16 @@
   top: 0;
   z-index: 10;
   margin-left: 0.5rem;
-  display: flex;
-  align-items: center;
   gap: 1rem;
-  /* border-bottom: 1px solid #2d3748; */
 }
 
-.repo-info {
+.repoInfo {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.repo-path {
+.repoPath {
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
   font-size: 0.9em;
   color: #e2e8f0;
@@ -89,7 +83,7 @@
   border: 1px solid #4a5568;
 }
 
-.merge-warning {
+.mergeWarning {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -109,7 +103,7 @@
 }
 
 /* Vertical view toggle styles */
-.view-toggle-vertical {
+.viewToggleVertical {
   position: fixed;
   left: 0;
   top: 0;
@@ -123,7 +117,7 @@
   box-sizing: border-box;
 }
 
-.view-toggle-scroll {
+.viewToggleScroll {
   display: flex;
   flex-direction: column;
   max-height: 100%;
@@ -133,14 +127,14 @@
   box-sizing: border-box;
 }
 
-.command-tabs {
+.commandTabs {
   display: flex;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: 0 10px;
 }
 
-.command-tab {
+.commandTab {
   padding: 8px 16px;
   background: none;
   border: none;
@@ -151,16 +145,16 @@
   transition: all 0.2s;
 }
 
-.command-tab:hover {
+.commandTab:hover {
   background-color: var(--surface-color);
   color: var(--text-color);
 }
 
-.command-tab.active {
+.commandTab.active {
   color: var(--primary-color);
 }
 
-.command-tab.active::after {
+.commandTab.active::after {
   content: '';
   position: absolute;
   bottom: -1px;
@@ -170,7 +164,7 @@
   background-color: var(--primary-color);
 }
 
-.command-list {
+.commandList {
   flex: 1;
   overflow-y: auto;
   background-color: var(--bg-color);
@@ -179,7 +173,7 @@
   padding: 10px;
 }
 
-.command-item {
+.commandItem {
   display: flex;
   align-items: center;
   padding: 5px 0;
@@ -187,37 +181,37 @@
   font-family: monospace;
 }
 
-.command-item:last-child {
+.commandItem:last-child {
   border-bottom: none;
 }
 
-.command-number {
+.commandNumber {
   color: var(--text-secondary);
   margin-right: 10px;
   min-width: 25px;
 }
 
-.command-text {
+.commandText {
   color: var(--text-color);
 }
 
-.create-branch {
+.createBranch {
   margin-bottom: 20px;
   display: flex;
   gap: 10px;
 }
 
-.create-branch input {
+.createBranch input {
   color: white;
 }
 
-.branch-list ul {
+.branchList ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.branch-list li {
+.branchList li {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -225,16 +219,16 @@
   padding: 8px 12px;
 }
 
-.branch-list li:last-child {
+.branchList li:last-child {
   border-bottom: none;
 }
 
-.branch-actions {
+.branchActions {
   display: flex;
   gap: 8px;
 }
 
-.branch-actions button {
+.branchActions button {
   padding: 4px 8px;
   font-size: 0.9em;
   background: var(--bg-secondary);
@@ -245,28 +239,28 @@
   transition: all 0.2s;
 }
 
-.branch-actions button:hover {
+.branchActions button:hover {
   background: var(--surface-color);
 }
 
-.branch-actions button:last-child {
+.branchActions button:last-child {
   background-color: var(--danger-color);
   color: white;
   border-color: var(--danger-color);
 }
 
-.branch-actions button:last-child:hover {
+.branchActions button:last-child:hover {
   background-color: #e53e3e;
 }
 
-.branch-list-header {
+.branchListHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.refresh-btn {
+.refreshBtn {
   padding: 0.5rem 1rem;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -280,24 +274,24 @@
   transition: all 0.2s;
 }
 
-.refresh-btn:hover {
+.refreshBtn:hover {
   background-color: var(--surface-color);
   border-color: var(--primary-color);
 }
 
-.refresh-btn:disabled {
+.refreshBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 
-.action-buttons {
+.actionButtons {
   margin-bottom: 20px;
   display: flex;
   gap: 10px;
 }
 
-.commit-message-input {
+.commitMessageInput {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--border-color);
@@ -310,13 +304,13 @@
   color: var(--text-color);
 }
 
-.commit-message-input:focus {
+.commitMessageInput:focus {
   outline: none;
   border-color: var(--primary-color);
   box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
 }
 
-.dialog-overlay {
+.dialogOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -343,11 +337,11 @@
   color: var(--text-color);
 }
 
-.dialog-content {
+.dialogContent {
   margin-bottom: 20px;
 }
 
-.checkbox-label {
+.checkboxLabel {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -355,12 +349,12 @@
   color: var(--text-color);
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkboxLabel input[type="checkbox"] {
   width: 16px;
   height: 16px;
 }
 
-.warning-message {
+.warningMessage {
   margin-top: 10px;
   padding: 8px;
   background-color: rgba(237, 137, 54, 0.1);
@@ -370,14 +364,14 @@
   font-size: 0.9em;
 }
 
-.dialog-buttons {
+.dialogButtons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
-.stage-btn,
-.unstage-btn {
+.stageBtn,
+.unstageBtn {
   padding: 4px 8px;
   font-size: 1.2em;
   background: none;
@@ -389,21 +383,21 @@
   text-align: center;
 }
 
-.stage-btn:hover {
+.stageBtn:hover {
   color: var(--success-color);
 }
 
-.unstage-btn:hover {
+.unstageBtn:hover {
   color: var(--danger-color);
 }
 
-.view-toggle {
+.viewToggle {
   display: flex;
   gap: 10px;
   margin-bottom: 20px;
 }
 
-.view-btn {
+.viewBtn {
   flex: 1;
   padding: 10px;
   background-color: var(--bg-secondary);
@@ -414,29 +408,29 @@
   transition: all 0.2s;
 }
 
-.view-btn:hover {
+.viewBtn:hover {
   background-color: var(--surface-color);
   border-color: var(--primary-color);
 }
 
-.view-btn.active {
+.viewBtn.active {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
 }
 
-.view-btn.active:hover {
+.viewBtn.active:hover {
   background-color: var(--primary-hover);
 }
 
-.header-section {
+.headerSection {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
 
-.repo-btn {
+.repoBtn {
   padding: 0.5rem 1.25rem;
   background-color: var(--primary-color);
   color: white;
@@ -449,24 +443,24 @@
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
 }
 
-.repo-btn:hover:not(:disabled) {
+.repoBtn:hover:not(:disabled) {
   background-color: var(--primary-hover);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
 }
 
-.repo-btn:active:not(:disabled) {
+.repoBtn:active:not(:disabled) {
   transform: translateY(0);
 }
 
-.repo-btn:disabled {
+.repoBtn:disabled {
   background-color: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.5;
   box-shadow: none;
 }
 
-.repo-path {
+.repoPath {
   color: var(--text-secondary);
   font-size: 0.9rem;
   overflow: hidden;
@@ -474,7 +468,7 @@
   white-space: nowrap;
 }
 
-.terminal-container {
+.terminalContainer {
   flex: 1;
   background-color: var(--bg-color);
   color: var(--text-color);
@@ -485,7 +479,8 @@
   border-radius: 4px;
 }
 
-.terminal-content {
+.terminalContent {
   white-space: pre-wrap;
   word-break: break-all;
-} 
+}
+ 

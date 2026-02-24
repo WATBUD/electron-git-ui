@@ -1,21 +1,21 @@
-import React from 'react';
-import './LeftSideBar.css';
+import React from 'react'
+import styles from './LeftSideBar.module.css'
 
 const LeftSideBar = ({ activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'main', label: 'Branch View' },
     { id: 'graph', label: 'Graph View' },
-    { id: 'files', label: 'File Status' },
-  ];
+    { id: 'files', label: 'File Status' }
+  ]
 
   return (
-    <div className="sidebar">
-      <div className="sidebar-scroll">
-        <nav className="menu">
+    <div className={styles.sidebar}>
+      <div className={styles.sidebarScroll}>
+        <nav className={styles.menu}>
           {menuItems.map((item) => (
             <button
               key={item.id}
-              className={`menu-item ${activeTab === item.id ? 'active' : ''}`}
+              className={`${styles.menuItem} ${activeTab === item.id ? styles.active : ''}`}
               onClick={() => onTabChange(item.id)}
             >
               {item.label}
@@ -24,7 +24,7 @@ const LeftSideBar = ({ activeTab, onTabChange }) => {
         </nav>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LeftSideBar;
+export default LeftSideBar
