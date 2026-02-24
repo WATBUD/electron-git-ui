@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('git', {
   loadCommitHistory: () => ipcRenderer.invoke('git:loadCommitHistory'),
   checkoutCommit: (commitHash) => ipcRenderer.invoke('git:checkoutCommit', commitHash),
   checkMergeInProgress: () => ipcRenderer.invoke('git:checkMergeInProgress'),
+  mergeBranch: (sourceBranch) => ipcRenderer.invoke('git:mergeBranch', sourceBranch),
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),

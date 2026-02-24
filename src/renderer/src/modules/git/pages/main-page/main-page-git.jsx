@@ -13,6 +13,7 @@ import {
   deleteBranch,
   loadBranches,
   createBranch,
+  mergeBranch,
   checkoutBranch,
   deleteRemoteBranch,
   fetchFromRemote,
@@ -71,6 +72,21 @@ export const MainPageGit = () => {
       dispatch(checkMergeInProgress())
     }
   }, [repoPath, dispatch])
+
+  useEffect(() => {
+    const handleFocus = () => {
+      if (repoPath) {
+        if (activeTab === 'files') {
+          dispatch(loadFileStatus())
+        }
+        dispatch(checkMergeInProgress())
+        dispatch(loadBranches())
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [repoPath, activeTab, dispatch])
 
   const getStatusText = (file) => {
     if (file.statusType) {

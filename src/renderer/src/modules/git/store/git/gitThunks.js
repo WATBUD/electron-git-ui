@@ -80,7 +80,7 @@ export const abortMerge = createAsyncThunk(
     updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
-      () => window.git.abortMerge(),
+      () => window.git.mergeAbort(),
       rejectWithValue,
       'Failed to abort merge',
       'abortMerge'

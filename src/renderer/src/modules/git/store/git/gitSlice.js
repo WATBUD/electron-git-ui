@@ -22,7 +22,8 @@ import {
   updateCommandHistory,
   clearCommandHistory,
   selectRepository,
-  getCachedDiff
+  getCachedDiff,
+  renameBranch
 } from './gitThunks'
 
 const STORAGE_KEYS = {
@@ -157,10 +158,26 @@ const gitSlice = createSlice({
         state.error = action.payload
       })
       .addCase(mergeBranch.pending, (state) => {
+        state.loadingMessage = 'Merging branch...'
         state.error = null
       })
-      .addCase(mergeBranch.fulfilled, (state) => {})
+      .addCase(mergeBranch.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
       .addCase(mergeBranch.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+
+      .addCase(renameBranch.pending, (state) => {
+        state.loadingMessage = 'Renaming branch...'
+        state.error = null
+      })
+      .addCase(renameBranch.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(renameBranch.rejected, (state, action) => {
+        state.loadingMessage = ''
         state.error = action.payload
       })
 

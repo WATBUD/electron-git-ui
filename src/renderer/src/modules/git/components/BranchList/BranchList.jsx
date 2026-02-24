@@ -53,9 +53,6 @@ const BranchList = ({
       if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
         setContextMenu({ show: false, x: 0, y: 0, branchName: null })
       }
-      if (prefixInputRef.current && !prefixInputRef.current.contains(event.target)) {
-        setShowPrefixDropdown(false)
-      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)

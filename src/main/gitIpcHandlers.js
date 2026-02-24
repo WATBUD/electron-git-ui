@@ -613,6 +613,21 @@ export function setupGitHandlers() {
     }
   })
 
+  ipcMain.handle('git:mergeBranch', async (_, sourceBranch) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = `git merge "${sourceBranch}"`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      console.error('Error merging branch:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:mergeAbort', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')
