@@ -390,8 +390,28 @@
   flex: 1;
 }
 
-.prefixCheckRow input {
-  cursor: pointer;
+.customCheckbox {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-color);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  color: transparent;
+}
+
+.prefixItem:hover .customCheckbox {
+  border-color: var(--primary-color);
+}
+
+.customCheckbox.checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
 }
 
 .prefixText {

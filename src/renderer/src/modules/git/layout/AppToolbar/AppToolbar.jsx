@@ -13,7 +13,50 @@ import {
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import styles from './AppToolbar.module.css'
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, Check } from 'lucide-react'
+
+const PrefixItem = React.memo(({ prefix, onRemove }) => {
+  const isSelected = useSelector((state) => (state.git.selectedPrefixes || []).includes(prefix))
+  const dispatch = useDispatch()
+
+  return (
+    <div
+      className={styles.prefixItem}
+      onClick={(e) => {
+        e.stopPropagation()
+        dispatch(toggleSelectedPrefix(prefix))
+      }}
+    >
+      <div className={styles.prefixCheckRow}>
+        <div className={`${styles.customCheckbox} ${isSelected ? styles.checked : ''}`}>
+          {isSelected && <Check size={12} />}
+        </div>
+        <span className={styles.prefixText}>{prefix}</span>
+      </div>
+      <button
+        className={styles.removeBtn}
+        onClick={(e) => {
+          e.stopPropagation()
+          onRemove(prefix)
+        }}
+      >
+        <Trash2 size={12} />
+      </button>
+    </div>
+  )
+})
+
+const PrefixList = React.memo(({ onRemove }) => {
+  const prefixes = useSelector((state) => state.git.prefixes || [])
+
+  return (
+    <div className={styles.prefixList}>
+      {prefixes.map((prefix) => (
+        <PrefixItem key={prefix} prefix={prefix} onRemove={onRemove} />
+      ))}
+    </div>
+  )
+})
 
 export const AppToolbar = () => {
   const [activeMenu, setActiveMenu] = useState(null)
@@ -23,21 +66,10 @@ export const AppToolbar = () => {
   const prefixMenuRef = useRef(null)
   const [newPrefix, setNewPrefix] = useState('')
   const dispatch = useDispatch()
-  const {
-    showFooter,
-    isRefreshingTags,
-    hasMergeInProgress,
-    cachedDiff,
-    prefixes,
-    selectedPrefixes
-  } = useSelector((state) => ({
-    showFooter: state.git.showFooter,
-    isRefreshingTags: state.git.isRefreshingTags,
-    hasMergeInProgress: state.git.hasMergeInProgress,
-    cachedDiff: state.git.cachedDiff,
-    prefixes: state.git.prefixes || [],
-    selectedPrefixes: state.git.selectedPrefixes || []
-  }))
+  const showFooter = useSelector((state) => state.git.showFooter)
+  const isRefreshingTags = useSelector((state) => state.git.isRefreshingTags)
+  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
+  const cachedDiff = useSelector((state) => state.git.cachedDiff)
   const [showDiffModal, setShowDiffModal] = useState(false)
 
   // Close menu when clicking outside
@@ -99,9 +131,12 @@ export const AppToolbar = () => {
     }
   }
 
-  const handleRemovePrefix = (prefix) => {
-    dispatch(removePrefix(prefix))
-  }
+  const handleRemovePrefix = React.useCallback(
+    (prefix) => {
+      dispatch(removePrefix(prefix))
+    },
+    [dispatch]
+  )
 
   return (
     <div className={styles.appToolbar}>
@@ -204,32 +239,7 @@ export const AppToolbar = () => {
               <Plus size={14} />
             </button>
           </div>
-          <div className={styles.prefixList}>
-            {prefixes.map((prefix) => (
-              <div
-                key={prefix}
-                className={styles.prefixItem}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  dispatch(toggleSelectedPrefix(prefix))
-                }}
-              >
-                <div className={styles.prefixCheckRow}>
-                  <input type="checkbox" checked={selectedPrefixes.includes(prefix)} readOnly />
-                  <span className={styles.prefixText}>{prefix}</span>
-                </div>
-                <button
-                  className={styles.removeBtn}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleRemovePrefix(prefix)
-                  }}
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
+          <PrefixList onRemove={handleRemovePrefix} />
         </div>
       </div>
       <DiffModal show={showDiffModal} diff={cachedDiff} onClose={handleCloseDiff} />
