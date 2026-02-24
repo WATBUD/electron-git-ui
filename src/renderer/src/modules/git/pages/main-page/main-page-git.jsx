@@ -98,6 +98,13 @@ export const MainPageGit = () => {
     return '📄'
   }
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    if (tab === 'files') {
+      dispatch(loadFileStatus())
+    }
+  }
+
   return (
     <div className={styles.gitUi}>
       <div className={styles.toolbarContainer}>
@@ -139,7 +146,7 @@ export const MainPageGit = () => {
 
       <div className={styles.mainLayout}>
         <div className={styles.contentArea}>
-          <LeftSideBar activeTab={activeTab} onTabChange={setActiveTab} />
+          <LeftSideBar activeTab={activeTab} onTabChange={handleTabChange} />
           <div className={styles.mainContent}>
             {repoPath && (
               <>

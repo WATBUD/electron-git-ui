@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Provider } from 'react-redux';
-import { store } from './modules/git/store';
-import { MainPageGit } from './modules/git/pages/main-page/main-page-git';
-import { MainPageMacro } from './modules/macro-recorder/pages/main-page/main-page-macro';
-import './main.css';
+import React, { useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
+import { store } from './modules/git/store'
+import { MainPageGit } from './modules/git/pages/main-page/main-page-git'
+import { MainPageMacro } from './modules/macro-recorder/pages/main-page/main-page-macro'
+import './main.css'
 
-const container = document.getElementById('root');
-if (!container) throw new Error('Failed to find the root element');
-const root = createRoot(container);
+const container = document.getElementById('root')
+if (!container) throw new Error('Failed to find the root element')
+const root = createRoot(container)
 
 const PAGES = {
   GIT: 'git',
   MACRO: 'macro'
-};
+}
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState(PAGES.GIT);
+  const [currentPage, setCurrentPage] = useState(PAGES.GIT)
 
   const navStyle = {
     display: 'flex',
@@ -24,7 +24,7 @@ const App = () => {
     padding: '10px',
     backgroundColor: '#f6f8fa',
     borderBottom: '1px solid #d1d5da'
-  };
+  }
 
   const buttonStyle = (isActive) => ({
     padding: '8px 16px',
@@ -37,13 +37,13 @@ const App = () => {
     '&:hover': {
       borderColor: '#0366d6'
     }
-  });
+  })
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* <nav style={navStyle}>
         <button 
-          onClick={() => setCurrentPage(PAGES.GIT)}
+        onClick={() => setCurrentPage(PAGES.GIT)}
           style={buttonStyle(currentPage === PAGES.GIT)}
         >
           Git
@@ -55,13 +55,13 @@ const App = () => {
           Macro
         </button>
       </nav> */}
-      
+
       <div style={{ flex: 1, overflow: 'auto' }}>
         {currentPage === PAGES.GIT ? <MainPageGit /> : <MainPageMacro />}
       </div>
     </div>
-  );
-};
+  )
+}
 
 root.render(
   <React.StrictMode>
@@ -69,4 +69,4 @@ root.render(
       <App />
     </Provider>
   </React.StrictMode>
-);
+)

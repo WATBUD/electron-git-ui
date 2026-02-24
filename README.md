@@ -17,7 +17,6 @@ src/renderer/src/
 │   ├── hooks/                 # Custom React hooks
 │   └── utils/                 # Utility functions
 │
-├── App.jsx                    # Root component
 └── main.jsx                   # Application entry point
 ```
 
@@ -46,20 +45,20 @@ npm run build
 
 ```javascript
 // MainPageGit 內引入
-import { LoadingModal } from '../../ui/LoadingModal';
-import { AppToolbar } from '../../layout/AppToolbar';
-import { BranchList } from '../BranchList';
+import { LoadingModal } from '../../ui/LoadingModal'
+import { AppToolbar } from '../../layout/AppToolbar'
+import { BranchList } from '../BranchList'
 
 // App.jsx 引入
-import { MainPageGit } from './components/git/MainPageGit';
-import Versions from './components/ui/Versions';
+import { MainPageGit } from './components/git/MainPageGit'
+import Versions from './components/ui/Versions'
 ```
 
 ---
 
 ## ⚙️ Recommended IDE Setup
 
-* **VSCode** + **ESLint** + **Prettier**
+- **VSCode** + **ESLint** + **Prettier**
 
 ---
 
