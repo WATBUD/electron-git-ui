@@ -1,11 +1,12 @@
 import React from 'react'
 import styles from './LeftSideBar.module.css'
+import { GIT_TABS } from '../../constants/tabs'
 
 const LeftSideBar = ({ activeTab, onTabChange }) => {
   const menuItems = [
-    { id: 'main', label: 'Branch View' },
-    // { id: 'graph', label: 'Graph View' },
-    { id: 'files', label: 'File Status' }
+    { id: GIT_TABS.BRANCH_VIEW, label: 'Branch View' },
+    // { id: GIT_TABS.GRAPH, label: 'Graph View' },
+    { id: GIT_TABS.FILES, label: 'File Status' }
   ]
 
   return (

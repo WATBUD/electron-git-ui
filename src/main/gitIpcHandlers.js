@@ -58,6 +58,12 @@ export function setupGitHandlers() {
           command: command
         })
       } else {
+        if (currentRepoPath) {
+          return success({
+            repoPath: currentRepoPath,
+            message: 'No change'
+          })
+        }
         return fail('No repository selected')
       }
     } catch (error) {

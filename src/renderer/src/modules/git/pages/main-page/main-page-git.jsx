@@ -31,10 +31,11 @@ import {
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
+import { GIT_TABS } from '../../constants/tabs'
 
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
-  const [activeTab, setActiveTab] = useState('main') // 'main', 'graph', or 'files'
+  const [activeTab, setActiveTab] = useState(GIT_TABS.BRANCH_VIEW)
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -50,7 +51,6 @@ export const MainPageGit = () => {
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
   const prefixes = useSelector((state) => state.git.prefixes)
   const selectedPrefixes = useSelector((state) => state.git.selectedPrefixes)
-  // console.log('main-page-git+currentBranch:', currentBranch);
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -76,11 +76,16 @@ export const MainPageGit = () => {
   useEffect(() => {
     const handleFocus = () => {
       if (repoPath) {
-        if (activeTab === 'files') {
+        if (activeTab === GIT_TABS.FILES) {
           dispatch(loadFileStatus())
         }
-        dispatch(checkMergeInProgress())
-        dispatch(loadBranches())
+        // if (activeTab === GIT_TABS.GRAPH) {
+        //   dispatch(loadCommitHistory())
+        // }
+        if (activeTab === GIT_TABS.BRANCH_VIEW) {
+          dispatch(checkMergeInProgress())
+          dispatch(loadBranches())
+        }
       }
     }
 
@@ -117,9 +122,6 @@ export const MainPageGit = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    if (tab === 'files') {
-      dispatch(loadFileStatus())
-    }
   }
 
   return (
@@ -167,7 +169,7 @@ export const MainPageGit = () => {
           <div className={styles.mainContent}>
             {repoPath && (
               <>
-                {activeTab === 'main' && (
+                {activeTab === GIT_TABS.BRANCH_VIEW && (
                   <BranchList
                     branches={branches}
                     remoteBranches={remoteBranches}
@@ -214,9 +216,9 @@ export const MainPageGit = () => {
                   />
                 )}
 
-                {activeTab === 'graph' && <GitGraphContainer />}
+                {activeTab === GIT_TABS.GRAPH && <GitGraphContainer />}
 
-                {activeTab === 'files' && (
+                {activeTab === GIT_TABS.FILES && (
                   <FileStatus
                     fileStatus={fileStatus}
                     onStageFile={async (file) => {
