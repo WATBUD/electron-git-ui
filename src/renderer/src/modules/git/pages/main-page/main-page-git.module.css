@@ -266,7 +266,8 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--input-font-size);
+
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -462,7 +463,8 @@
 
 .repoPath {
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--input-font-size);
+
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

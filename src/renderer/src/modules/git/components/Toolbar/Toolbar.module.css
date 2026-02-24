@@ -91,7 +91,7 @@
   background: rgba(237, 137, 54, 0.1);
   border-radius: 4px;
   color: var(--warning-color);
-  font-size: 0.9rem;
+  font-size: var(--input-font-size);
 }
 
 .dialogButtons {
@@ -104,7 +104,8 @@
   padding: 0.5rem 1rem;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  font-size: 0.9rem;
+  font-size: var(--input-font-size);
+
   cursor: pointer;
   transition: all 0.2s ease;
 }

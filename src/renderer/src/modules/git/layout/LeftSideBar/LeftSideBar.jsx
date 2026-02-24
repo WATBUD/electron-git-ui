@@ -4,7 +4,7 @@ import styles from './LeftSideBar.module.css'
 const LeftSideBar = ({ activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'main', label: 'Branch View' },
-    { id: 'graph', label: 'Graph View' },
+    // { id: 'graph', label: 'Graph View' },
     { id: 'files', label: 'File Status' }
   ]
 

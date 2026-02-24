@@ -14,7 +14,11 @@
   --surface-color: #2d3748;
   --overlay-bg: rgba(0, 0, 0, 0.8);
   --active-bg: rgba(79, 70, 229, 0.15);
-
+  --input-bg: var(--bg-secondary);
+  --input-border: var(--border-color);
+  --input-padding: 0.5rem;
+  --input-radius: 4px;
+  --input-font-size: 0.9rem;
   /* Error modal specific colors */
   --error-bg: #7f1d1d;
   --error-border: #991b1b;

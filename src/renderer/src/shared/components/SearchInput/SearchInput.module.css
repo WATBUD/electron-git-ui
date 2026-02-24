@@ -1,17 +1,16 @@
 .searchContainer {
   display: flex;
   align-items: center;
-  margin-top: 0.5rem;
 }
 
 .searchInput {
   width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+  padding: var(--input-padding);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
   background-color: var(--input-bg);
   color: var(--text-color);
-  font-size: 0.9rem;
+  font-size: var(--input-font-size);
 }
 
 .searchInput:focus {

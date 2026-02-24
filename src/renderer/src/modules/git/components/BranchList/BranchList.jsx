@@ -90,7 +90,7 @@ const BranchList = ({
     <div className={styles.branchManagement}>
       <div className={styles.branchPrefix}>
         <div className={styles.prefixInputWrapper}>
-          <span className={styles.prefixLabel}>branchPrefix:</span>
+          <span className={styles.prefixLabel}>BranchPrefix:</span>
           <input
             type="text"
             value={branchPrefix}
