@@ -18,7 +18,6 @@ const BranchList = ({
   newBranchName,
   setNewBranchName,
   createBranchByNewBranchName,
-  handleCreateFromBranchWithPrefix,
   prefixes = [],
   selectedPrefixes = [],
   onAddPrefix,
@@ -366,29 +365,6 @@ const BranchList = ({
               disabled={!contextMenu.branchName || contextMenu.branchName.includes('origin/')}
             >
               Rename branch
-            </button>
-            <button
-              className={styles.contextMenuItem}
-              onClick={() => {
-                const branchName = contextMenu.branchName.replace('refs/heads/', '')
-                const lastPart = branchName.split('/').pop()
-
-                // Record the used prefix string as a whole
-                // (Note: Since branchPrefix is now derived from selectedPrefixes,
-                // recording here is technically redundant but kept for consistency)
-                if (branchPrefix.trim()) {
-                  onAddPrefix(branchPrefix.trim())
-                }
-
-                const branchNames = branchPrefix
-                  ? branchPrefix.split(',').map((prefix) => `${prefix.trim()}${lastPart}`)
-                  : [lastPart]
-                handleCreateFromBranchWithPrefix(branchNames.join(','))
-                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
-              }}
-              title={`Create branch from ${contextMenu.branchName?.split('/').pop()} with prefix ${branchPrefix}`}
-            >
-              Create from with prefix
             </button>
           </div>
         </div>

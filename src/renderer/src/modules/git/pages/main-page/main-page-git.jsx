@@ -211,27 +211,6 @@ export const MainPageGit = () => {
                       setNewBranchName('')
                       dispatch(loadBranches())
                     }}
-                    handleCreateFromBranchWithPrefix={async (branchNames) => {
-                      console.log('handleCreateFromBranchWithPrefix+branchNames', branchNames)
-                      if (!branchNames.trim()) return
-
-                      const names = branchNames
-                        .split(',')
-                        .map((name) => name.trim())
-                        .filter(Boolean)
-
-                      for (const name of names) {
-                        console.log('Creating branch:', name)
-                        const result = await dispatch(createBranch(name))
-                        if (!createBranch.fulfilled.match(result)) {
-                          console.error('Failed to create branch:', name)
-                          break // Stop if any branch creation fails
-                        }
-                      }
-
-                      // Refresh branches after all creations are done
-                      dispatch(loadBranches())
-                    }}
                   />
                 )}
 
