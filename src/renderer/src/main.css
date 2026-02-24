@@ -2,6 +2,7 @@
   --bg-color: #1e1e2d;
   --bg-secondary: #16162a;
   --text-color: #e2e8f0;
+  --text-hover: #ffffff;
   --text-secondary: #a0aec0;
   --text-muted: #718096;
   --border-color: #2d3748;
@@ -12,6 +13,7 @@
   --warning-color: #ed8936;
   --surface-color: #2d3748;
   --overlay-bg: rgba(0, 0, 0, 0.8);
+  --active-bg: rgba(79, 70, 229, 0.15);
 
   /* Error modal specific colors */
   --error-bg: #7f1d1d;
