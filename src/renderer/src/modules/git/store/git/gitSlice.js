@@ -57,6 +57,8 @@ const initialGraphState = {
   error: null
 }
 
+const DEFAULT_PREFIXES = ['feature/PT-', 'promote-prod/PT-', 'promote-stg2602/PT-']
+
 const initialState = {
   ...initialGraphState,
   showFooter: false,
@@ -74,11 +76,8 @@ const initialState = {
   repoPath: null,
   mergeStatus: { isInProgress: false, message: '' },
   cachedDiff: null,
-  prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, ['promote-prod/', 'promote-stg2602/']),
-  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, [
-    'promote-prod/',
-    'promote-stg2602/'
-  ])
+  prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
+  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, [])
 }
 
 const gitSlice = createSlice({
