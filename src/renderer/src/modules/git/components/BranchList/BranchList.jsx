@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { message } from 'antd'
+import { Modal, Input, App } from 'antd'
 import { Copy, ChevronDown } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
@@ -21,13 +21,20 @@ const BranchList = ({
   handleCreateFromBranchWithPrefix,
   prefixes = [],
   selectedPrefixes = [],
-  onAddPrefix
+  onAddPrefix,
+  onRename
 }) => {
+  const { modal, message: messageApi } = App.useApp()
   const [contextMenu, setContextMenu] = React.useState({
     show: false,
     x: 0,
     y: 0,
     branchName: null
+  })
+  const [renameBranchState, setRenameBranchState] = useState({
+    show: false,
+    oldName: '',
+    newName: ''
   })
   const contextMenuRef = React.useRef(null)
 
@@ -80,6 +87,22 @@ const BranchList = ({
           .join(',')
       : newBranchName
     createBranchByNewBranchName(branchNames)
+  }
+
+  const handleRenameBranch = (oldName) => {
+    setRenameBranchState({
+      show: true,
+      oldName: oldName,
+      newName: oldName
+    })
+    setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+  }
+
+  const submitRename = () => {
+    if (renameBranchState.newName && renameBranchState.newName !== renameBranchState.oldName) {
+      onRename(renameBranchState.oldName, renameBranchState.newName)
+    }
+    setRenameBranchState({ show: false, oldName: '', newName: '' })
   }
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -278,6 +301,35 @@ const BranchList = ({
         </div>
       </div>
 
+      {renameBranchState.show && (
+        <Modal
+          title="Rename Branch"
+          open={renameBranchState.show}
+          onOk={submitRename}
+          onCancel={() => setRenameBranchState({ show: false, oldName: '', newName: '' })}
+          okText="Rename"
+          cancelText="Cancel"
+          destroyOnClose
+        >
+          <div style={{ marginTop: '16px' }}>
+            <div style={{ marginBottom: '8px', color: 'var(--text-secondary)' }}>
+              Old Name: <span style={{ fontWeight: 600 }}>{renameBranchState.oldName}</span>
+            </div>
+            <Input
+              value={renameBranchState.newName}
+              onChange={(e) =>
+                setRenameBranchState((prev) => ({ ...prev, newName: e.target.value }))
+              }
+              placeholder="Enter new branch name"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') submitRename()
+              }}
+            />
+          </div>
+        </Modal>
+      )}
+
       {contextMenu.show && (
         <div
           ref={contextMenuRef}
@@ -310,6 +362,13 @@ const BranchList = ({
               disabled={contextMenu.branchName === currentBranch}
             >
               Checkout
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => handleRenameBranch(contextMenu.branchName)}
+              disabled={!contextMenu.branchName || contextMenu.branchName.includes('origin/')}
+            >
+              Rename branch
             </button>
             <button
               className={styles.contextMenuItem}

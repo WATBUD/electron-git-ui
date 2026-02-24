@@ -203,6 +203,23 @@ export function setupGitHandlers() {
     }
   })
 
+  ipcMain.handle('git:renameBranch', async (_, oldName, newName) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = oldName
+        ? `git branch -m "${oldName}" "${newName}"`
+        : `git branch -m "${newName}"`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return success({ command })
+    } catch (error) {
+      console.error('Error renaming branch:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:deleteRemoteBranch', async (_, branchName) => {
     if (!currentRepoPath) {
       return fail('No repository selected')

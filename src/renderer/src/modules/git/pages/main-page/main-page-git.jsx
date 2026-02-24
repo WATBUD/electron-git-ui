@@ -25,7 +25,8 @@ import {
   discardFileChanges,
   selectRepository,
   clearError,
-  loadCommitHistory
+  loadCommitHistory,
+  renameBranch
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -170,6 +171,9 @@ export const MainPageGit = () => {
                     }}
                     onMerge={async (branchName) => {
                       await dispatch(mergeBranch(branchName))
+                    }}
+                    onRename={async (oldName, newName) => {
+                      await dispatch(renameBranch({ oldName, newName }))
                     }}
                     prefixes={prefixes}
                     selectedPrefixes={selectedPrefixes}

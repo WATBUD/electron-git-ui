@@ -127,6 +127,25 @@ export const deleteBranch = createAsyncThunk(
   }
 )
 
+export const renameBranch = createAsyncThunk(
+  'git/renameBranch',
+  async ({ oldName, newName }, { getState, rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    updateHistoryIndex(getState, dispatch)
+
+    const result = await callGit(
+      () => window.git.renameBranch(oldName, newName),
+      rejectWithValue,
+      'Failed to rename branch',
+      'renameBranch'
+    )
+    await dispatch(loadBranches())
+    return result
+  }
+)
+
 export const loadBranches = createAsyncThunk(
   'git/loadBranches',
   async (_, { getState, rejectWithValue, dispatch }) => {
