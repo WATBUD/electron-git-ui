@@ -1,17 +1,23 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { openRepository, selectRepository, removeProject } from '../../store/git'
+import { openRepository, selectRepository, removeProject, reorderProjects } from '../../store/git'
 import styles from './ProjectList.module.css'
 
-const ProjectList = () => {
+const ProjectList = ({ onProjectSelect }) => {
   const projects = useSelector((state) => state.git.projects || [])
   const currentRepoPath = useSelector((state) => state.git.repoPath)
   const loading = useSelector((state) => state.git.loading)
   const dispatch = useDispatch()
+  const [draggedItemIndex, setDraggedItemIndex] = React.useState(null)
 
   const handleProjectDoubleClick = (path) => {
-    if (path === currentRepoPath) return
-    dispatch(openRepository(path))
+    if (path === currentRepoPath) {
+      onProjectSelect?.()
+      return
+    }
+    dispatch(openRepository(path)).then(() => {
+      onProjectSelect?.()
+    })
   }
 
   const handleRemoveProject = (e, path) => {
@@ -25,6 +31,30 @@ const ProjectList = () => {
 
   const getProjectName = (path) => {
     return path.split(/[/\\]/).pop() || path
+  }
+
+  const handleDragStart = (e, index) => {
+    setDraggedItemIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    // Set a ghost image or just let the browser handle it
+    e.currentTarget.style.opacity = '0.5'
+  }
+
+  const handleDragEnd = (e) => {
+    e.currentTarget.style.opacity = '1'
+    setDraggedItemIndex(null)
+  }
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault()
+    if (draggedItemIndex === null || draggedItemIndex === index) return
+
+    const newProjects = [...projects]
+    const itemToMove = newProjects.splice(draggedItemIndex, 1)[0]
+    newProjects.splice(index, 0, itemToMove)
+
+    setDraggedItemIndex(index)
+    dispatch(reorderProjects(newProjects))
   }
 
   return (
@@ -47,16 +77,22 @@ const ProjectList = () => {
               <div>No projects added yet. Click "Add Project" to start.</div>
             </div>
           ) : (
-            projects.map((path) => (
+            projects.map((path, index) => (
               <div
                 key={path}
-                className={`${styles.projectItem} ${path === currentRepoPath ? styles.activeProject : ''}`}
+                className={`${styles.projectItem} ${path === currentRepoPath ? styles.activeProject : ''} ${draggedItemIndex === index ? styles.isDragging : ''}`}
                 onDoubleClick={() => handleProjectDoubleClick(path)}
-                title="Double click to switch"
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => handleDragOver(e, index)}
+                title="Double click to switch, drag to reorder"
               >
+                <div className={styles.dragHandle}>⠿</div>
                 <div className={styles.projectInfo}>
                   <div className={styles.projectName}>
                     {getProjectName(path)}
+                    {index < 5 && <span className={styles.shortcutHint}>CTRL+{index + 1}</span>}
                     {path === currentRepoPath && (
                       <span className={styles.currentBadge}> (current)</span>
                     )}

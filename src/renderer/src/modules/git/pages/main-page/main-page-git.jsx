@@ -28,7 +28,8 @@ import {
   clearError,
   loadCommitHistory,
   renameBranch,
-  addPrefix
+  addPrefix,
+  openRepository
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -41,7 +42,6 @@ export const MainPageGit = () => {
 
   // Get state from Redux
   const showFooter = useSelector((state) => state.git.showFooter)
-  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const branches = useSelector((state) => state.git.branches)
   const remoteBranches = useSelector((state) => state.git.remoteBranches)
   const currentBranch = useSelector((state) => state.git.currentBranch)
@@ -52,6 +52,7 @@ export const MainPageGit = () => {
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
   const prefixes = useSelector((state) => state.git.prefixes)
   const selectedPrefixes = useSelector((state) => state.git.selectedPrefixes)
+  const projects = useSelector((state) => state.git.projects || [])
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -89,6 +90,27 @@ export const MainPageGit = () => {
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [repoPath, activeTab, dispatch])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '5') {
+        const index = parseInt(e.key) - 1
+        if (projects[index]) {
+          e.preventDefault()
+          if (projects[index] !== repoPath) {
+            dispatch(openRepository(projects[index])).then(() => {
+              setActiveTab(GIT_TABS.BRANCH_VIEW)
+            })
+          } else {
+            //setActiveTab(GIT_TABS.BRANCH_VIEW)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [projects, repoPath, dispatch])
 
   const getStatusText = (file) => {
     if (file.statusType) {
@@ -163,7 +185,9 @@ export const MainPageGit = () => {
             isRepoSelected={!!repoPath}
           />
           <div className={styles.mainContent}>
-            {activeTab === GIT_TABS.PROJECTS && <ProjectList />}
+            {activeTab === GIT_TABS.PROJECTS && (
+              <ProjectList onProjectSelect={() => setActiveTab(GIT_TABS.BRANCH_VIEW)} />
+            )}
             {repoPath && (
               <>
                 {activeTab === GIT_TABS.BRANCH_VIEW && (

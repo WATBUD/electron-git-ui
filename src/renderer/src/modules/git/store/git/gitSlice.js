@@ -147,6 +147,10 @@ const gitSlice = createSlice({
     removeProject: (state, action) => {
       state.projects = state.projects.filter((p) => p !== action.payload)
       saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
+    },
+    reorderProjects: (state, action) => {
+      state.projects = action.payload
+      saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
     }
   },
   extraReducers: (builder) => {
@@ -438,7 +442,8 @@ export const {
   removePrefix,
   toggleSelectedPrefix,
   addProject,
-  removeProject
+  removeProject,
+  reorderProjects
 } = gitSlice.actions
 
 export default gitSlice.reducer
