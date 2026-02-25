@@ -7,6 +7,7 @@ import { FooterArea } from '../../layout/FooterArea'
 import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
+import ProjectList from '../../components/ProjectList'
 import { GitGraphContainer } from './GitGraphContainer'
 import {
   checkMergeInProgress,
@@ -24,10 +25,10 @@ import {
   stageFile,
   unstageFile,
   discardFileChanges,
-  selectRepository,
   clearError,
   loadCommitHistory,
-  renameBranch
+  renameBranch,
+  addPrefix
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -35,7 +36,7 @@ import { GIT_TABS } from '../../constants/tabs'
 
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
-  const [activeTab, setActiveTab] = useState(GIT_TABS.BRANCH_VIEW)
+  const [activeTab, setActiveTab] = useState(GIT_TABS.PROJECTS)
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -60,10 +61,6 @@ export const MainPageGit = () => {
       console.log('Available git methods:', Object.keys(window.git))
     }
   }, [])
-
-  const handleSelectRepository = async () => {
-    const result = await dispatch(selectRepository())
-  }
 
   useEffect(() => {
     if (repoPath) {
@@ -122,27 +119,22 @@ export const MainPageGit = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
+    if (tab === GIT_TABS.FILES) {
+      dispatch(loadFileStatus())
+    }
+    if (tab === GIT_TABS.BRANCH_VIEW) {
+      dispatch(checkMergeInProgress())
+      dispatch(loadBranches())
+    }
+    if (tab === GIT_TABS.GRAPH) {
+      dispatch(loadCommitHistory())
+    }
   }
 
   return (
     <div className={styles.gitUi}>
       <div className={styles.toolbarContainer}>
         <AppToolbar />
-        <div className={styles.repositorySelector}>
-          <button onClick={handleSelectRepository} disabled={loading} className={styles.repoBtn}>
-            {repoPath ? 'Change Repository' : 'Select Repository'}
-          </button>
-          {repoPath && (
-            <div className={styles.repoInfo}>
-              <span className={styles.repoPath}>{repoPath}</span>
-              {hasMergeInProgress && mergeStatus?.message && (
-                <span className={styles.mergeWarning} title={mergeStatus.message}>
-                  ⚠️ {mergeStatus.message}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
 
         {repoPath && (
           <Toolbar
@@ -165,8 +157,13 @@ export const MainPageGit = () => {
 
       <div className={styles.mainLayout}>
         <div className={styles.contentArea}>
-          <LeftSideBar activeTab={activeTab} onTabChange={handleTabChange} />
+          <LeftSideBar
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            isRepoSelected={!!repoPath}
+          />
           <div className={styles.mainContent}>
+            {activeTab === GIT_TABS.PROJECTS && <ProjectList />}
             {repoPath && (
               <>
                 {activeTab === GIT_TABS.BRANCH_VIEW && (

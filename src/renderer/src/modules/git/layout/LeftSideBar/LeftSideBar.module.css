@@ -82,4 +82,18 @@
   transform: scaleY(1);
 }
 
+.menuItem:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.menuItem:disabled:hover {
+  background-color: transparent;
+}
+
+.menuItem:disabled::before {
+  display: none;
+}
+
 

@@ -23,12 +23,14 @@ import {
   clearCommandHistory,
   selectRepository,
   getCachedDiff,
-  renameBranch
+  renameBranch,
+  openRepository
 } from './gitThunks'
 
 const STORAGE_KEYS = {
   PREFIXES: 'git_prefixes',
-  SELECTED_PREFIXES: 'git_selected_prefixes'
+  SELECTED_PREFIXES: 'git_selected_prefixes',
+  PROJECTS: 'git_projects'
 }
 
 const loadFromStorage = (key, defaultValue) => {
@@ -78,7 +80,8 @@ const initialState = {
   mergeStatus: { isInProgress: false, message: '' },
   cachedDiff: null,
   prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
-  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, [])
+  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, []),
+  projects: loadFromStorage(STORAGE_KEYS.PROJECTS, [])
 }
 
 const gitSlice = createSlice({
@@ -133,6 +136,17 @@ const gitSlice = createSlice({
         state.selectedPrefixes.push(prefix)
       }
       saveToStorage(STORAGE_KEYS.SELECTED_PREFIXES, state.selectedPrefixes)
+    },
+    addProject: (state, action) => {
+      const path = action.payload
+      if (path && !state.projects.includes(path)) {
+        state.projects.push(path)
+        saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
+      }
+    },
+    removeProject: (state, action) => {
+      state.projects = state.projects.filter((p) => p !== action.payload)
+      saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
     }
   },
   extraReducers: (builder) => {
@@ -374,8 +388,24 @@ const gitSlice = createSlice({
       .addCase(selectRepository.fulfilled, (state, action) => {
         state.loadingMessage = ''
         state.repoPath = action.payload.data.repoPath
+        if (state.repoPath && !state.projects.includes(state.repoPath)) {
+          state.projects.push(state.repoPath)
+          saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
+        }
       })
       .addCase(selectRepository.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      .addCase(openRepository.pending, (state) => {
+        state.loadingMessage = 'Opening repository...'
+        state.error = null
+      })
+      .addCase(openRepository.fulfilled, (state, action) => {
+        state.loadingMessage = ''
+        state.repoPath = action.payload.data.repoPath
+      })
+      .addCase(openRepository.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
       })
@@ -406,7 +436,9 @@ export const {
   clearCachedDiff,
   addPrefix,
   removePrefix,
-  toggleSelectedPrefix
+  toggleSelectedPrefix,
+  addProject,
+  removeProject
 } = gitSlice.actions
 
 export default gitSlice.reducer

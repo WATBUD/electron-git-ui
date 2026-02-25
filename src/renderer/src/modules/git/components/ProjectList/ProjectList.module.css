@@ -1,0 +1,205 @@
+.projectManagement {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text-color);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.projectList {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.projectListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.projectListHeader h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  letter-spacing: 0.5px;
+}
+
+.projectCount {
+  font-size: 0.75rem;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-color);
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.projectListContainer {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.projectItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  border-left: 4px solid transparent;
+}
+
+.projectItem:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-left-color: rgba(99, 102, 241, 0.4);
+}
+
+.projectItem.activeProject {
+  background-color: rgba(99, 102, 241, 0.08);
+  border-left-color: var(--primary-color);
+}
+
+.projectInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.projectName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.currentBadge {
+  font-size: 0.7rem;
+  color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.15);
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.projectPath {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  opacity: 0.8;
+}
+
+.projectActions {
+  display: flex;
+  gap: 1rem;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.2s ease;
+}
+
+.projectItem:hover .projectActions {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.deleteBtn {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  background-color: transparent;
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background-color: #ef4444;
+  color: white;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #64748b;
+}
+
+.addProjectBtn {
+  padding: 0.5rem 1rem;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-color);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.addProjectBtn:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.addProjectBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.addProjectBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.addProjectBtn span {
+  font-size: 1.1rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.emptyState {
+  padding: 5rem 2rem;
+  text-align: center;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.emptyStateIcon {
+  font-size: 4rem;
+  opacity: 0.3;
+  filter: grayscale(1);
+}

@@ -41,6 +41,23 @@ export function setupGitHandlers() {
     }
   })
 
+  ipcMain.handle('git:openRepository', async (_, path) => {
+    try {
+      currentRepoPath = path
+      // Verify if it's a git repository
+      const command = 'git rev-parse --is-inside-work-tree'
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return success({
+        repoPath: currentRepoPath,
+        command: command
+      })
+    } catch (error) {
+      currentRepoPath = null
+      return fail('Not a valid git repository: ' + error.message)
+    }
+  })
+
   ipcMain.handle('git:selectRepository', async () => {
     try {
       const result = await dialog.showOpenDialog({

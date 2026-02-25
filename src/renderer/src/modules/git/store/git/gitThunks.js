@@ -510,6 +510,27 @@ export const selectRepository = createAsyncThunk(
   }
 )
 
+export const openRepository = createAsyncThunk(
+  'git/openRepository',
+  async (path, { rejectWithValue, dispatch, getState }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized')
+    }
+
+    const result = await callGit(
+      () => window.git.openRepository(path),
+      rejectWithValue,
+      'Error opening repository',
+      'openRepository'
+    )
+    // Update previous history index in the state
+    updateHistoryIndex(getState, dispatch)
+    await dispatch(loadCommitHistory())
+    await dispatch(updateCommandHistory())
+    return result
+  }
+)
+
 export const getCachedDiff = createAsyncThunk(
   'git/getCachedDiff',
   async (_, { rejectWithValue }) => {
