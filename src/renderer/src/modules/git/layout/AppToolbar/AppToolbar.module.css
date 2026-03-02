@@ -373,7 +373,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.4rem 1rem;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
   margin: 0 0.5rem;
   border-radius: 4px;
   transition: background-color 0.15s ease;
@@ -416,10 +416,40 @@
 
 .prefixText {
   font-size: 0.8125rem;
+  padding-right: 0.5rem;
   color: var(--text-color);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.prefixActions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Only apply base styles to buttons within prefixActions that DON'T have a specific class or we want to normalize them */
+.prefixActions button:not(.removeBtn) {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.2s;
+}
+
+.prefixActions button:not(.removeBtn):hover {
+  border-color: var(--primary-color);
+}
+
+.prefixItem:hover .prefixActions {
+  opacity: 1;
 }
 
 .removeBtn {
@@ -427,17 +457,12 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
   border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.prefixItem:hover .removeBtn {
-  opacity: 1;
 }
 
 .removeBtn:hover {

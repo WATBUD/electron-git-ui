@@ -12,6 +12,7 @@ import {
   toggleSelectedPrefix
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
+import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './AppToolbar.module.css'
 import { Trash2, Plus, Check } from 'lucide-react'
 
@@ -33,15 +34,18 @@ const PrefixItem = React.memo(({ prefix, onRemove }) => {
         </div>
         <span className={styles.prefixText}>{prefix}</span>
       </div>
-      <button
-        className={styles.removeBtn}
-        onClick={(e) => {
-          e.stopPropagation()
-          onRemove(prefix)
-        }}
-      >
-        <Trash2 size={12} />
-      </button>
+      <div className={styles.prefixActions}>
+        <CopyButton textToCopy={prefix} title="Copy prefix" size={12} showCopiedText={false} />
+        <button
+          className={styles.removeBtn}
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove(prefix)
+          }}
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
     </div>
   )
 })

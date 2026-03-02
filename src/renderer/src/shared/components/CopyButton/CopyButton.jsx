@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Copy } from 'lucide-react'
+import { Copy, Check } from 'lucide-react'
 import styles from './CopyButton.module.css'
 
 export const CopyButton = ({
@@ -36,7 +36,7 @@ export const CopyButton = ({
       className={`${styles.copyButton} ${copied ? styles.copied : ''} ${resolvedClassName}`}
       title={title}
     >
-      <Copy size={size} />
+      {copied ? <Check size={size} /> : <Copy size={size} />}
       {showCopiedText && copied && <span className={styles.copiedText}>Copied!</span>}
     </button>
   )
