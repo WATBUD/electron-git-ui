@@ -242,6 +242,7 @@ export const MainPageGit = () => {
                 {activeTab === GIT_TABS.FILES && (
                   <FileStatus
                     fileStatus={fileStatus}
+                    repoPath={repoPath}
                     onStageFile={async (file) => {
                       const result = await dispatch(stageFile(file))
                       if (stageFile.fulfilled.match(result)) {

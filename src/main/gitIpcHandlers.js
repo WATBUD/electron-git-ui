@@ -1,4 +1,4 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell } from 'electron'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
@@ -55,6 +55,17 @@ export function setupGitHandlers() {
     } catch (error) {
       currentRepoPath = null
       return fail('Not a valid git repository: ' + error.message)
+    }
+  })
+
+  ipcMain.handle('git:openInExplorer', async (_, path) => {
+    const pathToOpen = path || currentRepoPath
+    if (!pathToOpen) return fail('No path provided')
+    try {
+      await shell.openPath(pathToOpen)
+      return success()
+    } catch (error) {
+      return fail(error.message)
     }
   })
 

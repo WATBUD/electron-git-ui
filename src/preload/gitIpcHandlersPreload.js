@@ -7,6 +7,7 @@ console.log('Preload script is running')
 contextBridge.exposeInMainWorld('git', {
   selectRepository: () => ipcRenderer.invoke('git:selectRepository'),
   openRepository: (path) => ipcRenderer.invoke('git:openRepository', path),
+  openInExplorer: (path) => ipcRenderer.invoke('git:openInExplorer', path),
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),
   createBranch: (branchName) => ipcRenderer.invoke('git:createBranch', branchName),
   checkoutBranch: (branchName) => ipcRenderer.invoke('git:checkoutBranch', branchName),

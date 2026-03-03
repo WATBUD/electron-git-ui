@@ -6,6 +6,7 @@ import { message } from 'antd'
 
 export const FileStatus = ({
   fileStatus,
+  repoPath,
   onStageFile,
   onUnstageFile,
   onDiscardChanges,
@@ -88,12 +89,38 @@ export const FileStatus = ({
       setSelectedFiles(new Set(files.map((file) => file.file)))
     }
   }
-  const _fileStatus = fileStatus?.data?.files || []
-  //  console.log('fileStatus:', _fileStatus);
 
-  // if (!_fileStatus.length) {
-  //   return null
-  // }
+  const handleOpenInExplorer = () => {
+    if (window.git && window.git.openInExplorer) {
+      window.git.openInExplorer(repoPath)
+    }
+  }
+
+  const _fileStatus = fileStatus?.data?.files || []
+
+  if (!loading && _fileStatus.length === 0) {
+    return (
+      <div className={styles.fileStatusPanel}>
+        <div className={styles.fileStatusHeader}>
+          <h3></h3>
+          <RefreshButton
+            onClick={onRefresh}
+            disabled={loading}
+            title="Refresh status"
+            text="File Status Refresh"
+          />
+        </div>
+        <div className={styles.noChangesView}>
+          <div className={styles.noChangesIcon}>📂</div>
+          <p>No file changes detected.</p>
+          <button onClick={handleOpenInExplorer} className={styles.openFolderBtn}>
+            Open In Explorer / Finder
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.fileStatusPanel}>
       <div className={styles.fileStatusHeader}>
