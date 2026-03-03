@@ -549,3 +549,21 @@ export const getCachedDiff = createAsyncThunk(
     }
   }
 )
+
+export const getFileDiff = createAsyncThunk(
+  'git/getFileDiff',
+  async ({ file, isStaged }, { rejectWithValue }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized')
+    }
+
+    const result = await callGit(
+      () => window.git.getFileDiff(file, isStaged),
+      rejectWithValue,
+      'Failed to get file diff',
+      'getFileDiff'
+    )
+
+    return result.data
+  }
+)

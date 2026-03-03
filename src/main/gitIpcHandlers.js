@@ -41,6 +41,23 @@ export function setupGitHandlers() {
     }
   })
 
+  ipcMain.handle('git:getFileDiff', async (_, file, isStaged) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+
+    try {
+      const command = isStaged ? `git diff --cached "${file}"` : `git diff "${file}"`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success(stdout || stderr || '')
+    } catch (err) {
+      // If it's a new file (not yet in index/staged), it might fail or return nothing.
+      // For untracked files, git diff returns nothing.
+      return fail(err.message)
+    }
+  })
+
   ipcMain.handle('git:openRepository', async (_, path) => {
     try {
       currentRepoPath = path

@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('git', {
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
+  getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand)
 })
 

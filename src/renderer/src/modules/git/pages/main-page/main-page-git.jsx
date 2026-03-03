@@ -29,7 +29,9 @@ import {
   loadCommitHistory,
   renameBranch,
   addPrefix,
-  openRepository
+  openRepository,
+  getFileDiff,
+  setSelectedFileDiff
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -53,6 +55,7 @@ export const MainPageGit = () => {
   const prefixes = useSelector((state) => state.git.prefixes)
   const selectedPrefixes = useSelector((state) => state.git.selectedPrefixes)
   const projects = useSelector((state) => state.git.projects || [])
+  const selectedFileDiff = useSelector((state) => state.git.selectedFileDiff)
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -243,6 +246,14 @@ export const MainPageGit = () => {
                   <FileStatus
                     fileStatus={fileStatus}
                     repoPath={repoPath}
+                    selectedFileDiff={selectedFileDiff}
+                    onFileClick={({ file, isStaged }) => {
+                      if (file) {
+                        dispatch(getFileDiff({ file, isStaged }))
+                      } else {
+                        dispatch(setSelectedFileDiff(null))
+                      }
+                    }}
                     onStageFile={async (file) => {
                       const result = await dispatch(stageFile(file))
                       if (stageFile.fulfilled.match(result)) {

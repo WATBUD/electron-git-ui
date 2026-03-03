@@ -23,6 +23,7 @@ import {
   clearCommandHistory,
   selectRepository,
   getCachedDiff,
+  getFileDiff,
   renameBranch,
   openRepository
 } from './gitThunks'
@@ -81,7 +82,8 @@ const initialState = {
   cachedDiff: null,
   prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
   selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, []),
-  projects: loadFromStorage(STORAGE_KEYS.PROJECTS, [])
+  projects: loadFromStorage(STORAGE_KEYS.PROJECTS, []),
+  selectedFileDiff: null
 }
 
 const gitSlice = createSlice({
@@ -151,6 +153,9 @@ const gitSlice = createSlice({
     reorderProjects: (state, action) => {
       state.projects = action.payload
       saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
+    },
+    setSelectedFileDiff: (state, action) => {
+      state.selectedFileDiff = action.payload
     }
   },
   extraReducers: (builder) => {
@@ -425,6 +430,18 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
         state.error = action.payload
       })
+      .addCase(getFileDiff.pending, (state) => {
+        state.loadingMessage = 'Fetching file diff...'
+        state.error = null
+      })
+      .addCase(getFileDiff.fulfilled, (state, action) => {
+        state.loadingMessage = ''
+        state.selectedFileDiff = action.payload
+      })
+      .addCase(getFileDiff.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
   }
 })
 
@@ -443,7 +460,8 @@ export const {
   toggleSelectedPrefix,
   addProject,
   removeProject,
-  reorderProjects
+  reorderProjects,
+  setSelectedFileDiff
 } = gitSlice.actions
 
 export default gitSlice.reducer

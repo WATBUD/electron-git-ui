@@ -21,13 +21,7 @@
 }
 
 .fileStatusContent {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  flex: 1;
-  padding-bottom: 20px;
-  padding-right: 10px;
-  overflow-y: auto;
+  display: none;
 }
 
 .fileStatusSection {
@@ -222,6 +216,154 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.fileStatusContainer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 1px;
+  background-color: var(--border-color); /* For the divider/gap */
+}
+
+.fileListPanel {
+  flex: 1;
+  max-width: 450px;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: var(--bg-color);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.diffPanel {
+  flex: 2;
+  background-color: #0d1117;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.diffContent {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.diffHeader {
+  padding: 12px 20px;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.diffHeader h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  font-family: monospace;
+}
+
+.diffType {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.diffBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.diffLines {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Fira Code', 'Roboto Mono', monospace;
+  font-size: 13px;
+  background-color: #0d1117;
+}
+
+.diffLine {
+  display: flex;
+  min-height: 20px;
+  line-height: 20px;
+  white-space: pre;
+}
+
+.lineNumber {
+  width: 45px;
+  min-width: 45px;
+  text-align: right;
+  padding-right: 10px;
+  color: #484f58;
+  user-select: none;
+  background-color: #161b22;
+  border-right: 1px solid #30363d;
+  font-size: 11px;
+}
+
+.lineContent {
+  padding-left: 10px;
+  flex: 1;
+}
+
+.add {
+  background-color: rgba(56, 139, 253, 0.15);
+  color: #7dbeff;
+}
+
+.add .lineNumber {
+  background-color: rgba(56, 139, 253, 0.3);
+  color: #7dbeff;
+}
+
+.del {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #ffa198;
+}
+
+.del .lineNumber {
+  background-color: rgba(248, 81, 73, 0.3);
+  color: #ffa198;
+}
+
+.hunk {
+  background-color: rgba(110, 118, 129, 0.1);
+  color: #8b949e;
+  font-style: italic;
+}
+
+.hunk .lineNumber {
+  background-color: rgba(110, 118, 129, 0.2);
+}
+
+.info {
+  color: #8b949e;
+  opacity: 0.7;
+}
+
+.emptyDiff {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+.fileItem.active {
+  background-color: var(--active-bg);
+  border-left: 3px solid var(--primary-color);
 }
 
 .loading {
