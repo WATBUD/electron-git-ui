@@ -3,6 +3,7 @@ import { LoadingModal } from '../../../../shared/components/LoadingModal'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import styles from './FileStatus.module.css'
 import { message } from 'antd'
+import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
 
 export const FileStatus = ({
   fileStatus,
@@ -76,16 +77,12 @@ export const FileStatus = ({
   }
 
   const handleDiscardSelected = async () => {
-    // Create an array from the Set to maintain order
     const filesToDiscard = Array.from(selectedFiles)
-
     try {
-      // Pass all files to discard at once
       await onDiscardChanges(filesToDiscard)
     } catch (error) {
       console.error('Error discarding changes:', error)
     } finally {
-      // Always clear the selection
       setSelectedFiles(new Set())
     }
   }
@@ -131,7 +128,6 @@ export const FileStatus = ({
           rightLine: rightLine++
         })
       } else {
-        // Headers or other info
         result.push({ type: 'info', content: line, leftLine: '', rightLine: '' })
       }
     })
@@ -192,14 +188,21 @@ export const FileStatus = ({
                       : 'Select All'}
                   </button>
                   {selectedFiles.size > 0 && (
-                    <button
-                      onClick={handleDiscardSelected}
-                      className={styles.deleteSelectedBtn}
-                      disabled={loading}
+                    <CustomTooltip
+                      styles={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                      }}
                       title="Discard selected changes"
                     >
-                      Discard Selected ({selectedFiles.size})
-                    </button>
+                      <button
+                        onClick={handleDiscardSelected}
+                        className={styles.deleteSelectedBtn}
+                        disabled={loading}
+                      >
+                        Discard Selected ({selectedFiles.size})
+                      </button>
+                    </CustomTooltip>
                   )}
                 </div>
               )}
@@ -229,17 +232,18 @@ export const FileStatus = ({
                       <span className={styles.fileName}>{file.file}</span>
                       <span className={styles.fileStatusText}>{getStatusText(file)}</span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onUnstageFile(file.file)
-                      }}
-                      className={styles.unstageBtn}
-                      title="Unstage file"
-                      disabled={loading}
-                    >
-                      ⬅
-                    </button>
+                    <CustomTooltip title="Unstage file">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onUnstageFile(file.file)
+                        }}
+                        className={styles.unstageBtn}
+                        disabled={loading}
+                      >
+                        ⬅
+                      </button>
+                    </CustomTooltip>
                   </div>
                 ))}
             </div>
@@ -259,14 +263,21 @@ export const FileStatus = ({
                       : 'Select All'}
                   </button>
                   {selectedFiles.size > 0 && (
-                    <button
-                      onClick={handleDiscardSelected}
-                      className={styles.deleteSelectedBtn}
-                      disabled={loading}
+                    <CustomTooltip
+                      styles={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)'
+                      }}
                       title="Discard selected changes"
                     >
-                      Discard Selected ({selectedFiles.size})
-                    </button>
+                      <button
+                        onClick={handleDiscardSelected}
+                        className={styles.deleteSelectedBtn}
+                        disabled={loading}
+                      >
+                        Discard Selected ({selectedFiles.size})
+                      </button>
+                    </CustomTooltip>
                   )}
                 </div>
               )}
@@ -297,28 +308,42 @@ export const FileStatus = ({
                       <span className={styles.fileStatusText}>{getStatusText(fileList)}</span>
                     </div>
                     <div className={styles.fileActions}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onStageFile(fileList.file)
+                      <CustomTooltip
+                        styles={{
+                          backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                          border: '1px solid rgba(34, 197, 94, 0.3)'
                         }}
-                        className={styles.stageBtn}
                         title="Stage file"
-                        disabled={loading}
                       >
-                        ➜
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onDiscardChanges(fileList.file)
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onStageFile(fileList.file)
+                          }}
+                          className={styles.stageBtn}
+                          disabled={loading}
+                        >
+                          ➜
+                        </button>
+                      </CustomTooltip>
+                      <CustomTooltip
+                        styles={{
+                          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)'
                         }}
-                        className={styles.discardBtn}
                         title="Discard changes"
-                        disabled={loading}
                       >
-                        ×
-                      </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDiscardChanges(fileList.file)
+                          }}
+                          className={styles.discardBtn}
+                          disabled={loading}
+                        >
+                          ×
+                        </button>
+                      </CustomTooltip>
                     </div>
                   </div>
                 ))}
@@ -386,3 +411,5 @@ export const FileStatus = ({
     </div>
   )
 }
+
+export default FileStatus

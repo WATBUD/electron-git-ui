@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { ErrorModal } from '../../../../shared/components/ErrorModal'
 import { Toolbar } from '../../components/Toolbar'
 import { FileStatus } from '../../components/FileStatus'
+import { GitStashes } from '../../components/GitStashes'
 import { FooterArea } from '../../layout/FooterArea'
 import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
@@ -31,7 +32,13 @@ import {
   addPrefix,
   openRepository,
   getFileDiff,
-  setSelectedFileDiff
+  setSelectedFileDiff,
+  loadStashes,
+  pushStash,
+  applyStash,
+  popStash,
+  dropStash,
+  getStashDiff
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -56,6 +63,9 @@ export const MainPageGit = () => {
   const selectedPrefixes = useSelector((state) => state.git.selectedPrefixes)
   const projects = useSelector((state) => state.git.projects || [])
   const selectedFileDiff = useSelector((state) => state.git.selectedFileDiff)
+  const stashes = useSelector((state) => state.git.stashes)
+  const stashLoading = useSelector((state) => state.git.stashLoading)
+  const selectedStashDiff = useSelector((state) => state.git.selectedStashDiff)
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -153,6 +163,9 @@ export const MainPageGit = () => {
     }
     if (tab === GIT_TABS.GRAPH) {
       dispatch(loadCommitHistory())
+    }
+    if (tab === GIT_TABS.STASHES) {
+      dispatch(loadStashes())
     }
   }
 
@@ -277,6 +290,20 @@ export const MainPageGit = () => {
                     onRefresh={() => {
                       dispatch(loadFileStatus())
                     }}
+                  />
+                )}
+
+                {activeTab === GIT_TABS.STASHES && (
+                  <GitStashes
+                    stashes={stashes}
+                    loading={stashLoading}
+                    selectedStashDiff={selectedStashDiff}
+                    onRefresh={() => dispatch(loadStashes())}
+                    onPush={async (message) => dispatch(pushStash(message))}
+                    onApply={async (stashIndex) => dispatch(applyStash(stashIndex))}
+                    onPop={async (stashIndex) => dispatch(popStash(stashIndex))}
+                    onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
+                    onSelectStash={(stashIndex) => dispatch(getStashDiff(stashIndex))}
                   />
                 )}
               </>

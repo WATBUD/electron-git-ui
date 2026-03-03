@@ -567,3 +567,96 @@ export const getFileDiff = createAsyncThunk(
     return result.data
   }
 )
+
+// ── Stash thunks ────────────────────────────────────────────────────────────────────
+
+export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejectWithValue }) => {
+  const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+  if (rejectIfNotInitialized) return rejectIfNotInitialized
+  const result = await callGit(
+    () => window.git.stashList(),
+    rejectWithValue,
+    'Failed to load stashes',
+    'stashList'
+  )
+  return result.data
+})
+
+export const pushStash = createAsyncThunk(
+  'git/pushStash',
+  async (message, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashPush(message),
+      rejectWithValue,
+      'Failed to push stash',
+      'stashPush'
+    )
+    await dispatch(loadStashes())
+    return result.data
+  }
+)
+
+export const applyStash = createAsyncThunk(
+  'git/applyStash',
+  async (stashIndex, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashApply(stashIndex),
+      rejectWithValue,
+      'Failed to apply stash',
+      'stashApply'
+    )
+    await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
+    return result.data
+  }
+)
+
+export const popStash = createAsyncThunk(
+  'git/popStash',
+  async (stashIndex, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashPop(stashIndex),
+      rejectWithValue,
+      'Failed to pop stash',
+      'stashPop'
+    )
+    await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
+    return result.data
+  }
+)
+
+export const dropStash = createAsyncThunk(
+  'git/dropStash',
+  async (stashIndex, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashDrop(stashIndex),
+      rejectWithValue,
+      'Failed to drop stash',
+      'stashDrop'
+    )
+    await dispatch(loadStashes())
+    return result.data
+  }
+)
+
+export const getStashDiff = createAsyncThunk(
+  'git/getStashDiff',
+  async (stashIndex, { rejectWithValue }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.getStashDiff(stashIndex),
+      rejectWithValue,
+      'Failed to load stash diff',
+      'getStashDiff'
+    )
+    return result.data
+  }
+)

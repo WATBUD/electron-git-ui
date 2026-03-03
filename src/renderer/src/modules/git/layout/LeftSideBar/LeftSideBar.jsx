@@ -4,10 +4,11 @@ import { GIT_TABS } from '../../constants/tabs'
 
 const LeftSideBar = ({ activeTab, onTabChange, isRepoSelected }) => {
   const menuItems = [
-    { id: GIT_TABS.PROJECTS, label: 'Project List', alwaysEnabled: true },
-    { id: GIT_TABS.BRANCH_VIEW, label: 'Branch View' },
-    // { id: GIT_TABS.GRAPH, label: 'Graph View' },
-    { id: GIT_TABS.FILES, label: 'File Status' }
+    { id: GIT_TABS.PROJECTS, label: '📁 Projects', alwaysEnabled: true },
+    { id: GIT_TABS.BRANCH_VIEW, label: '🌿 Branches' },
+    // { id: GIT_TABS.GRAPH, label: '🔀 Graph' },
+    { id: GIT_TABS.FILES, label: '📝 File Status' },
+    { id: GIT_TABS.STASHES, label: '📦 Stashes' }
   ]
 
   return (

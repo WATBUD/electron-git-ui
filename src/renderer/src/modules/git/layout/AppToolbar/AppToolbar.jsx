@@ -15,6 +15,7 @@ import { DiffModal } from '../../../../shared/components/DiffModal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './AppToolbar.module.css'
 import { Trash2, Plus, Check } from 'lucide-react'
+import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
 
 const PrefixItem = React.memo(({ prefix, onRemove }) => {
   const isSelected = useSelector((state) => (state.git.selectedPrefixes || []).includes(prefix))
@@ -35,7 +36,9 @@ const PrefixItem = React.memo(({ prefix, onRemove }) => {
         <span className={styles.prefixText}>{prefix}</span>
       </div>
       <div className={styles.prefixActions}>
-        <CopyButton textToCopy={prefix} title="Copy prefix" size={12} showCopiedText={false} />
+        <CustomTooltip title="Copy prefix">
+          <CopyButton textToCopy={prefix} size={12} showCopiedText={false} />
+        </CustomTooltip>
         <button
           className={styles.removeBtn}
           onClick={(e) => {
@@ -162,16 +165,17 @@ export const AppToolbar = () => {
           View
         </span>
         <div className={styles.menuContent}>
-          <button
-            className={styles.menuItem}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleShowDiff()
-            }}
-            title="View staged changes diff"
-          >
-            Cached Diff
-          </button>
+          <CustomTooltip title="View staged changes diff">
+            <button
+              className={styles.menuItem}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleShowDiff()
+              }}
+            >
+              Cached Diff
+            </button>
+          </CustomTooltip>
         </div>
       </div>
 
@@ -183,20 +187,23 @@ export const AppToolbar = () => {
           Merge
         </span>
         <div className={styles.menuContent}>
-          <button
-            className={`${styles.menuItem} ${styles.mergeAbortBtn} ${hasMergeInProgress ? styles.active : styles.disabled}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleMergeAbort()
-              setActiveMenu(null)
-            }}
-            disabled={!hasMergeInProgress}
+          <CustomTooltip
             title={
               hasMergeInProgress ? 'Abort the current merge operation' : 'No merge in progress'
             }
           >
-            Abort Merge
-          </button>
+            <button
+              className={`${styles.menuItem} ${styles.mergeAbortBtn} ${hasMergeInProgress ? styles.active : styles.disabled}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMergeAbort()
+                setActiveMenu(null)
+              }}
+              disabled={!hasMergeInProgress}
+            >
+              Abort Merge
+            </button>
+          </CustomTooltip>
         </div>
       </div>
 
@@ -208,18 +215,19 @@ export const AppToolbar = () => {
           Tags
         </span>
         <div className={styles.menuContent}>
-          <button
-            className={`${styles.menuItem} ${styles.refreshTagsBtn} ${isRefreshingTags ? styles.refreshing : ''}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleRefreshTags()
-              setActiveMenu(null)
-            }}
-            disabled={isRefreshingTags}
-            title="Refresh tags from remote"
-          >
-            {isRefreshingTags ? 'Refreshing...' : 'Refresh Tags'}
-          </button>
+          <CustomTooltip title="Refresh tags from remote">
+            <button
+              className={`${styles.menuItem} ${styles.refreshTagsBtn} ${isRefreshingTags ? styles.refreshing : ''}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleRefreshTags()
+                setActiveMenu(null)
+              }}
+              disabled={isRefreshingTags}
+            >
+              {isRefreshingTags ? 'Refreshing...' : 'Refresh Tags'}
+            </button>
+          </CustomTooltip>
         </div>
       </div>
       <div

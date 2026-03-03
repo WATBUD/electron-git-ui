@@ -25,7 +25,13 @@ import {
   getCachedDiff,
   getFileDiff,
   renameBranch,
-  openRepository
+  openRepository,
+  loadStashes,
+  pushStash,
+  applyStash,
+  popStash,
+  dropStash,
+  getStashDiff
 } from './gitThunks'
 
 const STORAGE_KEYS = {
@@ -83,7 +89,10 @@ const initialState = {
   prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
   selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, []),
   projects: loadFromStorage(STORAGE_KEYS.PROJECTS, []),
-  selectedFileDiff: null
+  selectedFileDiff: null,
+  stashes: [],
+  stashLoading: false,
+  selectedStashDiff: null
 }
 
 const gitSlice = createSlice({
@@ -440,6 +449,77 @@ const gitSlice = createSlice({
       })
       .addCase(getFileDiff.rejected, (state, action) => {
         state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // loadStashes
+      .addCase(loadStashes.pending, (state) => {
+        state.stashLoading = true
+        state.error = null
+      })
+      .addCase(loadStashes.fulfilled, (state, action) => {
+        state.stashLoading = false
+        state.stashes = action.payload || []
+        state.selectedStashDiff = null // 重載列表時清除預覽
+      })
+      .addCase(loadStashes.rejected, (state, action) => {
+        state.stashLoading = false
+        state.error = action.payload
+      })
+      // pushStash
+      .addCase(pushStash.pending, (state) => {
+        state.loadingMessage = 'Stashing changes...'
+        state.error = null
+      })
+      .addCase(pushStash.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(pushStash.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // applyStash
+      .addCase(applyStash.pending, (state) => {
+        state.loadingMessage = 'Applying stash...'
+        state.error = null
+      })
+      .addCase(applyStash.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(applyStash.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // popStash
+      .addCase(popStash.pending, (state) => {
+        state.loadingMessage = 'Popping stash...'
+        state.error = null
+      })
+      .addCase(popStash.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(popStash.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // dropStash
+      .addCase(dropStash.pending, (state) => {
+        state.loadingMessage = 'Dropping stash...'
+        state.error = null
+      })
+      .addCase(dropStash.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(dropStash.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      .addCase(getStashDiff.pending, (state) => {
+        state.error = null
+      })
+      .addCase(getStashDiff.fulfilled, (state, action) => {
+        state.selectedStashDiff = action.payload
+      })
+      .addCase(getStashDiff.rejected, (state, action) => {
         state.error = action.payload
       })
   }

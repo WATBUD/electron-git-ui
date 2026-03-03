@@ -718,4 +718,91 @@ export function setupGitHandlers() {
       return fail(error.message)
     }
   })
+
+  // ── Stash handlers ──────────────────────────────────────────────────────────
+
+  ipcMain.handle('git:stashList', async () => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const command = 'git stash list --pretty=format:"%gd|%s|%cr|%H"'
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+      const stashes = stdout
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => {
+          const parts = line.split('|')
+          return {
+            index: parts[0]?.trim() || '',
+            message: parts[1]?.trim() || '',
+            date: parts[2]?.trim() || '',
+            hash: parts[3]?.trim() || ''
+          }
+        })
+      return success(stashes)
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:stashPush', async (_, message) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const command = message ? `git stash push -m "${message}"` : 'git stash push'
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:stashApply', async (_, stashIndex) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const command = `git stash apply ${stashIndex}`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:stashPop', async (_, stashIndex) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const command = `git stash pop ${stashIndex}`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:stashDrop', async (_, stashIndex) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const command = `git stash drop ${stashIndex}`
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:getStashDiff', async (_, stashIndex) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      // 使用 -p 參數來獲取完整 patch (diff)
+      const command = `git stash show -p ${stashIndex}`
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+      return success(stdout)
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
 }

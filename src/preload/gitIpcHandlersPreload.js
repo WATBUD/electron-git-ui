@@ -32,7 +32,13 @@ contextBridge.exposeInMainWorld('git', {
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
-  exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand)
+  exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),
+  stashList: () => ipcRenderer.invoke('git:stashList'),
+  stashPush: (message) => ipcRenderer.invoke('git:stashPush', message),
+  stashApply: (stashIndex) => ipcRenderer.invoke('git:stashApply', stashIndex),
+  stashPop: (stashIndex) => ipcRenderer.invoke('git:stashPop', stashIndex),
+  stashDrop: (stashIndex) => ipcRenderer.invoke('git:stashDrop', stashIndex),
+  getStashDiff: (stashIndex) => ipcRenderer.invoke('git:getStashDiff', stashIndex)
 })
 
 // Debug log to verify git object is exposed
