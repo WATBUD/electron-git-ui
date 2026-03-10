@@ -6,10 +6,11 @@ export const SearchInput = ({
   onChange,
   placeholder = 'Search...',
   className = '',
+  customStyle,
   ...props
 }) => {
   return (
-    <div className={styles.searchContainer}>
+    <div style={customStyle} className={styles.searchContainer}>
       <input
         type="text"
         value={value}
