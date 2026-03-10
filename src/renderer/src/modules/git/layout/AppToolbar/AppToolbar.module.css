@@ -1,268 +1,36 @@
 .appToolbar {
-  margin-left: 0.5rem;
   position: relative;
   top: 0;
   left: 0;
   right: 0;
-  background-color: var(--bg-color);
+  background-color: rgba(30, 30, 45, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 1.2rem;
-  height: 48px;
+  gap: 1rem;
+  height: 44px; /* macOS toolbars are often around 38-44px */
+  padding: 0 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 1000;
   user-select: none;
-}
-
-.toolbarBtn {
-  background-color: transparent;
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.toolbarBtn:hover {
-  background-color: var(--active-bg);
-  border-color: var(--primary-color);
-  color: var(--text-hover);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
 }
 
 .toolbarSection {
   display: flex;
-  gap: 0.5rem;
+  gap: 1.5rem;
   align-items: center;
   height: 100%;
 }
 
-.toolbarMenu {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding: 0 0.25rem;
-  cursor: pointer;
-}
-
-.menuLabel {
-  cursor: pointer;
-  color: var(--text-color);
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 4px;
-  transition: all 0.15s ease;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  position: relative;
-}
-
-.menuLabel:hover {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.menuLabel::after {
-  content: '▼';
-  font-size: 0.6em;
-  margin-left: 0.5em;
-  opacity: 0.7;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.toolbarMenu.active .menuLabel::after {
-  transform: rotate(180deg);
-  opacity: 1;
-}
-
-.menuContent {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  background-color: var(--bg-color);
-  min-width: 200px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  z-index: 1100;
-  padding: 0.5rem 0;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-5px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
-  pointer-events: none;
-}
-
-.toolbarMenu.active .menuContent {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
-}
-
-.menuContent::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 20px;
-  width: 12px;
-  height: 12px;
-  background: var(--bg-color);
-  border-left: 1px solid var(--border-color);
-  border-top: 1px solid var(--border-color);
-  transform: rotate(45deg);
-  z-index: -1;
-}
-
-.menuItem {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  margin: 0 0.5rem;
-  cursor: pointer;
-  color: var(--text-color);
-  font-size: 0.875rem;
-  font-weight: 400;
-  user-select: none;
-  white-space: nowrap;
-  width: calc(100% - 1rem);
-  box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  background: none;
-  border: none;
-  text-align: left;
-  border-radius: 4px;
-  position: relative;
-  overflow: hidden;
-}
-
-.menuItem::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background-color: var(--primary-color);
-  transform: scaleY(0);
-  transform-origin: center;
-  transition: transform 0.2s ease;
-}
-
-.menuItem:hover {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.menuItem:hover::before {
-  transform: scaleY(1);
-}
-
-.menuItem:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: none !important;
-  padding-left: 1.25rem !important;
-}
-
-.menuItem:disabled::before {
-  display: none;
-}
-
-.menuItem input[type="checkbox"] {
-  margin-right: 8px;
-  flex-shrink: 0;
-}
-
-.menuItem > span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mergeAbortBtn {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mergeAbortBtn:hover:not(:disabled) {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.mergeAbortBtn:disabled,
-.mergeAbortBtn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.mergeAbortBtn.active {
-  color: var(--error-color);
-}
-
-.mergeAbortBtn.active:hover {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-.refreshTagsBtn {
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  color: var(--text-color);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.refreshTagsBtn:hover:not(.disabled) {
-  background-color: var(--active-bg);
-  color: var(--text-hover);
-}
-
-.refreshTagsBtn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.refreshTagsBtn.refreshing {
-  position: relative;
-  color: var(--text-secondary);
-}
-
-.refreshTagsBtn.refreshing::after {
-  content: '↻';
-  display: inline-block;
-  margin-left: 0.5rem;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
+/* Mac-style Toggle Switch */
 .toggleSwitch {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 8px;
   cursor: pointer;
-  user-select: none;
 }
 
 .toggleSwitch input {
@@ -274,198 +42,273 @@
 
 .toggleCheckbox {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background-color: var(--bg-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: 6px;
-  transition: all 0.1s ease;
-}
-
-.toggleCheckbox:hover {
-  border-color: var(--primary-color);
-  background-color: rgba(79, 70, 229, 0.1);
-}
-
-.toggleSwitch input:checked + .toggleCheckbox {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  width: 32px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .toggleCheckbox::after {
   content: "";
   position: absolute;
-  display: none;
-  left: 7px;
-  top: 3px;
-  width: 6px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.toggleSwitch input:checked + .toggleCheckbox {
+  background-color: #34c759; /* macOS Success Switch color */
 }
 
 .toggleSwitch input:checked + .toggleCheckbox::after {
-  display: block;
+  transform: translateX(14px);
+}
+
+.toggleLabelContainer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-color);
+  opacity: 0.8;
 }
 
 .toggleLabel {
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 500;
+}
+
+/* Toolbar Menu Labels */
+.toolbarMenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.menuLabel {
+  padding: 4px 10px;
+  border-radius: 6px;
   color: var(--text-color);
-  transition: color 0.1s ease;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
-.toggleSwitch:hover .toggleLabel {
-  color: var(--text-hover);
+.menuLabel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
+.toolbarMenu.active .menuLabel {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+
+/* Dropdown Content */
+.menuContent {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background-color: rgba(30, 30, 45, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  min-width: 180px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: 1100;
+  padding: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.toolbarMenu.active .menuContent {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Mac-style Selection Highlight */
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--text-color);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  background: none;
+  transition: all 0.1s ease;
+  margin: 1px 0;
+}
+
+.menuItem:hover:not(:disabled) {
+  background-color: #007aff; /* macOS blue accent */
+  color: white;
+}
+
+.menuItem:disabled, .menuItem.disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Specific Menu Items */
+.mergeAbortBtn.active {
+  color: #ff3b30; /* macOS Red */
+}
+
+.mergeAbortBtn.active:hover {
+  background-color: #ff3b30;
+  color: white;
+}
+
+.refreshTagsBtn.refreshing::after {
+  content: '↻';
+  display: inline-block;
+  margin-left: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Prefix Management UI */
 .prefixInputContainer {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-bottom: 1px solid var(--border-color);
-  margin-bottom: 0.5rem;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 4px;
 }
 
 .prefixInputContainer input {
   flex: 1;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-color);
-  padding: 4px 8px;
-  font-size: 0.8125rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 4px 10px;
+  font-size: 12px;
   outline: none;
 }
 
 .prefixInputContainer input:focus {
-  border-color: var(--primary-color);
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
 .prefixInputContainer button {
-  background-color: var(--primary-color);
+  background-color: #007aff;
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 4px;
-  cursor: pointer;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
-}
-
-.prefixInputContainer button:hover {
-  background-color: var(--primary-hover);
+  cursor: pointer;
 }
 
 .prefixList {
-  max-height: 200px;
+  max-height: 240px;
   overflow-y: auto;
-  padding-bottom: 0.5rem;
+  padding: 2px;
 }
 
 .prefixItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.4rem 0.5rem 0.4rem 1rem;
-  margin: 0 0.5rem;
-  border-radius: 4px;
-  transition: background-color 0.15s ease;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.1s;
 }
 
 .prefixItem:hover {
-  background-color: var(--active-bg);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .prefixCheckRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex: 1;
+  gap: 10px;
 }
 
 .customCheckbox {
   width: 16px;
   height: 16px;
-  border: 1.5px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-color);
   transition: all 0.2s ease;
-  flex-shrink: 0;
-  color: transparent;
-}
-
-.prefixItem:hover .customCheckbox {
-  border-color: var(--primary-color);
 }
 
 .customCheckbox.checked {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #007aff;
+  border-color: #007aff;
   color: white;
 }
 
 .prefixText {
-  font-size: 0.8125rem;
-  padding-right: 0.5rem;
+  font-size: 12px;
   color: var(--text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .prefixActions {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-/* Only apply base styles to buttons within prefixActions that DON'T have a specific class or we want to normalize them */
-.prefixActions button:not(.removeBtn) {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  transition: all 0.2s;
-}
-
-.prefixActions button:not(.removeBtn):hover {
-  border-color: var(--primary-color);
+  gap: 4px;
+  visibility: hidden;
 }
 
 .prefixItem:hover .prefixActions {
-  opacity: 1;
+  visibility: visible;
 }
 
-.removeBtn {
+.prefixActions button {
   background: none;
   border: none;
   color: var(--text-muted);
+  padding: 2px;
   cursor: pointer;
-  padding: 4px;
   border-radius: 4px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.prefixActions button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .removeBtn:hover {
-  color: #f56565;
-  background-color: rgba(245, 101, 101, 0.1);
+  color: #ff3b30 !important;
+  background-color: rgba(255, 59, 48, 0.1) !important;
+}
+
+/* Scrollbar Style in Prefixes */
+.prefixList::-webkit-scrollbar {
+  width: 4px;
+}
+.prefixList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }

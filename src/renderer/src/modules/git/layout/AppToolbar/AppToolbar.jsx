@@ -14,7 +14,7 @@ import {
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './AppToolbar.module.css'
-import { Trash2, Plus, Check } from 'lucide-react'
+import { Trash2, Plus, Check, Eye, GitMerge, Tag, Type, Clock } from 'lucide-react'
 import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
 
 const PrefixItem = React.memo(({ prefix, onRemove }) => {
@@ -152,7 +152,10 @@ export const AppToolbar = () => {
           <label className={styles.toggleSwitch}>
             <input type="checkbox" checked={showFooter} onChange={() => dispatch(toggleFooter())} />
             <span className={styles.toggleCheckbox}></span>
-            <span className={styles.toggleLabel}>Show History</span>
+            <div className={styles.toggleLabelContainer}>
+              <Clock size={14} />
+              <span className={styles.toggleLabel}>History</span>
+            </div>
           </label>
         </div>
       </div>
@@ -162,6 +165,7 @@ export const AppToolbar = () => {
         ref={viewMenuRef}
       >
         <span className={styles.menuLabel} onClick={() => toggleMenu('view')}>
+          <Eye size={14} style={{ marginRight: '6px' }} />
           View
         </span>
         <div className={styles.menuContent}>
@@ -184,6 +188,7 @@ export const AppToolbar = () => {
         ref={mergeMenuRef}
       >
         <span className={styles.menuLabel} onClick={() => toggleMenu('merge')}>
+          <GitMerge size={14} style={{ marginRight: '6px' }} />
           Merge
         </span>
         <div className={styles.menuContent}>
@@ -212,6 +217,7 @@ export const AppToolbar = () => {
         ref={tagsMenuRef}
       >
         <span className={styles.menuLabel} onClick={() => toggleMenu('tags')}>
+          <Tag size={14} style={{ marginRight: '6px' }} />
           Tags
         </span>
         <div className={styles.menuContent}>
@@ -230,11 +236,13 @@ export const AppToolbar = () => {
           </CustomTooltip>
         </div>
       </div>
+
       <div
         className={`${styles.toolbarMenu} ${activeMenu === 'prefixes' ? styles.active : ''}`}
         ref={prefixMenuRef}
       >
         <span className={styles.menuLabel} onClick={() => toggleMenu('prefixes')}>
+          <Type size={14} style={{ marginRight: '6px' }} />
           Prefixes
         </span>
         <div className={styles.menuContent}>
