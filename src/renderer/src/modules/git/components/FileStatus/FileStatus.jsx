@@ -4,6 +4,18 @@ import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import styles from './FileStatus.module.css'
 import { message } from 'antd'
 import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
+import {
+  Plus,
+  X,
+  ArrowRight,
+  ArrowLeft,
+  FileCode,
+  FolderOpen,
+  Copy,
+  ExternalLink,
+  ChevronRight,
+  ChevronDown
+} from 'lucide-react'
 
 export const FileStatus = ({
   fileStatus,
@@ -141,18 +153,24 @@ export const FileStatus = ({
     return (
       <div className={styles.fileStatusPanel}>
         <div className={styles.fileStatusHeader}>
-          <h3></h3>
+          <div className={styles.headerTitle}>
+            <FileCode size={18} />
+            <span>Changes</span>
+          </div>
           <RefreshButton
             onClick={onRefresh}
             disabled={loading}
             title="Refresh status"
-            text="File Status Refresh"
+            text="Refresh"
           />
         </div>
         <div className={styles.noChangesView}>
-          <div className={styles.noChangesIcon}>📂</div>
+          <div className={styles.noChangesIcon}>
+            <FolderOpen size={48} />
+          </div>
           <p>No file changes detected.</p>
           <button onClick={handleOpenInExplorer} className={styles.openFolderBtn}>
+            <ExternalLink size={16} style={{ marginRight: '8px' }} />
             Open In Explorer / Finder
           </button>
         </div>
@@ -163,19 +181,25 @@ export const FileStatus = ({
   return (
     <div className={styles.fileStatusPanel}>
       <div className={styles.fileStatusHeader}>
-        <h3></h3>
+        <div className={styles.headerTitle}>
+          <FileCode size={18} />
+          <span>Changes</span>
+        </div>
         <RefreshButton
           onClick={onRefresh}
           disabled={loading}
           title="Refresh status"
-          text="File Status Refresh"
+          text="Refresh"
         />
       </div>
       <div className={styles.fileStatusContainer}>
         <div className={styles.fileListPanel}>
           <div className={styles.fileStatusSection}>
             <div className={styles.sectionHeader}>
-              <h3>Staging Area</h3>
+              <div className={styles.sectionTitle}>
+                <ChevronDown size={14} />
+                <h3>Staging Area</h3>
+              </div>
               {_fileStatus.some((f) => f.isStaged) && (
                 <div className={styles.selectionActions}>
                   <button
@@ -184,25 +208,17 @@ export const FileStatus = ({
                     disabled={loading}
                   >
                     {selectedFiles.size === _fileStatus.filter((f) => f.isStaged).length
-                      ? 'Deselect All'
+                      ? 'Deselect'
                       : 'Select All'}
                   </button>
                   {selectedFiles.size > 0 && (
-                    <CustomTooltip
-                      styles={{
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
-                      }}
-                      title="Discard selected changes"
+                    <button
+                      onClick={handleDiscardSelected}
+                      className={styles.deleteSelectedBtn}
+                      disabled={loading}
                     >
-                      <button
-                        onClick={handleDiscardSelected}
-                        className={styles.deleteSelectedBtn}
-                        disabled={loading}
-                      >
-                        Discard Selected ({selectedFiles.size})
-                      </button>
-                    </CustomTooltip>
+                      Discard ({selectedFiles.size})
+                    </button>
                   )}
                 </div>
               )}
@@ -220,17 +236,18 @@ export const FileStatus = ({
                     }}
                     onContextMenu={(e) => handleContextMenu(e, file.file)}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedFiles.has(file.file)}
-                      onChange={() => toggleFileSelection(file.file)}
-                      onClick={(e) => e.stopPropagation()}
-                      className={styles.fileCheckbox}
-                    />
+                    <div className={styles.checkboxWrapper}>
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.has(file.file)}
+                        onChange={() => toggleFileSelection(file.file)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={styles.fileCheckbox}
+                      />
+                    </div>
                     <span className={styles.fileIcon}>{getStatusIcon(file)}</span>
                     <div className={styles.fileInfo}>
                       <span className={styles.fileName}>{file.file}</span>
-                      <span className={styles.fileStatusText}>{getStatusText(file)}</span>
                     </div>
                     <CustomTooltip title="Unstage file">
                       <button
@@ -241,7 +258,7 @@ export const FileStatus = ({
                         className={styles.unstageBtn}
                         disabled={loading}
                       >
-                        ⬅
+                        <ArrowLeft size={14} />
                       </button>
                     </CustomTooltip>
                   </div>
@@ -250,7 +267,10 @@ export const FileStatus = ({
           </div>
           <div className={styles.fileStatusSection}>
             <div className={styles.sectionHeader}>
-              <h3>Working Directory</h3>
+              <div className={styles.sectionTitle}>
+                <ChevronDown size={14} />
+                <h3>Working Directory</h3>
+              </div>
               {_fileStatus.some((f) => !f.isStaged) && (
                 <div className={styles.selectionActions}>
                   <button
@@ -259,25 +279,17 @@ export const FileStatus = ({
                     disabled={loading}
                   >
                     {selectedFiles.size === _fileStatus.filter((f) => !f.isStaged).length
-                      ? 'Deselect All'
+                      ? 'Deselect'
                       : 'Select All'}
                   </button>
                   {selectedFiles.size > 0 && (
-                    <CustomTooltip
-                      styles={{
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)'
-                      }}
-                      title="Discard selected changes"
+                    <button
+                      onClick={handleDiscardSelected}
+                      className={styles.deleteSelectedBtn}
+                      disabled={loading}
                     >
-                      <button
-                        onClick={handleDiscardSelected}
-                        className={styles.deleteSelectedBtn}
-                        disabled={loading}
-                      >
-                        Discard Selected ({selectedFiles.size})
-                      </button>
-                    </CustomTooltip>
+                      Discard ({selectedFiles.size})
+                    </button>
                   )}
                 </div>
               )}
@@ -290,31 +302,26 @@ export const FileStatus = ({
                     key={`working-${index}`}
                     className={`${styles.fileItem} ${selectedFiles.has(fileList.file) ? styles.selected : ''} ${activeFile?.file === fileList.file && !activeFile?.isStaged ? styles.active : ''}`}
                     onClick={(e) => {
-                      if (e.target.closest('input')) return
+                      if (e.target.closest('input') || e.target.closest('button')) return
                       handleFileItemClick(fileList.file, false)
                     }}
                     onContextMenu={(e) => handleContextMenu(e, fileList.file)}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedFiles.has(fileList.file)}
-                      onChange={() => toggleFileSelection(fileList.file)}
-                      onClick={(e) => e.stopPropagation()}
-                      className={styles.fileCheckbox}
-                    />
+                    <div className={styles.checkboxWrapper}>
+                      <input
+                        type="checkbox"
+                        checked={selectedFiles.has(fileList.file)}
+                        onChange={() => toggleFileSelection(fileList.file)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={styles.fileCheckbox}
+                      />
+                    </div>
                     <span className={styles.fileIcon}>{getStatusIcon(fileList)}</span>
                     <div className={styles.fileInfo}>
                       <span className={styles.fileName}>{fileList.file}</span>
-                      <span className={styles.fileStatusText}>{getStatusText(fileList)}</span>
                     </div>
                     <div className={styles.fileActions}>
-                      <CustomTooltip
-                        styles={{
-                          backgroundColor: 'rgba(34, 197, 94, 0.6)',
-                          border: '1px solid rgba(34, 197, 94, 0.3)'
-                        }}
-                        title="Stage file"
-                      >
+                      <CustomTooltip title="Stage file">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -323,16 +330,10 @@ export const FileStatus = ({
                           className={styles.stageBtn}
                           disabled={loading}
                         >
-                          ➜
+                          <Plus size={14} />
                         </button>
                       </CustomTooltip>
-                      <CustomTooltip
-                        styles={{
-                          backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                          border: '1px solid rgba(239, 68, 68, 0.3)'
-                        }}
-                        title="Discard changes"
-                      >
+                      <CustomTooltip title="Discard changes">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -341,7 +342,7 @@ export const FileStatus = ({
                           className={styles.discardBtn}
                           disabled={loading}
                         >
-                          ×
+                          <X size={14} />
                         </button>
                       </CustomTooltip>
                     </div>
@@ -354,9 +355,14 @@ export const FileStatus = ({
           {activeFile ? (
             <div className={styles.diffContent}>
               <div className={styles.diffHeader}>
-                <h4>Diff: {activeFile.file}</h4>
-                <span className={styles.diffType}>
-                  {activeFile.isStaged ? 'Staged' : 'Working Tree'}
+                <div className={styles.diffTitle}>
+                  <FileCode size={16} />
+                  <h4>{activeFile.file}</h4>
+                </div>
+                <span
+                  className={`${styles.diffType} ${activeFile.isStaged ? styles.staged : styles.unstaged}`}
+                >
+                  {activeFile.isStaged ? 'Staged' : 'Modified'}
                 </span>
               </div>
               <div className={styles.diffBody}>
@@ -378,7 +384,10 @@ export const FileStatus = ({
               </div>
             </div>
           ) : (
-            <div className={styles.emptyDiff}>Select a file to view changes</div>
+            <div className={styles.emptyDiffStatus}>
+              <FileCode size={48} />
+              <p>Select a file to view changes</p>
+            </div>
           )}
         </div>
       </div>
@@ -391,19 +400,23 @@ export const FileStatus = ({
             left: contextMenu.x
           }}
         >
-          <div className={styles.contextMenuHeader}>File: {contextMenu.fileName}</div>
+          <div className={styles.contextMenuHeader}>
+            <span className={styles.contextMenuFileName}>{contextMenu.fileName}</span>
+          </div>
           <div className={styles.contextMenuContent}>
             <button
               className={styles.contextMenuItem}
               onClick={() => handleCopyFileName(contextMenu.fileName)}
             >
-              Copy file name
+              <Copy size={14} />
+              <span>Copy file name</span>
             </button>
             <button
               className={styles.contextMenuItem}
               onClick={() => handleCopyPath(contextMenu.fileName)}
             >
-              Copy full path
+              <ExternalLink size={14} />
+              <span>Copy full path</span>
             </button>
           </div>
         </div>

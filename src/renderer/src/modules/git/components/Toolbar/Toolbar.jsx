@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import styles from './Toolbar.module.css'
+import { Download, RefreshCw, Upload, GitCommit, AlertTriangle } from 'lucide-react'
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
@@ -38,7 +39,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
             disabled={loading}
             title="Pull from remote"
           >
-            <span className={styles.toolbarIcon}>⚓</span>
+            <span className={styles.toolbarIcon}>
+              <Download size={14} />
+            </span>
             <span className={styles.toolbarText}>Pull</span>
           </button>
           <button
@@ -47,7 +50,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
             disabled={loading}
             title="Fetch from remote"
           >
-            <span className={styles.toolbarIcon}>⬇️</span>
+            <span className={styles.toolbarIcon}>
+              <RefreshCw size={14} />
+            </span>
             <span className={styles.toolbarText}>Fetch</span>
           </button>
           <button
@@ -56,7 +61,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
             disabled={loading}
             title="Push to remote"
           >
-            <span className={styles.toolbarIcon}>⬆️</span>
+            <span className={styles.toolbarIcon}>
+              <Upload size={14} />
+            </span>
             <span className={styles.toolbarText}>Push</span>
           </button>
           <button
@@ -65,7 +72,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
             disabled={loading}
             title="Commit changes"
           >
-            <span className={styles.toolbarIcon}>💾</span>
+            <span className={styles.toolbarIcon}>
+              <GitCommit size={14} />
+            </span>
             <span className={styles.toolbarText}>Commit</span>
           </button>
         </div>
@@ -73,17 +82,28 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
       {showFetchDialog && (
         <ModalPortal>
-          <div className={styles.dialogOverlay}>
-            <div className={styles.dialog}>
+          <div className={styles.dialogOverlay} onClick={() => setShowFetchDialog(false)}>
+            <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
               <h3>Fetch Options</h3>
               <div className={styles.dialogContent}>
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={pruneBranches}
-                    onChange={(e) => setPruneBranches(e.target.checked)}
-                  />
-                  Prune tracking branches no longer present on remote(s)
+                  <span>Prune remote branches</span>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="checkbox"
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        zIndex: 1
+                      }}
+                      checked={pruneBranches}
+                      onChange={(e) => setPruneBranches(e.target.checked)}
+                    />
+                    <div className={styles.toggleSwitch}></div>
+                  </div>
                 </label>
               </div>
               <div className={styles.dialogButtons}>
@@ -101,21 +121,36 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
       {showPushDialog && (
         <ModalPortal>
-          <div className={styles.dialogOverlay}>
-            <div className={styles.dialog}>
+          <div className={styles.dialogOverlay} onClick={() => setShowPushDialog(false)}>
+            <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
               <h3>Push Options</h3>
               <div className={styles.dialogContent}>
                 <label className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={forcePush}
-                    onChange={(e) => setForcePush(e.target.checked)}
-                  />
-                  Force Push
+                  <span>Force Push</span>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="checkbox"
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        zIndex: 1
+                      }}
+                      checked={forcePush}
+                      onChange={(e) => setForcePush(e.target.checked)}
+                    />
+                    <div className={styles.toggleSwitch}></div>
+                  </div>
                 </label>
                 {forcePush && (
                   <div className={styles.warningMessage}>
-                    ⚠️ Warning: Force push will overwrite remote changes. Use with caution!
+                    <AlertTriangle
+                      size={14}
+                      style={{ marginRight: '8px', verticalAlign: 'middle' }}
+                    />
+                    Warning: Force push will overwrite remote changes. Use with caution!
                   </div>
                 )}
               </div>
@@ -134,8 +169,8 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
 
       {showCommitDialog && (
         <ModalPortal>
-          <div className={styles.dialogOverlay}>
-            <div className={styles.dialog}>
+          <div className={styles.dialogOverlay} onClick={() => setShowCommitDialog(false)}>
+            <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
               <h3>Commit Changes</h3>
               <div className={styles.dialogContent}>
                 <textarea
@@ -143,7 +178,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
                   onChange={(e) => setCommitMessage(e.target.value)}
                   placeholder="Enter commit message..."
                   className={styles.commitMessageInput}
-                  rows={4}
+                  autoFocus
                 />
               </div>
               <div className={styles.dialogButtons}>
@@ -165,3 +200,5 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
     </>
   )
 }
+
+export default Toolbar

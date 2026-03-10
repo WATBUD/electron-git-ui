@@ -9,7 +9,7 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: 1rem;
+  gap: 0.2rem;
   height: 44px; /* macOS toolbars are often around 38-44px */
   padding: 0 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -20,7 +20,7 @@
 
 .toolbarSection {
   display: flex;
-  gap: 1.5rem;
+  gap: 0.4rem;
   align-items: center;
   height: 100%;
 }
