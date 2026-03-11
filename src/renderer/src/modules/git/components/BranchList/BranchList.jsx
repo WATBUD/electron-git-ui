@@ -165,16 +165,13 @@ const BranchList = ({
           </button>
         </div>
       </div>
-
+      <SearchInput
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search branches..."
+        customStyle={{ marginTop: '10px', marginBottom: '10px' }}
+      />
       <div className={styles.listSection}>
-        <SearchInput
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search branches..."
-          className={styles.searchInput}
-          customStyle={{ marginTop: '10px' }}
-        />
-
         <div className={styles.branchListContainer}>
           {loading && !branches.length ? (
             <div className={styles.loading}>

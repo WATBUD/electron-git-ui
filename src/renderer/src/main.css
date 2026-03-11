@@ -18,11 +18,16 @@
   --input-border: var(--border-color);
   --input-padding: 0.5rem;
   --input-radius: 4px;
-  --input-font-size: 0.9rem;
+  --input-font-size: 0.8rem;
+  --input-default-height: 32px;
   /* Error modal specific colors */
   --error-bg: #7f1d1d;
   --error-border: #991b1b;
   --text-error: #fca5a5;
+}
+/* root font-size for rem unit */
+html {
+  font-size: 16px;
 }
 
 body {

@@ -14,7 +14,8 @@ import {
   Copy,
   ExternalLink,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Trash2
 } from 'lucide-react'
 
 export const FileStatus = ({
@@ -30,7 +31,6 @@ export const FileStatus = ({
   onRefresh,
   loading
 }) => {
-  const [selectedFiles, setSelectedFiles] = useState(new Set())
   const [activeFile, setActiveFile] = useState(null)
   const [contextMenu, setContextMenu] = useState({
     show: false,
@@ -73,6 +73,11 @@ export const FileStatus = ({
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
 
+  const handleDiscardFromMenu = (fileName) => {
+    onDiscardChanges(fileName)
+    setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
+
   const toggleFileSelection = (filePath) => {
     const newSelection = new Set(selectedFiles)
     if (selectedFiles.has(filePath)) {
@@ -88,22 +93,17 @@ export const FileStatus = ({
     onFileClick({ file, isStaged })
   }
 
-  const handleDiscardSelected = async () => {
-    const filesToDiscard = Array.from(selectedFiles)
-    try {
-      await onDiscardChanges(filesToDiscard)
-    } catch (error) {
-      console.error('Error discarding changes:', error)
-    } finally {
-      setSelectedFiles(new Set())
+  const handleStageAll = () => {
+    const files = _fileStatus.filter((f) => !f.isStaged).map((f) => f.file)
+    if (files.length > 0) {
+      onStageFile(files)
     }
   }
 
-  const handleSelectAll = (files) => {
-    if (selectedFiles.size === files.length) {
-      setSelectedFiles(new Set())
-    } else {
-      setSelectedFiles(new Set(files.map((file) => file.file)))
+  const handleUnstageAll = () => {
+    const files = _fileStatus.filter((f) => f.isStaged).map((f) => f.file)
+    if (files.length > 0) {
+      onUnstageFile(files)
     }
   }
 
@@ -203,23 +203,12 @@ export const FileStatus = ({
               {_fileStatus.some((f) => f.isStaged) && (
                 <div className={styles.selectionActions}>
                   <button
-                    onClick={() => handleSelectAll(_fileStatus.filter((f) => f.isStaged))}
+                    onClick={handleUnstageAll}
                     className={styles.selectAllBtn}
                     disabled={loading}
                   >
-                    {selectedFiles.size === _fileStatus.filter((f) => f.isStaged).length
-                      ? 'Deselect'
-                      : 'Select All'}
+                    Unstage All
                   </button>
-                  {selectedFiles.size > 0 && (
-                    <button
-                      onClick={handleDiscardSelected}
-                      className={styles.deleteSelectedBtn}
-                      disabled={loading}
-                    >
-                      Discard ({selectedFiles.size})
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -229,7 +218,7 @@ export const FileStatus = ({
                 .map((file, index) => (
                   <div
                     key={`staged-${index}`}
-                    className={`${styles.fileItem} ${selectedFiles.has(file.file) ? styles.selected : ''} ${activeFile?.file === file.file && activeFile?.isStaged ? styles.active : ''}`}
+                    className={`${styles.fileItem} ${activeFile?.file === file.file && activeFile?.isStaged ? styles.active : ''}`}
                     onClick={(e) => {
                       if (e.target.closest('input')) return
                       handleFileItemClick(file.file, true)
@@ -239,8 +228,8 @@ export const FileStatus = ({
                     <div className={styles.checkboxWrapper}>
                       <input
                         type="checkbox"
-                        checked={selectedFiles.has(file.file)}
-                        onChange={() => toggleFileSelection(file.file)}
+                        checked={true}
+                        onChange={() => onUnstageFile(file.file)}
                         onClick={(e) => e.stopPropagation()}
                         className={styles.fileCheckbox}
                       />
@@ -274,23 +263,12 @@ export const FileStatus = ({
               {_fileStatus.some((f) => !f.isStaged) && (
                 <div className={styles.selectionActions}>
                   <button
-                    onClick={() => handleSelectAll(_fileStatus.filter((f) => !f.isStaged))}
+                    onClick={handleStageAll}
                     className={styles.selectAllBtn}
                     disabled={loading}
                   >
-                    {selectedFiles.size === _fileStatus.filter((f) => !f.isStaged).length
-                      ? 'Deselect'
-                      : 'Select All'}
+                    Stage All
                   </button>
-                  {selectedFiles.size > 0 && (
-                    <button
-                      onClick={handleDiscardSelected}
-                      className={styles.deleteSelectedBtn}
-                      disabled={loading}
-                    >
-                      Discard ({selectedFiles.size})
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -300,7 +278,7 @@ export const FileStatus = ({
                 .map((fileList, index) => (
                   <div
                     key={`working-${index}`}
-                    className={`${styles.fileItem} ${selectedFiles.has(fileList.file) ? styles.selected : ''} ${activeFile?.file === fileList.file && !activeFile?.isStaged ? styles.active : ''}`}
+                    className={`${styles.fileItem} ${activeFile?.file === fileList.file && !activeFile?.isStaged ? styles.active : ''}`}
                     onClick={(e) => {
                       if (e.target.closest('input') || e.target.closest('button')) return
                       handleFileItemClick(fileList.file, false)
@@ -310,8 +288,8 @@ export const FileStatus = ({
                     <div className={styles.checkboxWrapper}>
                       <input
                         type="checkbox"
-                        checked={selectedFiles.has(fileList.file)}
-                        onChange={() => toggleFileSelection(fileList.file)}
+                        checked={false}
+                        onChange={() => onStageFile(fileList.file)}
                         onClick={(e) => e.stopPropagation()}
                         className={styles.fileCheckbox}
                       />
@@ -331,18 +309,6 @@ export const FileStatus = ({
                           disabled={loading}
                         >
                           <Plus size={14} />
-                        </button>
-                      </CustomTooltip>
-                      <CustomTooltip title="Discard changes">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDiscardChanges(fileList.file)
-                          }}
-                          className={styles.discardBtn}
-                          disabled={loading}
-                        >
-                          <X size={14} />
                         </button>
                       </CustomTooltip>
                     </div>
@@ -417,6 +383,14 @@ export const FileStatus = ({
             >
               <ExternalLink size={14} />
               <span>Copy full path</span>
+            </button>
+            <div className={styles.contextMenuDivider} />
+            <button
+              className={`${styles.contextMenuItem} ${styles.danger}`}
+              onClick={() => handleDiscardFromMenu(contextMenu.fileName)}
+            >
+              <Trash2 size={14} />
+              <span>Discard changes</span>
             </button>
           </div>
         </div>

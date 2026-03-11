@@ -509,3 +509,13 @@
   background-color: #007aff;
   color: white;
 }
+
+.contextMenuDivider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.08);
+  margin: 4px 6px;
+}
+
+.contextMenuItem.danger:hover {
+  background-color: #ff3b30;
+}

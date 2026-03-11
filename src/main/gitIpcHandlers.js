@@ -481,12 +481,16 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:stageFile', async (_, file) => {
+  ipcMain.handle('git:stageFile', async (_, files) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
     try {
-      const command = `git add "${file}"`
+      const fileList = Array.isArray(files) ? files : [files]
+      if (fileList.length === 0) return success()
+
+      const quotedFiles = fileList.map((f) => `"${f}"`).join(' ')
+      const command = `git add ${quotedFiles}`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
       return success()
@@ -496,12 +500,16 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:unstageFile', async (_, file) => {
+  ipcMain.handle('git:unstageFile', async (_, files) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
     try {
-      const command = `git reset HEAD "${file}"`
+      const fileList = Array.isArray(files) ? files : [files]
+      if (fileList.length === 0) return success()
+
+      const quotedFiles = fileList.map((f) => `"${f}"`).join(' ')
+      const command = `git reset HEAD -- ${quotedFiles}`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
       return success()
