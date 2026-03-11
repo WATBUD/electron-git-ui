@@ -172,6 +172,7 @@
   margin-top: 5px;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .branchGroup {
@@ -182,7 +183,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 0;
+  padding: 8px 12px;
   margin: 0;
   color: rgba(255, 255, 255, 0.35);
   font-size: 10px;
@@ -193,7 +194,7 @@
   transition: color 0.15s;
   position: sticky;
   top: 0;
-  background-color: transparent;
+  background-color: #1e1e2d; /* Match container background */
   z-index: 5;
 }
 
@@ -226,6 +227,7 @@
   cursor: pointer;
   transition: background 0.1s;
   position: relative;
+  gap: 12px;
 }
 
 .branchItem:hover:not(.active) {

@@ -274,7 +274,8 @@ const BranchList = ({
                   {!isRemoteBranchesCollapsed && (
                     <div className={styles.groupContent}>
                       {sortBranches(remoteBranches).length > 0 ? (
-                        sortBranches(remoteBranches).map((branch) => {
+                        sortBranches(remoteBranches).map((branchObj) => {
+                          const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
                           const isActive = branch === currentBranch
                           return (
                             <div
@@ -286,19 +287,28 @@ const BranchList = ({
                               <div className={styles.branchMain}>
                                 <GitBranch size={14} className={styles.itemIcon} />
                                 <span className={styles.branchNameText}>{branch}</span>
+                                {isActive && (
+                                  <CheckCircle2 size={12} className={styles.activeCheck} />
+                                )}
                               </div>
 
-                              <div className={styles.itemActions}>
-                                <CopyButton textToCopy={branch} size={12} showCopiedText={false} />
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onDeleteRemote(branch)
-                                  }}
-                                  className={styles.itemDeleteBtn}
-                                >
-                                  <Trash2 size={12} />
-                                </button>
+                              <div className={styles.branchMeta}>
+                                <div className={styles.itemActions}>
+                                  <CopyButton
+                                    textToCopy={branch}
+                                    size={12}
+                                    showCopiedText={false}
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onDeleteRemote(branch)
+                                    }}
+                                    className={styles.itemDeleteBtn}
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           )
