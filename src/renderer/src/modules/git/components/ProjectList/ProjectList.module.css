@@ -2,213 +2,84 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  color: var(--text-color);
-}
-
-.headerTitle {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  padding: 20px;
 }
 
 .projectList {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: rgba(30, 30, 45, 0.6);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .projectListHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 16px 20px;
   background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerIcon {
+  color: #007aff;
+  opacity: 0.9;
 }
 
 .projectListHeader h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--primary-color);
-  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -0.2px;
 }
 
 .projectCount {
-  font-size: 0.75rem;
-  background: rgba(99, 102, 241, 0.15);
-  color: var(--primary-color);
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.projectListContainer {
-  overflow-y: auto;
-  flex: 1;
-}
-
-.projectItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: grab;
-  border-left: 4px solid transparent;
-  user-select: none;
-}
-
-.projectItem:active {
-  cursor: grabbing;
-}
-
-.dragHandle {
-  margin-right: 1rem;
-  color: #64748b;
-  font-size: 1.2rem;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-  cursor: grab;
-}
-
-.projectItem:hover .dragHandle {
-  opacity: 1;
-}
-
-.isDragging {
-  background-color: rgba(99, 102, 241, 0.1);
-  border-left-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.projectItem:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  border-left-color: rgba(99, 102, 241, 0.4);
-}
-
-.projectItem.activeProject {
-  background-color: rgba(99, 102, 241, 0.08);
-  border-left-color: var(--primary-color);
-}
-
-.projectInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.projectName {
-  font-size: 1rem;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2px 8px;
+  border-radius: 10px;
   font-weight: 600;
-  color: #f1f5f9;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.currentBadge {
-  font-size: 0.7rem;
-  color: var(--primary-color);
-  background: rgba(99, 102, 241, 0.15);
-  padding: 0.1rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.shortcutHint {
-  font-size: 0.7rem;
-  color: #64748b;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  font-weight: 700;
-  margin-left: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.projectPath {
-  font-size: 0.8rem;
-  color: #94a3b8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  opacity: 0.8;
-}
-
-.projectActions {
-  display: flex;
-  gap: 1rem;
-  opacity: 0;
-  transform: translateX(10px);
-  transition: all 0.2s ease;
-}
-
-.projectItem:hover .projectActions {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.deleteBtn {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: 6px;
-  background-color: transparent;
-  color: #f87171;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-weight: 600;
-}
-
-.deleteBtn:hover:not(:disabled) {
-  background-color: #ef4444;
-  color: white;
-  border-color: #ef4444;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
-}
-
-.deleteBtn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #64748b;
 }
 
 .addProjectBtn {
-  padding: 0.5rem 1rem;
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary-color);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #007aff;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .addProjectBtn:hover:not(:disabled) {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  background: #0063cf;
+  transform: translateY(-0.5px);
 }
 
 .addProjectBtn:active:not(:disabled) {
+  background: #0051a8;
   transform: translateY(0);
 }
 
@@ -217,24 +88,236 @@
   cursor: not-allowed;
 }
 
-.addProjectBtn span {
-  font-size: 1.1rem;
-  font-weight: 400;
-  line-height: 1;
+.projectListContainer {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px;
+}
+
+/* Custom scrollbar for macOS feel */
+.projectListContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.projectListContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.projectListContainer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.projectListContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+  background-clip: content-box;
+}
+
+.projectItem {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  gap: 12px;
+}
+
+.projectItem:last-child {
+  margin-bottom: 0;
+}
+
+.projectItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.activeProject {
+  background-color: rgba(0, 122, 255, 0.15) !important;
+}
+
+.activeProject::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background-color: #007aff;
+  border-radius: 0 2px 2px 0;
+}
+
+.isDragging {
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 0.8;
+  transform: scale(1.02);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dragHandle {
+  color: rgba(255, 255, 255, 0.2);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.projectItem:hover .dragHandle {
+  opacity: 1;
+}
+
+.projectIcon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.folderIconWrapper {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: #007aff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 122, 255, 0.3);
+}
+
+.overlayIcon {
+  color: white;
+  opacity: 0.9;
+}
+
+.projectInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.projectName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nameText {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shortcutHint {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.currentBadge {
+  font-size: 10px;
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.projectPath {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: -apple-system, system-ui, sans-serif;
+}
+
+.projectActions {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.projectItem:hover .projectActions {
+  opacity: 1;
+}
+
+.deleteBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background-color: rgba(255, 59, 48, 0.15);
+  color: #ff3b30;
+}
+
+.deleteBtn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
 }
 
 .emptyState {
-  padding: 5rem 2rem;
-  text-align: center;
-  color: #64748b;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  gap: 16px;
 }
 
 .emptyStateIcon {
-  font-size: 4rem;
-  opacity: 0.3;
-  filter: grayscale(1);
+  opacity: 0.2;
+  color: #ffffff;
+}
+
+.emptyState p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.emptyStateBtn {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.emptyStateBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
