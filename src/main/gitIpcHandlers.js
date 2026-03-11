@@ -562,7 +562,11 @@ export function setupGitHandlers() {
       return fail('No repository selected')
     }
     try {
-      const command = `git commit -m "${message}"`
+      // Use a temporary file or properly escape for shell
+      // Given the current architecture, escaping is the quickest fix.
+      // But a better way is to use execFile/spawn to avoid shell parsing.
+      const escapedMessage = message.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$')
+      const command = `git commit -m "${escapedMessage}"`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
       return success({ output: stdout || stderr })
