@@ -15,7 +15,8 @@ import {
   ExternalLink,
   ChevronRight,
   ChevronDown,
-  Trash2
+  Trash2,
+  Archive
 } from 'lucide-react'
 
 export const FileStatus = ({
@@ -29,6 +30,7 @@ export const FileStatus = ({
   getStatusIcon,
   getStatusText,
   onRefresh,
+  onStashFile,
   loading
 }) => {
   const [activeFile, setActiveFile] = useState(null)
@@ -75,6 +77,11 @@ export const FileStatus = ({
 
   const handleDiscardFromMenu = (fileName) => {
     onDiscardChanges(fileName)
+    setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
+
+  const handleStashFromMenu = (fileName) => {
+    onStashFile(fileName)
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
 
@@ -238,18 +245,20 @@ export const FileStatus = ({
                     <div className={styles.fileInfo}>
                       <span className={styles.fileName}>{file.file}</span>
                     </div>
-                    <CustomTooltip title="Unstage file">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onUnstageFile(file.file)
-                        }}
-                        className={styles.unstageBtn}
-                        disabled={loading}
-                      >
-                        <ArrowLeft size={14} />
-                      </button>
-                    </CustomTooltip>
+                    <div className={styles.fileActions}>
+                      <CustomTooltip title="Unstage file">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onUnstageFile(file.file)
+                          }}
+                          className={styles.unstageBtn}
+                          disabled={loading}
+                        >
+                          <ArrowLeft size={14} />
+                        </button>
+                      </CustomTooltip>
+                    </div>
                   </div>
                 ))}
             </div>
@@ -383,6 +392,13 @@ export const FileStatus = ({
             >
               <ExternalLink size={14} />
               <span>Copy full path</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => handleStashFromMenu(contextMenu.fileName)}
+            >
+              <Archive size={14} />
+              <span>Stash changes</span>
             </button>
             <div className={styles.contextMenuDivider} />
             <button

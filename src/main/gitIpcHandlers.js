@@ -757,10 +757,17 @@ export function setupGitHandlers() {
     }
   })
 
-  ipcMain.handle('git:stashPush', async (_, message) => {
+  ipcMain.handle('git:stashPush', async (_, message, files) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {
-      const command = message ? `git stash push -m "${message}"` : 'git stash push'
+      let command = 'git stash push'
+      if (message) {
+        command += ` -m "${message}"`
+      }
+      if (files && files.length > 0) {
+        const fileList = Array.isArray(files) ? files : [files]
+        command += ` -- ${fileList.map((f) => `"${f}"`).join(' ')}`
+      }
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
       return success({ output: stdout || stderr })

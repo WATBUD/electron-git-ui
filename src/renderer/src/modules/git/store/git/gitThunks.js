@@ -584,16 +584,21 @@ export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejec
 
 export const pushStash = createAsyncThunk(
   'git/pushStash',
-  async (message, { rejectWithValue, dispatch }) => {
+  async (args, { rejectWithValue, dispatch }) => {
+    // If args is a string, it's the message (legacy)
+    // If args is an object, it can have { message, files }
+    const message = typeof args === 'string' ? args : args?.message
+    const files = typeof args === 'object' ? args?.files : undefined
+
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
     const result = await callGit(
-      () => window.git.stashPush(message),
+      () => window.git.stashPush(message, files),
       rejectWithValue,
       'Failed to push stash',
       'stashPush'
     )
-    await dispatch(loadStashes())
+    await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
     return result.data
   }
 )

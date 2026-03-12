@@ -97,7 +97,6 @@ export const GitStashes = ({
           <h3>Stashed Changes</h3>
           {stashes.length > 0 && <span className={styles.badge}>{stashes.length}</span>}
         </div>
-        <RefreshButton onClick={onRefresh} disabled={loading} text="Refresh" />
       </div>
 
       <div className={styles.createSection}>

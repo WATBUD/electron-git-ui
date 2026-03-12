@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld('git', {
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),
   stashList: () => ipcRenderer.invoke('git:stashList'),
-  stashPush: (message) => ipcRenderer.invoke('git:stashPush', message),
+  stashPush: (message, files) => ipcRenderer.invoke('git:stashPush', message, files),
   stashApply: (stashIndex) => ipcRenderer.invoke('git:stashApply', stashIndex),
   stashPop: (stashIndex) => ipcRenderer.invoke('git:stashPop', stashIndex),
   stashDrop: (stashIndex) => ipcRenderer.invoke('git:stashDrop', stashIndex),

@@ -263,6 +263,12 @@
   border-color: #ff3b30;
 }
 
+.stashFileBtn:hover {
+  background-color: #007aff;
+  color: white;
+  border-color: #007aff;
+}
+
 /* Diff Panel Styles */
 .diffPanel {
   flex: 2;

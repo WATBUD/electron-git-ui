@@ -97,6 +97,9 @@ export const MainPageGit = () => {
           dispatch(checkMergeInProgress())
           dispatch(loadBranches())
         }
+        if (activeTab === GIT_TABS.STASHES) {
+          dispatch(loadStashes())
+        }
       }
     }
 
@@ -284,6 +287,14 @@ export const MainPageGit = () => {
                     onDiscardChanges={async (file) => {
                       const result = await dispatch(discardFileChanges(file))
                       if (discardFileChanges.fulfilled.match(result)) {
+                        dispatch(loadFileStatus())
+                      }
+                    }}
+                    onStashFile={async (file) => {
+                      const result = await dispatch(
+                        pushStash({ files: [file], message: `Stashed ${file}` })
+                      )
+                      if (pushStash.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}

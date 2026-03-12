@@ -453,15 +453,18 @@ const gitSlice = createSlice({
       })
       // loadStashes
       .addCase(loadStashes.pending, (state) => {
+        state.loadingMessage = 'Loading stashes...'
         state.stashLoading = true
         state.error = null
       })
       .addCase(loadStashes.fulfilled, (state, action) => {
+        state.loadingMessage = ''
         state.stashLoading = false
         state.stashes = action.payload || []
         state.selectedStashDiff = null // 重載列表時清除預覽
       })
       .addCase(loadStashes.rejected, (state, action) => {
+        state.loadingMessage = ''
         state.stashLoading = false
         state.error = action.payload
       })
