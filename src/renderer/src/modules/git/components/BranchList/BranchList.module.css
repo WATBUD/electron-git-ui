@@ -6,6 +6,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   overflow: hidden;
   background-color: transparent;
+  padding: var(--container-padding);
 }
 
 /* --- Header Section --- */

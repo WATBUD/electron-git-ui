@@ -24,6 +24,7 @@
   --error-bg: #7f1d1d;
   --error-border: #991b1b;
   --text-error: #fca5a5;
+  --container-padding: 12px;
 }
 /* root font-size for rem unit */
 html {

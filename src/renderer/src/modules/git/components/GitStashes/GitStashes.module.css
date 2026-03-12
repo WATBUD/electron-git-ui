@@ -2,78 +2,108 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--bg-color);
-  border-radius: 8px;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   overflow: hidden;
+  padding: var(--container-padding);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 4px 12px;
   flex-shrink: 0;
-  padding: 0 4px 8px;
 }
 
 .headerTitle {
-  margin: 0;
-  color: var(--text-color);
-  font-size: 1.1rem;
-  font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+
+.headerIcon {
+  color: #007aff;
+}
+
+.headerTitle h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--primary-color);
-  color: #fff;
-  font-size: 0.72rem;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
   padding: 0 6px;
-  margin-left: 4px;
+  font-weight: 600;
 }
 
 .createSection {
   flex-shrink: 0;
-  background-color: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 14px 16px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 12px;
   margin-bottom: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .createRow {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+}
+
+.inputWrapper {
+  flex: 1;
 }
 
 .stashInput {
-  flex: 1;
-  padding: 8px 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
+  width: 100%;
+  padding: 6px 10px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  color: var(--text-color);
-  font-size: 0.88rem;
+  color: #ffffff;
+  font-size: 12px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.stashInput:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
 .pushBtn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  background-color: var(--primary-color);
+  padding: 6px 14px;
+  background-color: #007aff;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.pushBtn:hover:not(:disabled) {
+  background-color: #0063cf;
+}
+
+.pushBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .listWrapper {
@@ -82,195 +112,326 @@
   padding: 0 2px;
 }
 
+/* Custom scrollbar for macOS feel */
+.listWrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.listWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.listWrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.listWrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .stashList {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .stashItem {
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
   overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stashItem.expanded {
-  border-color: var(--primary-color);
-  box-shadow: 0 3px 12px rgba(79, 70, 229, 0.25);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .stashSummary {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   cursor: pointer;
+  user-select: none;
 }
 
-.stashBadge {
-  font-family: monospace;
-  font-size: 0.75rem;
-  color: var(--primary-color);
-  background-color: rgba(79, 70, 229, 0.12);
-  padding: 3px 8px;
+.stashIndexBadge {
+  font-family: "SF Mono", monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #007aff;
+  background-color: rgba(0, 122, 255, 0.1);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .stashMeta {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   overflow: hidden;
 }
 
 .stashMessage {
-  font-size: 0.88rem;
-  color: var(--text-color);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
-.stashDate {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
+.stashTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .chevron {
-  font-size: 1.4rem;
-  color: var(--text-secondary);
-  transition: transform 0.2s;
+  color: rgba(255, 255, 255, 0.2);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chevronOpen {
   transform: rotate(90deg);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.stashActions {
-  padding: 12px 14px 14px;
-  border-top: 1px solid var(--border-color);
-  background-color: rgba(0, 0, 0, 0.1);
+.stashDetails {
+  padding: 0 14px 14px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-/* 內嵌式 Diff 預覽樣式 (參考 FileStatus) */
+.actionToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.applyBtn:hover:not(:disabled) {
+  background-color: rgba(52, 199, 89, 0.1);
+  color: #34c759;
+  border-color: rgba(52, 199, 89, 0.3);
+}
+
+.popBtn:hover:not(:disabled) {
+  background-color: rgba(0, 122, 255, 0.1);
+  color: #007aff;
+  border-color: rgba(0, 122, 255, 0.3);
+}
+
+.dropBtn:hover:not(:disabled) {
+  background-color: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+  border-color: rgba(255, 59, 48, 0.3);
+}
+
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 59, 48, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 59, 48, 0.2);
+}
+
+.alertIcon {
+  color: #ff3b30;
+}
+
+.confirmLabel {
+  font-size: 11px;
+  color: #ff3b30;
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.confirmActionBtn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dropBtnActive {
+  background-color: #ff3b30;
+  color: #fff;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Embedded Diff Styling */
 .embeddedDiff {
   background-color: #0d1117;
-  border: 1px solid #30363d;
-  border-radius: 6px;
-  margin: 10px 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   overflow: hidden;
 }
 
-.diffTitle {
+.diffHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 12px;
-  background-color: #161b22;
-  border-bottom: 1px solid #30363d;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-family: monospace;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .diffBody {
-  max-height: 400px;
+  max-height: 350px;
   overflow-y: auto;
 }
 
 .diffLines {
   display: flex;
   flex-direction: column;
-  font-family: monospace;
-  font-size: 12px;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .diffLine {
   display: flex;
   min-height: 18px;
-  line-height: 18px;
   white-space: pre;
 }
 
 .lineNumber {
-  width: 35px;
-  min-width: 35px;
+  width: 32px;
+  min-width: 32px;
   text-align: right;
   padding-right: 8px;
-  color: #484f58;
-  background-color: #161b22;
-  border-right: 1px solid #30363d;
-  font-size: 10px;
+  color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.01);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 9px;
+  user-select: none;
 }
 
 .lineContent {
-  padding-left: 8px;
+  padding-left: 10px;
   flex: 1;
 }
 
-.add { background-color: rgba(56, 139, 253, 0.15); color: #7dbeff; }
-.add .lineNumber { background-color: rgba(56, 139, 253, 0.3); color: #7dbeff; }
-.del { background-color: rgba(248, 81, 73, 0.15); color: #ffa198; }
-.del .lineNumber { background-color: rgba(248, 81, 73, 0.3); color: #ffa198; }
-.hunk { background-color: rgba(110, 118, 129, 0.1); color: #8b949e; font-style: italic; }
-.diffLoading { padding: 20px; text-align: center; color: var(--text-secondary); font-style: italic; font-size: 0.85rem; }
-
-.actionBtns {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.add {
+  background-color: rgba(52, 199, 89, 0.1);
+  color: #34c759;
 }
 
-.actionBtn {
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
+.del {
+  background-color: rgba(255, 59, 48, 0.1);
+  color: #ff3b30;
+}
+
+.hunk {
+  background-color: rgba(0, 122, 255, 0.05);
+  color: #007aff;
+  font-style: italic;
+  font-size: 10px;
+}
+
+.diffLoading {
+  padding: 30px;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
 }
 
-.applyBtn { background-color: rgba(34, 197, 94, 0.15); color: #4ade80; }
-.popBtn { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-.dropBtn { background-color: rgba(239, 68, 68, 0.12); color: #f87171; }
-.confirmRow { display: flex; align-items: center; gap: 8px; }
-.confirmLabel { font-size: 0.8rem; color: #f87171; }
-.dropConfirmBtn { background-color: #ef4444; color: #fff; }
-.cancelBtn { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .emptyState {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px 32px;
+  padding: 80px 40px;
+  color: rgba(255, 255, 255, 0.3);
   text-align: center;
-  background-color: var(--bg-secondary);
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  margin-top: 8px;
+  gap: 16px;
 }
 
-.emptyIcon { font-size: 3rem; opacity: 0.5; }
-.emptyTitle { font-size: 1.1rem; color: var(--text-color); margin-bottom: 8px; }
-
-.loadingRow { padding: 20px; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; }
-.spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--border-color);
-  border-top-color: var(--primary-color);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+.emptyIconContainer {
+  opacity: 0.15;
+  color: #ffffff;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+.emptyState p {
+  font-size: 14px;
+  margin: 0;
+}

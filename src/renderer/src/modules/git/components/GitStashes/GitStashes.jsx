@@ -2,6 +2,17 @@ import React, { useState } from 'react'
 import styles from './GitStashes.module.css'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
+import {
+  Archive,
+  Trash2,
+  Play,
+  ArrowUpToLine,
+  ChevronRight,
+  Plus,
+  Clock,
+  Code2,
+  AlertCircle
+} from 'lucide-react'
 
 export const GitStashes = ({
   stashes = [],
@@ -39,11 +50,10 @@ export const GitStashes = ({
     const isExpanding = expandedStash !== stashIndex
     setExpandedStash(isExpanding ? stashIndex : null)
     if (isExpanding) {
-      onSelectStash(stashIndex) // 展開時抓取 Diff
+      onSelectStash(stashIndex)
     }
   }
 
-  // 渲染 Diff 的輔助函數 (參考 FileStatus)
   const parseDiff = (diffText) => {
     if (!diffText) return []
     const lines = diffText.split('\n')
@@ -79,167 +89,167 @@ export const GitStashes = ({
 
   const diffLines = parseDiff(selectedStashDiff)
 
-  // ── Empty state ──────────────────────────────────────────────────────────────
-  if (!loading && stashes.length === 0) {
-    return (
-      <div className={styles.panel}>
-        <div className={styles.header}>
-          <h3 className={styles.headerTitle}>
-            <span className={styles.headerIcon}>📦</span> Git Stashes
-          </h3>
-          <RefreshButton onClick={onRefresh} disabled={loading} text="Refresh" />
-        </div>
-        <div className={styles.createSection}>
-          <div className={styles.createRow}>
-            <input
-              className={styles.stashInput}
-              type="text"
-              placeholder="Stash message..."
-              value={stashMessage}
-              onChange={(e) => setStashMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={loading}
-            />
-            <button className={styles.pushBtn} onClick={handlePush} disabled={loading}>
-              Stash Changes
-            </button>
-          </div>
-        </div>
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📭</div>
-          <p className={styles.emptyTitle}>No stashes yet</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h3 className={styles.headerTitle}>
-          <span className={styles.headerIcon}>📦</span> Git Stashes
-          <span className={styles.badge}>{stashes.length}</span>
-        </h3>
+        <div className={styles.headerTitle}>
+          <Archive size={16} className={styles.headerIcon} />
+          <h3>Stashed Changes</h3>
+          {stashes.length > 0 && <span className={styles.badge}>{stashes.length}</span>}
+        </div>
         <RefreshButton onClick={onRefresh} disabled={loading} text="Refresh" />
       </div>
 
       <div className={styles.createSection}>
         <div className={styles.createRow}>
-          <input
-            className={styles.stashInput}
-            type="text"
-            placeholder="Stash message..."
-            value={stashMessage}
-            onChange={(e) => setStashMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-          />
-          <button className={styles.pushBtn} onClick={handlePush} disabled={loading}>
-            Stash
+          <div className={styles.inputWrapper}>
+            <input
+              className={styles.stashInput}
+              type="text"
+              placeholder="Give your stash a message..."
+              value={stashMessage}
+              onChange={(e) => setStashMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loading}
+            />
+          </div>
+          <button
+            className={styles.pushBtn}
+            onClick={handlePush}
+            disabled={loading || !stashMessage.trim()}
+          >
+            <Plus size={14} />
+            <span>Stash</span>
           </button>
         </div>
       </div>
 
       <div className={styles.listWrapper}>
-        <ul className={styles.stashList}>
-          {stashes.map((stash, idx) => {
-            const isExpanded = expandedStash === stash.index
-            const isConfirming = confirmDrop === stash.index
+        {!loading && stashes.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIconContainer}>
+              <Archive size={40} strokeWidth={1} />
+            </div>
+            <p>No stashed changes yet.</p>
+          </div>
+        ) : (
+          <ul className={styles.stashList}>
+            {stashes.map((stash) => {
+              const isExpanded = expandedStash === stash.index
+              const isConfirming = confirmDrop === stash.index
 
-            return (
-              <li
-                key={stash.index}
-                className={`${styles.stashItem} ${isExpanded ? styles.expanded : ''}`}
-              >
-                <div className={styles.stashSummary} onClick={() => toggleExpand(stash.index)}>
-                  <span className={styles.stashBadge}>{stash.index}</span>
-                  <div className={styles.stashMeta}>
-                    <span className={styles.stashMessage}>{stash.message}</span>
-                    <span className={styles.stashDate}>{stash.date}</span>
+              return (
+                <li
+                  key={stash.index}
+                  className={`${styles.stashItem} ${isExpanded ? styles.expanded : ''}`}
+                >
+                  <div className={styles.stashSummary} onClick={() => toggleExpand(stash.index)}>
+                    <div className={styles.stashIndexBadge}>{stash.index}</div>
+                    <div className={styles.stashMeta}>
+                      <span className={styles.stashMessage}>{stash.message}</span>
+                      <div className={styles.stashTime}>
+                        <Clock size={10} />
+                        <span>{stash.date}</span>
+                      </div>
+                    </div>
+                    <ChevronRight
+                      size={16}
+                      className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}
+                    />
                   </div>
-                  <span className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ''}`}>
-                    ›
-                  </span>
-                </div>
 
-                {isExpanded && (
-                  <div className={styles.stashActions}>
-                    <div className={styles.actionBtns}>
-                      <CustomTooltip title="git stash apply — 套用變更，但保留此 stash 記錄">
-                        <button
-                          className={`${styles.actionBtn} ${styles.applyBtn}`}
-                          onClick={() => onApply(stash.index)}
-                          disabled={loading}
-                        >
-                          ✅ Apply
-                        </button>
-                      </CustomTooltip>
-                      <CustomTooltip title="git stash pop — 套用變更，並刪除此 stash 記錄">
-                        <button
-                          className={`${styles.actionBtn} ${styles.popBtn}`}
-                          onClick={() => onPop(stash.index)}
-                          disabled={loading}
-                        >
-                          ⬆️ Pop
-                        </button>
-                      </CustomTooltip>
-                      {isConfirming ? (
-                        <div className={styles.confirmRow}>
-                          <span className={styles.confirmLabel}>確定刪除？</span>
+                  {isExpanded && (
+                    <div className={styles.stashDetails}>
+                      <div className={styles.actionToolbar}>
+                        <CustomTooltip title="Apply - Keep this stash while applying changes">
                           <button
-                            className={`${styles.actionBtn} ${styles.dropConfirmBtn}`}
-                            onClick={() => handleDropConfirm(stash.index)}
+                            className={`${styles.actionBtn} ${styles.applyBtn}`}
+                            onClick={() => onApply(stash.index)}
                             disabled={loading}
                           >
-                            確定
-                          </button>
-                          <button
-                            className={`${styles.actionBtn} ${styles.cancelBtn}`}
-                            onClick={() => setConfirmDrop(null)}
-                          >
-                            取消
-                          </button>
-                        </div>
-                      ) : (
-                        <CustomTooltip title="git stash drop — 直接刪除此 stash 記錄">
-                          <button
-                            className={`${styles.actionBtn} ${styles.dropBtn}`}
-                            onClick={() => setConfirmDrop(stash.index)}
-                            disabled={loading}
-                          >
-                            🗑️ Drop
+                            <Play size={12} fill="currentColor" />
+                            <span>Apply</span>
                           </button>
                         </CustomTooltip>
-                      )}
-                    </div>
+                        <CustomTooltip title="Pop - Apply and delete this stash">
+                          <button
+                            className={`${styles.actionBtn} ${styles.popBtn}`}
+                            onClick={() => onPop(stash.index)}
+                            disabled={loading}
+                          >
+                            <ArrowUpToLine size={12} />
+                            <span>Pop</span>
+                          </button>
+                        </CustomTooltip>
 
-                    {/* 內嵌式 Diff 預覽 */}
-                    <div className={styles.embeddedDiff}>
-                      <div className={styles.diffTitle}>
-                        📄 Stash Content Preview ({stash.index})
-                      </div>
-                      <div className={styles.diffBody}>
-                        {selectedStashDiff ? (
-                          <div className={styles.diffLines}>
-                            {diffLines.map((line, lidx) => (
-                              <div key={lidx} className={`${styles.diffLine} ${styles[line.type]}`}>
-                                <div className={styles.lineNumber}>{line.leftLine}</div>
-                                <div className={styles.lineNumber}>{line.rightLine}</div>
-                                <div className={styles.lineContent}>{line.content}</div>
-                              </div>
-                            ))}
+                        <div className={styles.spacer} />
+
+                        {isConfirming ? (
+                          <div className={styles.confirmRow}>
+                            <AlertCircle size={12} className={styles.alertIcon} />
+                            <span className={styles.confirmLabel}>Are you sure?</span>
+                            <button
+                              className={`${styles.confirmActionBtn} ${styles.dropBtnActive}`}
+                              onClick={() => handleDropConfirm(stash.index)}
+                              disabled={loading}
+                            >
+                              Delete
+                            </button>
+                            <button
+                              className={styles.cancelBtn}
+                              onClick={() => setConfirmDrop(null)}
+                            >
+                              Cancel
+                            </button>
                           </div>
                         ) : (
-                          <div className={styles.diffLoading}>Loading content diff...</div>
+                          <CustomTooltip title="Drop - Permanently remove this stash">
+                            <button
+                              className={`${styles.actionBtn} ${styles.dropBtn}`}
+                              onClick={() => setConfirmDrop(stash.index)}
+                              disabled={loading}
+                            >
+                              <Trash2 size={12} />
+                              <span>Drop</span>
+                            </button>
+                          </CustomTooltip>
                         )}
                       </div>
+
+                      <div className={styles.embeddedDiff}>
+                        <div className={styles.diffHeader}>
+                          <Code2 size={12} />
+                          <span>STASHED CONTENT</span>
+                        </div>
+                        <div className={styles.diffBody}>
+                          {selectedStashDiff ? (
+                            <div className={styles.diffLines}>
+                              {diffLines.map((line, lidx) => (
+                                <div
+                                  key={lidx}
+                                  className={`${styles.diffLine} ${styles[line.type]}`}
+                                >
+                                  <div className={styles.lineNumber}>{line.leftLine}</div>
+                                  <div className={styles.lineNumber}>{line.rightLine}</div>
+                                  <div className={styles.lineContent}>{line.content}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className={styles.diffLoading}>
+                              <div className={styles.loadingSpinner} />
+                              <span>Analyzing changes...</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </div>
   )
