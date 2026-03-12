@@ -47,13 +47,32 @@
   font-weight: 600;
 }
 
+/* Split Layout */
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 12px;
+  min-height: 0; /* Important for nested flex scroll */
+}
+
+/* Left Sidebar - Stash List */
+.sidebar {
+  width: 320px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  min-height: 0;
+}
+
 .createSection {
   flex-shrink: 0;
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 10px;
 }
 
 .createRow {
@@ -85,16 +104,16 @@
 .pushBtn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   background-color: #007aff;
   color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .pushBtn:hover:not(:disabled) {
@@ -109,27 +128,7 @@
 .listWrapper {
   flex: 1;
   overflow-y: auto;
-  padding: 0 2px;
-}
-
-/* Custom scrollbar for macOS feel */
-.listWrapper::-webkit-scrollbar {
-  width: 8px;
-}
-
-.listWrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.listWrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-.listWrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  padding-right: 4px;
 }
 
 .stashList {
@@ -145,14 +144,20 @@
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.stashItem.expanded {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+.stashItem:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.stashItem.active {
+  background-color: rgba(0, 122, 255, 0.1);
+  border-color: rgba(0, 122, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .stashSummary {
@@ -160,8 +165,6 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  cursor: pointer;
-  user-select: none;
 }
 
 .stashIndexBadge {
@@ -206,45 +209,71 @@
   color: rgba(255, 255, 255, 0.3);
 }
 
-.chevron {
-  color: rgba(255, 255, 255, 0.2);
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.chevronOpen {
-  transform: rotate(90deg);
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.stashDetails {
-  padding: 0 14px 14px;
+/* Right Content - Details & Diff */
+.detailView {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.detailHeader {
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.detailMeta {
+  flex: 1;
+  overflow: hidden;
+}
+
+.detailTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailSubtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .actionToolbar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.spacer {
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .actionBtn {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
+  padding: 6px 12px;
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
   color: rgba(255, 255, 255, 0.8);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -263,9 +292,13 @@
 }
 
 .popBtn:hover:not(:disabled) {
-  background-color: rgba(0, 122, 255, 0.1);
+  background-color: rgba(0, 122, 255, 0.15);
   color: #007aff;
   border-color: rgba(0, 122, 255, 0.3);
+}
+
+.dropBtn {
+  color: rgba(255, 59, 48, 0.6);
 }
 
 .dropBtn:hover:not(:disabled) {
@@ -292,7 +325,6 @@
   font-size: 11px;
   color: #ff3b30;
   font-weight: 500;
-  margin-right: 4px;
 }
 
 .confirmActionBtn {
@@ -302,9 +334,6 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.dropBtnActive {
   background-color: #ff3b30;
   color: #fff;
 }
@@ -318,30 +347,91 @@
   text-decoration: underline;
 }
 
-/* Embedded Diff Styling */
-.embeddedDiff {
+/* Diff Scroller */
+.diffScroller {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+}
+
+/* Custom scrollbar for diff area */
+.diffScroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.diffScroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.diffScroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.diffScroller::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* File Block Styling */
+.fileBlock {
   background-color: #0d1117;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   overflow: hidden;
+  flex-shrink: 0; /* Prevent blocks from collapsing */
 }
 
-.diffHeader {
+.fileHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   background-color: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fileName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: inherit;
+  font-weight: 500;
+  min-width: 0; /* Allow truncation */
+}
+
+.fileName span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileIcon {
+  color: #007aff;
+  flex-shrink: 0;
+}
+
+.fileStatusBadge {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
 }
 
 .diffBody {
-  max-height: 350px;
-  overflow-y: auto;
+  overflow-x: auto;
+  width: 100%;
 }
 
 .diffLines {
@@ -350,6 +440,8 @@
   font-family: "SF Mono", "Menlo", monospace;
   font-size: 11px;
   line-height: 1.5;
+  width: max-content; /* Ensure it expands to fit long lines */
+  min-width: 100%;
 }
 
 .diffLine {
@@ -359,12 +451,12 @@
 }
 
 .lineNumber {
-  width: 32px;
-  min-width: 32px;
+  width: 40px;
+  min-width: 40px;
   text-align: right;
-  padding-right: 8px;
+  padding-right: 10px;
   color: rgba(255, 255, 255, 0.15);
-  background-color: rgba(255, 255, 255, 0.01);
+  background-color: rgba(0, 0, 0, 0.1);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 9px;
   user-select: none;
@@ -375,44 +467,22 @@
   flex: 1;
 }
 
-.add {
-  background-color: rgba(52, 199, 89, 0.1);
-  color: #34c759;
-}
+.add { background-color: rgba(52, 199, 89, 0.1); color: #34c759; }
+.del { background-color: rgba(255, 59, 48, 0.1); color: #ff3b30; }
+.hunk { background-color: rgba(0, 122, 255, 0.05); color: #007aff; font-style: italic; font-size: 10px; }
 
-.del {
-  background-color: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
-}
-
-.hunk {
-  background-color: rgba(0, 122, 255, 0.05);
-  color: #007aff;
-  font-style: italic;
-  font-size: 10px;
-}
-
-.diffLoading {
-  padding: 30px;
+/* States */
+.diffLoading, .emptyDetail {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 16px;
   color: rgba(255, 255, 255, 0.2);
-  font-size: 12px;
-}
-
-.loadingSpinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #007aff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  font-size: 14px;
+  text-align: center;
+  padding: 40px;
 }
 
 .emptyState {
@@ -420,18 +490,23 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px 40px;
-  color: rgba(255, 255, 255, 0.3);
-  text-align: center;
-  gap: 16px;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.2);
+  gap: 12px;
 }
 
 .emptyIconContainer {
-  opacity: 0.15;
+  opacity: 0.1;
   color: #ffffff;
 }
 
-.emptyState p {
-  font-size: 14px;
-  margin: 0;
+.loadingSpinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #007aff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
