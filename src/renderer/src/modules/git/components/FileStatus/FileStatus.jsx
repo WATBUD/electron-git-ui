@@ -33,6 +33,8 @@ export const FileStatus = ({
   onStashFile,
   loading
 }) => {
+  const [listWidth, setListWidth] = useState(350)
+  const [isResizing, setIsResizing] = useState(false)
   const [activeFile, setActiveFile] = useState(null)
   const [contextMenu, setContextMenu] = useState({
     show: false,
@@ -41,6 +43,38 @@ export const FileStatus = ({
     fileName: null
   })
   const contextMenuRef = React.useRef(null)
+
+  const handleMouseDown = (e) => {
+    setIsResizing(true)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
+  const handleMouseMove = (e) => {
+    const newWidth = e.clientX - 64 // 64 is approximate LeftSideBar width if applicable, but better use a relative approach or handle it based on container offset
+    // Actually, a safer way is to use the movement or calculate relative to the container
+    const container = document.querySelector(`.${styles.fileStatusContainer}`)
+    if (container) {
+      const containerRect = container.getBoundingClientRect()
+      const calculatedWidth = e.clientX - containerRect.left
+      if (calculatedWidth > 200 && calculatedWidth < 800) {
+        setListWidth(calculatedWidth)
+      }
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsResizing(false)
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+  }
+
+  React.useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
 
   const handleContextMenu = (e, fileName) => {
     e.preventDefault()
@@ -200,7 +234,10 @@ export const FileStatus = ({
         />
       </div>
       <div className={styles.fileStatusContainer}>
-        <div className={styles.fileListPanel}>
+        <div
+          className={styles.fileListPanel}
+          style={{ width: `${listWidth}px`, flex: 'none', maxWidth: 'none' }}
+        >
           <div className={styles.fileStatusSection}>
             <div className={styles.sectionHeader}>
               <div className={styles.sectionTitle}>
@@ -326,6 +363,12 @@ export const FileStatus = ({
             </div>
           </div>
         </div>
+
+        <div
+          className={`${styles.resizer} ${isResizing ? styles.isResizing : ''}`}
+          onMouseDown={handleMouseDown}
+        />
+
         <div className={styles.diffPanel}>
           {activeFile ? (
             <div className={styles.diffContent}>

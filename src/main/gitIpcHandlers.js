@@ -760,17 +760,37 @@ export function setupGitHandlers() {
   ipcMain.handle('git:stashPush', async (_, message, files) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {
-      let command = 'git stash push'
+      const args = ['stash', 'push']
       if (message) {
-        command += ` -m "${message}"`
+        args.push('-m', message)
       }
       if (files && files.length > 0) {
+        args.push('--')
         const fileList = Array.isArray(files) ? files : [files]
-        command += ` -- ${fileList.map((f) => `"${f}"`).join(' ')}`
+        args.push(...fileList)
       }
+
+      // Build the command string for history
+      const command = `git ${args.map((a) => (a.includes(' ') || a === '' ? `"${a}"` : a)).join(' ')}`
       commandHistory.push(command)
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      return success({ output: stdout || stderr })
+
+      return new Promise((resolve) => {
+        const { spawn } = require('child_process')
+        const git = spawn('git', args, { cwd: currentRepoPath })
+        let stdout = ''
+        let stderr = ''
+
+        git.stdout.on('data', (data) => (stdout += data))
+        git.stderr.on('data', (data) => (stderr += data))
+
+        git.on('close', (code) => {
+          if (code === 0) {
+            resolve(success({ output: stdout || stderr }))
+          } else {
+            resolve(fail(stderr || stdout || `Git exit code ${code}`))
+          }
+        })
+      })
     } catch (error) {
       return fail(error.message)
     }

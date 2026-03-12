@@ -43,6 +43,16 @@ import {
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
 import { GIT_TABS } from '../../constants/tabs'
+import {
+  AlertCircle,
+  FileEdit,
+  Plus,
+  Trash2,
+  RefreshCcw,
+  Copy,
+  HelpCircle,
+  File
+} from 'lucide-react'
 
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
@@ -131,6 +141,7 @@ export const MainPageGit = () => {
   const getStatusText = (file) => {
     if (file.statusType) {
       const { staged, working } = file.statusType
+      if (staged === 'U' || working === 'U') return 'Conflict'
       if (staged === 'M') return 'Staged Changes'
       if (staged === 'A') return 'Staged Addition'
       if (staged === 'D') return 'Staged Deletion'
@@ -146,13 +157,17 @@ export const MainPageGit = () => {
 
   const getStatusIcon = (file) => {
     const { staged, working } = file.statusType
-    if (staged === 'M' || working === 'M') return '📝'
-    if (staged === 'A' || working === 'A') return '➕'
-    if (staged === 'D' || working === 'D') return '🗑️'
-    if (staged === 'R') return '🔄'
-    if (staged === 'C') return '📋'
-    if (staged === '?' || working === '?') return '❓'
-    return '📄'
+
+    const iconSize = 14
+
+    if (staged === 'U' || working === 'U') return <AlertCircle size={iconSize} color="#ff3b30" />
+    if (staged === 'M' || working === 'M') return <FileEdit size={iconSize} color="#0a84ff" />
+    if (staged === 'A' || working === 'A') return <Plus size={iconSize} color="#34c759" />
+    if (staged === 'D' || working === 'D') return <Trash2 size={iconSize} color="#ff3b30" />
+    if (staged === 'R') return <RefreshCcw size={iconSize} color="#5e5ce6" />
+    if (staged === 'C') return <Copy size={iconSize} color="#5e5ce6" />
+    if (staged === '?' || working === '?') return <HelpCircle size={iconSize} color="#8e8e93" />
+    return <File size={iconSize} color="#8e8e93" />
   }
 
   const handleTabChange = (tab) => {

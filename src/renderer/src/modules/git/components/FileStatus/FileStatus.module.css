@@ -188,10 +188,13 @@
 }
 
 .fileIcon {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
   min-width: 20px;
-  text-align: center;
   opacity: 0.8;
+  height: 100%;
 }
 
 .fileInfo {
@@ -199,6 +202,7 @@
   display: flex;
   align-items: center;
   overflow: hidden;
+  height: 100%;
 }
 
 .fileName {
@@ -208,6 +212,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: inherit;
+  line-height: normal;
+  display: flex;
+  align-items: center;
 }
 
 .fileActions {
@@ -267,6 +274,21 @@
   background-color: #007aff;
   color: white;
   border-color: #007aff;
+}
+
+.resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  transition: background-color 0.2s;
+  z-index: 100;
+  position: relative;
+  margin: 0 -2px;
+}
+
+.resizer:hover,
+.resizer.isResizing {
+  background-color: #007aff;
 }
 
 /* Diff Panel Styles */
