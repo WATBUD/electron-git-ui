@@ -47,7 +47,13 @@ export function setupGitHandlers() {
     }
 
     try {
-      const command = isStaged ? `git diff --cached "${file}"` : `git diff "${file}"`
+      // 如果文件名已经有引号，先移除它们，然后重新添加
+      let cleanFile = file
+      if (file.startsWith('"') && file.endsWith('"')) {
+        cleanFile = file.slice(1, -1)
+      }
+      const escapedFile = cleanFile.replace(/"/g, '\\"')
+      const command = isStaged ? `git diff --cached "${escapedFile}"` : `git diff "${escapedFile}"`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
       return success(stdout || stderr || '')
@@ -467,7 +473,7 @@ export function setupGitHandlers() {
           status: '??',
           file,
           isStaged: false,
-          isModified: false,
+          isModified: true,
           statusType: {
             staged: '?',
             working: '?'
@@ -489,10 +495,18 @@ export function setupGitHandlers() {
       const fileList = Array.isArray(files) ? files : [files]
       if (fileList.length === 0) return success()
 
-      const quotedFiles = fileList.map((f) => `"${f}"`).join(' ')
-      const command = `git add ${quotedFiles}`
-      commandHistory.push(command)
-      await execAsync(command, { cwd: currentRepoPath })
+      // 为每个文件单独构建命令，避免空格问题
+      for (const file of fileList) {
+        // 如果文件名已经有引号，先移除它们，然后重新添加
+        let cleanFile = file
+        if (file.startsWith('"') && file.endsWith('"')) {
+          cleanFile = file.slice(1, -1)
+        }
+        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const command = `git add -- "${escapedFile}"`
+        commandHistory.push(command)
+        await execAsync(command, { cwd: currentRepoPath })
+      }
       return success()
     } catch (error) {
       console.error('Error staging file:', error)
@@ -508,10 +522,18 @@ export function setupGitHandlers() {
       const fileList = Array.isArray(files) ? files : [files]
       if (fileList.length === 0) return success()
 
-      const quotedFiles = fileList.map((f) => `"${f}"`).join(' ')
-      const command = `git reset HEAD -- ${quotedFiles}`
-      commandHistory.push(command)
-      await execAsync(command, { cwd: currentRepoPath })
+      // 为每个文件单独构建命令，避免空格问题
+      for (const file of fileList) {
+        // 如果文件名已经有引号，先移除它们，然后重新添加
+        let cleanFile = file
+        if (file.startsWith('"') && file.endsWith('"')) {
+          cleanFile = file.slice(1, -1)
+        }
+        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const command = `git reset HEAD -- "${escapedFile}"`
+        commandHistory.push(command)
+        await execAsync(command, { cwd: currentRepoPath })
+      }
       return success()
     } catch (error) {
       console.error('Error unstaging file:', error)
@@ -531,8 +553,14 @@ export function setupGitHandlers() {
     try {
       // Process each file individually to avoid path parsing issues
       for (const file of files) {
-        const unstageCmd = `git reset HEAD -- "${file}"`
-        const discardCmd = `git checkout -- "${file}"`
+        // 如果文件名已经有引号，先移除它们，然后重新添加
+        let cleanFile = file
+        if (file.startsWith('"') && file.endsWith('"')) {
+          cleanFile = file.slice(1, -1)
+        }
+        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const unstageCmd = `git reset HEAD -- "${escapedFile}"`
+        const discardCmd = `git checkout -- "${escapedFile}"`
 
         commandHistory.push(unstageCmd)
         commandHistory.push(discardCmd)

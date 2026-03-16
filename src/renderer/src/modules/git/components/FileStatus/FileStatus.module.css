@@ -211,7 +211,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei',
+    sans-serif;
   line-height: normal;
   display: flex;
   align-items: center;
@@ -328,7 +331,10 @@
   margin: 0;
   font-size: 13px;
   font-weight: 500;
-  font-family: monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei',
+    sans-serif;
   opacity: 0.9;
 }
 
@@ -362,7 +368,9 @@
 .diffLines {
   display: flex;
   flex-direction: column;
-  font-family: 'SF Mono', 'Fira Code', 'Menlo', monospace;
+  font-family: 'SF Mono', 'Fira Code', 'Menlo', 'Consolas', 'Courier New',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei',
+    monospace;
   font-size: 12px;
   line-height: 1.6;
 }
@@ -516,6 +524,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'WenQuanYi Micro Hei',
+    sans-serif;
 }
 
 .contextMenuItem {
