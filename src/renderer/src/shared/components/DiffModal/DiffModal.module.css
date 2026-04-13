@@ -34,6 +34,62 @@
   align-items: center;
 }
 
+.generatedMessageContainer {
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  margin: 16px 20px;
+  overflow: hidden;
+  min-height: 60px;
+}
+
+.generatedMessageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(102, 126, 234, 0.1);
+  border-bottom: 1px solid #667eea20;
+}
+
+.generatedMessageHeader h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.copyGeneratedBtn {
+  background: rgba(102, 126, 234, 0.2);
+  border: 1px solid #667eea40;
+  color: var(--primary-color);
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.copyGeneratedBtn:hover {
+  background: rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+.generatedMessageContent {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.generatedMessageContent code {
+  background: transparent;
+  color: var(--text-color);
+  font-family: 'Fira Code', 'Roboto Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  display: block;
+}
+
 .diffModalHeader h3 {
   margin: 0;
   font-size: 1.1rem;
@@ -47,6 +103,48 @@
   align-items: center;
 }
 
+.generateBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.generateBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.generateBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generateBtn.generating {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .copyBtn {
   display: flex;
   align-items: center;
@@ -58,7 +156,6 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: var(--input-font-size);
-
   font-weight: 500;
   transition: all 0.2s;
 }
