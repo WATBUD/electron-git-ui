@@ -609,8 +609,28 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
         commandHistory.push(discardCmd)
 
         try {
-          await execAsync(unstageCmd, { cwd: currentRepoPath })
-          await execAsync(discardCmd, { cwd: currentRepoPath })
+          // Check if file is untracked (new file)
+          const statusCmd = `git status --porcelain "${escapedFile}"`
+          const statusResult = await execAsync(statusCmd, { cwd: currentRepoPath })
+          const isUntracked = statusResult.stdout.startsWith('??')
+          
+          if (isUntracked) {
+            // For untracked files, just delete them from file system
+            const fs = require('fs')
+            const path = require('path')
+            const fullPath = path.join(currentRepoPath, cleanFile)
+            
+            try {
+              await fs.promises.unlink(fullPath)
+              console.log(`Removed untracked file: ${fullPath}`)
+            } catch (unlinkError) {
+              console.error(`Error deleting file ${fullPath}:`, unlinkError)
+            }
+          } else {
+            // For tracked files, use git commands
+            await execAsync(unstageCmd, { cwd: currentRepoPath })
+            await execAsync(discardCmd, { cwd: currentRepoPath })
+          }
         } catch (error) {
           // If unstage fails, still try to discard changes
           if (!error.message.includes('fatal: ambiguous argument')) {

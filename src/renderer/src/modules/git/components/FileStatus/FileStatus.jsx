@@ -27,6 +27,7 @@ export const FileStatus = ({
   onStageFile,
   onUnstageFile,
   onDiscardChanges,
+  onRemoveFile,
   getStatusIcon,
   getStatusText,
   onRefresh,
@@ -112,6 +113,22 @@ export const FileStatus = ({
   const handleDiscardFromMenu = (fileName) => {
     onDiscardChanges(fileName)
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
+
+  const handleRemoveFromMenu = (fileName) => {
+    if (onRemoveFile) {
+      onRemoveFile(fileName)
+    } else {
+      onDiscardChanges(fileName)
+    }
+    setContextMenu({ show: false, x: 0, y: 0, fileName: null })
+  }
+
+  const isNewFile = (fileName) => {
+    const file = _fileStatus.find(f => f.file === fileName)
+    if (!file) return false
+    const { staged, working } = file.statusType
+    return staged === 'A' || working === 'A' || staged === '?' || working === '?'
   }
 
   const handleStashFromMenu = (fileName) => {
@@ -446,10 +463,10 @@ export const FileStatus = ({
             <div className={styles.contextMenuDivider} />
             <button
               className={`${styles.contextMenuItem} ${styles.danger}`}
-              onClick={() => handleDiscardFromMenu(contextMenu.fileName)}
+              onClick={() => isNewFile(contextMenu.fileName) ? handleRemoveFromMenu(contextMenu.fileName) : handleDiscardFromMenu(contextMenu.fileName)}
             >
               <Trash2 size={14} />
-              <span>Discard changes</span>
+              <span>{isNewFile(contextMenu.fileName) ? 'Remove file' : 'Discard changes'}</span>
             </button>
           </div>
         </div>

@@ -138,6 +138,13 @@ export const MainPageGit = () => {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [projects, repoPath, dispatch])
 
+  const handleFileClick = async ({ file, isStaged }) => {
+    const result = await dispatch(getFileDiff({ file, isStaged }))
+    if (getFileDiff.fulfilled.match(result)) {
+      // Diff is now loaded and available in selectedFileDiff
+    }
+  }
+
   const getStatusText = (file) => {
     if (file.statusType) {
       const { staged, working } = file.statusType
@@ -278,44 +285,45 @@ export const MainPageGit = () => {
                     fileStatus={fileStatus}
                     repoPath={repoPath}
                     selectedFileDiff={selectedFileDiff}
-                    onFileClick={({ file, isStaged }) => {
-                      if (file) {
-                        dispatch(getFileDiff({ file, isStaged }))
-                      } else {
-                        dispatch(setSelectedFileDiff(null))
-                      }
-                    }}
-                    onStageFile={async (file) => {
-                      const result = await dispatch(stageFile(file))
+                    onFileClick={({ file, isStaged }) =>
+                      handleFileClick({ file, isStaged })
+                    }
+                    onStageFile={async (files) => {
+                      const result = await dispatch(stageFile(files))
                       if (stageFile.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}
-                    onUnstageFile={async (file) => {
-                      const result = await dispatch(unstageFile(file))
+                    onUnstageFile={async (files) => {
+                      const result = await dispatch(unstageFile(files))
                       if (unstageFile.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}
-                    getStatusIcon={getStatusIcon}
-                    getStatusText={getStatusText}
                     onDiscardChanges={async (file) => {
                       const result = await dispatch(discardFileChanges(file))
                       if (discardFileChanges.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}
-                    onStashFile={async (file) => {
-                      const result = await dispatch(
-                        pushStash({ files: [file], message: `Stashed ${file}` })
-                      )
-                      if (pushStash.fulfilled.match(result)) {
+                    onRemoveFile={async (file) => {
+                      const result = await dispatch(discardFileChanges(file))
+                      if (discardFileChanges.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}
-                    onRefresh={() => {
-                      dispatch(loadFileStatus())
+                    getStatusIcon={getStatusIcon}
+                    getStatusText={getStatusText}
+                    onRefresh={async () => {
+                      await dispatch(loadFileStatus())
                     }}
+                    onStashFile={async (file) => {
+                      const result = await dispatch(stashFile(file))
+                      if (stashFile.fulfilled.match(result)) {
+                        dispatch(loadFileStatus())
+                      }
+                    }}
+                    loading={loading}
                   />
                 )}
 
