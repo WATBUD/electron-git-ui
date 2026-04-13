@@ -1,28 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import styles from './FooterArea.module.css'
-import { Copy } from 'lucide-react'
-import { clearCommandHistory } from '../../store/git'
+import { GitHistory } from '../../components/GitHistory/GitHistory'
 
 export const FooterArea = () => {
-  const dispatch = useDispatch()
-  const { commandHistory, previousHistoryIndex } = useSelector((state) => ({
-    commandHistory: state.git.commandHistory,
-    previousHistoryIndex: state.git.previousHistoryIndex
-  }))
   const gitState = useSelector((state) => state.git)
   const [activeCommandTab, setActiveCommandTab] = useState('history')
   const [height, setHeight] = useState(200)
   const [isResizing, setIsResizing] = useState(false)
-  const [copiedIndex, setCopiedIndex] = useState(null)
   const footerRef = useRef(null)
-
-  const copyToClipboard = (text, index) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedIndex(index)
-      setTimeout(() => setCopiedIndex(null), 2000)
-    })
-  }
   const startYRef = useRef(0)
   const startHeightRef = useRef(0)
   const rafRef = useRef(null)
@@ -81,44 +67,7 @@ export const FooterArea = () => {
   return (
     <div className={styles.footerArea} ref={footerRef} style={{ height: `${height}px` }}>
       <div className={styles.resizeHandle} onMouseDown={handleMouseDown} />
-      {activeCommandTab === 'history' && (
-        <>
-          <div className={styles.commandHistoryHeader}>
-            <button
-              onClick={() => dispatch(clearCommandHistory())}
-              className={styles.clearHistoryBtn}
-            >
-              Clear History
-            </button>
-          </div>
-          <div className={styles.commandList}>
-            {commandHistory
-              .slice()
-              .reverse()
-              .map((command, index) => (
-                <div
-                  key={commandHistory.length - 1 - index}
-                  className={`${styles.commandItem} ${
-                    commandHistory.length - 1 - index === previousHistoryIndex
-                      ? styles.previousCommand
-                      : ''
-                  }`}
-                >
-                  <span className={styles.commandNumber}>{commandHistory.length - index}.</span>
-                  <span className={styles.commandText}>{command}</span>
-                  <button
-                    className={`${styles.copyButton} ${copiedIndex === index ? styles.copied : ''}`}
-                    onClick={() => copyToClipboard(command, index)}
-                    title="Copy command"
-                  >
-                    <Copy size={14} />
-                    {copiedIndex === index && <span className={styles.copiedText}>Copied!</span>}
-                  </button>
-                </div>
-              ))}
-          </div>
-        </>
-      )}
+      {activeCommandTab === 'history' && <GitHistory />}
       {activeCommandTab === 'terminal' && (
         <div className={styles.terminalContainer}>
           <div className={styles.terminalContent}>Terminal content will be implemented here</div>

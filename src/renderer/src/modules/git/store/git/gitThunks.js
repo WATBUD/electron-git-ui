@@ -15,13 +15,6 @@ async function callGit(fn, rejectWithValue, fallbackError, fnName) {
     return rejectWithValue(err?.message ?? fallbackError)
   }
 }
-// Utility function to update command history index
-const updateHistoryIndex = (getState, dispatch) => {
-  const state = getState()
-  const lastIndex = state.git.commandHistory.length
-  dispatch(updatePreviousHistoryIndex(lastIndex))
-}
-
 // Utility function to check Git API initialization and handle errors
 const checkGitApiInitialization = (rejectWithValue) => {
   if (!window.git) {
@@ -29,13 +22,18 @@ const checkGitApiInitialization = (rejectWithValue) => {
   }
 }
 
+// Utility function to mark the start of a new operation
+const markOperationStart = (dispatch, getState) => {
+  const { commandHistory } = getState().git
+  const startIndex = commandHistory.length
+  dispatch(updatePreviousHistoryIndex(startIndex))
+}
+
 export const loadCommitHistory = createAsyncThunk(
   'git/loadCommitHistory',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.loadCommitHistory(),
@@ -55,11 +53,9 @@ export const loadCommitHistory = createAsyncThunk(
 
 export const refreshTags = createAsyncThunk(
   'git/refreshTags',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.refreshTags(),
@@ -73,11 +69,9 @@ export const refreshTags = createAsyncThunk(
 
 export const abortMerge = createAsyncThunk(
   'git/abortMerge',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.mergeAbort(),
@@ -91,11 +85,9 @@ export const abortMerge = createAsyncThunk(
 
 export const checkMergeInProgress = createAsyncThunk(
   'git/checkMergeInProgress',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.checkMergeInProgress(),
@@ -109,11 +101,12 @@ export const checkMergeInProgress = createAsyncThunk(
 
 export const deleteBranch = createAsyncThunk(
   'git/deleteBranch',
-  async (branchName, { getState, rejectWithValue, dispatch }) => {
+  async (branchName, { rejectWithValue, dispatch, getState }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.deleteBranch(branchName),
@@ -129,11 +122,9 @@ export const deleteBranch = createAsyncThunk(
 
 export const renameBranch = createAsyncThunk(
   'git/renameBranch',
-  async ({ oldName, newName }, { getState, rejectWithValue, dispatch }) => {
+  async ({ oldName, newName }, { rejectWithValue, dispatch }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.renameBranch(oldName, newName),
@@ -148,11 +139,12 @@ export const renameBranch = createAsyncThunk(
 
 export const loadBranches = createAsyncThunk(
   'git/loadBranches',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue, dispatch, getState }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.loadBranches(),
@@ -171,11 +163,12 @@ export const loadBranches = createAsyncThunk(
 
 export const createBranch = createAsyncThunk(
   'git/createBranch',
-  async (branchName, { getState, rejectWithValue, dispatch }) => {
+  async (branchName, { rejectWithValue, dispatch, getState }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.createBranch(branchName),
@@ -192,11 +185,12 @@ export const createBranch = createAsyncThunk(
 
 export const mergeBranch = createAsyncThunk(
   'git/mergeBranch',
-  async (sourceBranch, { getState, rejectWithValue, dispatch }) => {
+  async (sourceBranch, { rejectWithValue, dispatch, getState }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.mergeBranch(sourceBranch),
@@ -217,12 +211,10 @@ export const mergeBranch = createAsyncThunk(
 
 export const checkoutCommit = createAsyncThunk(
   'git/checkoutCommit',
-  async (commitHash, { getState, rejectWithValue, dispatch }) => {
+  async (commitHash, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.checkoutCommit(commitHash),
@@ -242,13 +234,10 @@ export const checkoutCommit = createAsyncThunk(
 
 export const checkoutBranch = createAsyncThunk(
   'git/checkoutBranch',
-  async (branchName, { getState, rejectWithValue, dispatch }) => {
+  async (branchName, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.checkoutBranch(branchName),
@@ -263,13 +252,10 @@ export const checkoutBranch = createAsyncThunk(
 
 export const deleteRemoteBranch = createAsyncThunk(
   'git/deleteRemoteBranch',
-  async (branchName, { getState, rejectWithValue, dispatch }) => {
+  async (branchName, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.deleteRemoteBranch(branchName),
@@ -284,13 +270,10 @@ export const deleteRemoteBranch = createAsyncThunk(
 
 export const fetchFromRemote = createAsyncThunk(
   'git/fetchFromRemote',
-  async (pruneBranches = false, { getState, rejectWithValue, dispatch }) => {
+  async (pruneBranches = false, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.fetch(pruneBranches),
@@ -305,12 +288,10 @@ export const fetchFromRemote = createAsyncThunk(
 
 export const pullFromRemote = createAsyncThunk(
   'git/pullFromRemote',
-  async (_, { getState, rejectWithValue, dispatch }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.branchPull(),
@@ -325,13 +306,10 @@ export const pullFromRemote = createAsyncThunk(
 
 export const pushToRemote = createAsyncThunk(
   'git/pushToRemote',
-  async (forcePush = false, { getState, rejectWithValue, dispatch }) => {
+  async (forcePush = false, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
 
     const result = await callGit(
       () => window.git.branchPush(forcePush),
@@ -346,13 +324,14 @@ export const pushToRemote = createAsyncThunk(
 
 export const commitChanges = createAsyncThunk(
   'git/commitChanges',
-  async (commitMessage, { getState, rejectWithValue, dispatch }) => {
+  async (commitMessage, { rejectWithValue, dispatch, getState }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
 
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
+
     const result = await callGit(
       () => window.git.commit(commitMessage),
       rejectWithValue,
@@ -370,14 +349,13 @@ export const commitChanges = createAsyncThunk(
 
 export const discardFileChanges = createAsyncThunk(
   'git/discardFileChanges',
-  async (files, { getState, rejectWithValue, dispatch }) => {
+  async (files, { rejectWithValue, dispatch, getState }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
 
-    const { commandHistory } = getState().git
-    const lastIndex = commandHistory.length
-    dispatch(updatePreviousHistoryIndex(lastIndex))
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.discardFileChanges(Array.isArray(files) ? files : [files]),
@@ -437,11 +415,12 @@ export const unstageFile = createAsyncThunk(
 
 export const loadFileStatus = createAsyncThunk(
   'git/loadFileStatus',
-  async (_, { rejectWithValue, getState, dispatch }) => {
+  async (_, { rejectWithValue, dispatch, getState }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
-    updateHistoryIndex(getState, dispatch)
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
     const result = await callGit(
       () => window.git.getStatus(),
       rejectWithValue,
@@ -456,7 +435,7 @@ export const loadFileStatus = createAsyncThunk(
 
 export const updateCommandHistory = createAsyncThunk(
   'git/updateCommandHistory',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
@@ -467,13 +446,17 @@ export const updateCommandHistory = createAsyncThunk(
       'Error updating command history',
       'getCommandHistory'
     )
+    
+    // Don't automatically update previousHistoryIndex here
+    // It should be manually updated at the start of operations
+    
     return result
   }
 )
 
 export const clearCommandHistory = createAsyncThunk(
   'git/clearCommandHistory',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
@@ -485,13 +468,15 @@ export const clearCommandHistory = createAsyncThunk(
       'clearCommandHistory'
     )
 
+    // Reset the previous history index when clearing history
+    dispatch(updatePreviousHistoryIndex(-1))
     return { success: true }
   }
 )
 
 export const selectRepository = createAsyncThunk(
   'git/selectRepository',
-  async (_, { rejectWithValue, dispatch, getState }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
@@ -502,8 +487,6 @@ export const selectRepository = createAsyncThunk(
       'Error selecting repository',
       'selectRepository'
     )
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
     await dispatch(loadCommitHistory())
     await dispatch(updateCommandHistory())
     return result
@@ -512,7 +495,7 @@ export const selectRepository = createAsyncThunk(
 
 export const openRepository = createAsyncThunk(
   'git/openRepository',
-  async (path, { rejectWithValue, dispatch, getState }) => {
+  async (path, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
@@ -523,8 +506,6 @@ export const openRepository = createAsyncThunk(
       'Error opening repository',
       'openRepository'
     )
-    // Update previous history index in the state
-    updateHistoryIndex(getState, dispatch)
     await dispatch(loadCommitHistory())
     await dispatch(updateCommandHistory())
     return result
@@ -552,10 +533,13 @@ export const getCachedDiff = createAsyncThunk(
 
 export const getFileDiff = createAsyncThunk(
   'git/getFileDiff',
-  async ({ file, isStaged }, { rejectWithValue }) => {
+  async ({ file, isStaged }, { rejectWithValue, dispatch, getState }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
+
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
 
     const result = await callGit(
       () => window.git.getFileDiff(file, isStaged),
@@ -564,6 +548,7 @@ export const getFileDiff = createAsyncThunk(
       'getFileDiff'
     )
 
+    await dispatch(updateCommandHistory())
     return result.data
   }
 )

@@ -56,10 +56,53 @@ export function setupGitHandlers() {
       const command = isStaged ? `git diff --cached "${escapedFile}"` : `git diff "${escapedFile}"`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      
+      // If git diff returns content, use it
+      if (stdout || stderr) {
+        return success(stdout || stderr)
+      }
+      
+      // For new files or files with no diff, try to read the full content
+      if (!isStaged) {
+        try {
+          const fs = require('fs').promises
+          const filePath = join(currentRepoPath, cleanFile)
+          const fileContent = await fs.readFile(filePath, 'utf8')
+          
+          // Format as a new file diff
+          const formattedDiff = `--- /dev/null
++++ a/${cleanFile}
+@@ -0,0 +1,${fileContent.split('\n').length} @@
+${fileContent.split('\n').map(line => '+' + line).join('\n')}`
+          
+          return success(formattedDiff)
+        } catch (readErr) {
+          // If we can't read the file, return the original empty result
+          return success('')
+        }
+      }
+      
       return success(stdout || stderr || '')
     } catch (err) {
-      // If it's a new file (not yet in index/staged), it might fail or return nothing.
-      // For untracked files, git diff returns nothing.
+      // If git diff fails, try to read the file content for new files
+      if (!isStaged && err.message.includes('did not match any file')) {
+        try {
+          const fs = require('fs').promises
+          const filePath = join(currentRepoPath, file.replace(/"/g, ''))
+          const fileContent = await fs.readFile(filePath, 'utf8')
+          
+          // Format as a new file diff
+          const formattedDiff = `--- /dev/null
++++ a/${file.replace(/"/g, '')}
+@@ -0,0 +1,${fileContent.split('\n').length} @@
+${fileContent.split('\n').map(line => '+' + line).join('\n')}`
+          
+          return success(formattedDiff)
+        } catch (readErr) {
+          return fail(err.message)
+        }
+      }
+      
       return fail(err.message)
     }
   })
