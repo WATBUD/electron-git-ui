@@ -1,5 +1,17 @@
+/* Toolbar Variables */
+:root {
+  --toolbar-height: 36px;
+  --toolbar-item-height: 32px;
+  --toolbar-padding: 6px 12px;
+  --toolbar-gap: 8px;
+  --toolbar-border-radius: 20px;
+  --toolbar-font-size: 13px;
+}
+
 .toolbar {
   display: flex;
+  align-items: center;
+  height: var(--toolbar-height);
   margin-left: 0.5rem;
 }
 
@@ -9,20 +21,22 @@
 }
 
 .toolbarBtn {
-  padding: 4px 12px;
-  height: 28px;
+  padding: var(--toolbar-padding);
+  height: var(--toolbar-item-height);
   display: flex;
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--toolbar-border-radius);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   background-color: rgba(255, 255, 255, 0.05);
   color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  font-size: 12px;
+  font-size: var(--toolbar-font-size);
+  min-width: 70px;
+  justify-content: center;
 }
 
 .toolbarBtn:hover:not(:disabled) {
@@ -213,4 +227,80 @@ input[type="checkbox"]:checked + .toggleSwitch::after {
 .commitMessageInput:focus {
   border-color: #007aff;
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+/* Status display styles */
+.statusGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.projectInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--toolbar-gap);
+  padding: var(--toolbar-padding);
+  height: var(--toolbar-item-height);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--toolbar-border-radius);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.projectInfo:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.projectIcon {
+  opacity: 0.8;
+  color: #007aff;
+  flex-shrink: 0;
+}
+
+.projectName {
+  font-size: var(--toolbar-font-size);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.3px;
+}
+
+.branchName {
+  font-size: 10px;
+  color: #007aff;
+  background: rgba(0, 122, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 500;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  margin-left: 4px;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--toolbar-padding);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--toolbar-border-radius);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  min-width: 32px;
+  height: var(--toolbar-item-height);
+}
+
+.statusIndicator:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.statusCount {
+  font-size: var(--toolbar-font-size);
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
+import { useSelector } from 'react-redux'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import styles from './Toolbar.module.css'
-import { Download, RefreshCw, Upload, GitCommit, AlertTriangle } from 'lucide-react'
+import { Download, RefreshCw, Upload, GitCommit, AlertTriangle, Circle, Folder } from 'lucide-react'
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
@@ -10,6 +11,57 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
   const [pruneBranches, setPruneBranches] = useState(false)
   const [forcePush, setForcePush] = useState(false)
   const [commitMessage, setCommitMessage] = useState('')
+
+  // Get Redux state
+  const fileStatus = useSelector((state) => state.git.fileStatus || [])
+  const repoPath = useSelector((state) => state.git.repoPath)
+  const currentBranch = useSelector((state) => state.git.currentBranch)
+
+  // Calculate Git status
+  const getGitStatus = () => {
+    if (!fileStatus || !Array.isArray(fileStatus) || fileStatus.length === 0) {
+      return { type: 'clean', count: 0 }
+    }
+    
+    let stagedCount = 0
+    let modifiedCount = 0
+    let untrackedCount = 0
+    
+    fileStatus.forEach(file => {
+      if (file && file.statusType) {
+        if (file.statusType.staged === 'M') stagedCount++
+        if (file.statusType.working === 'M') modifiedCount++
+        if (file.statusType.working === '??') untrackedCount++
+      }
+    })
+    
+    const totalChanges = stagedCount + modifiedCount + untrackedCount
+    
+    if (totalChanges === 0) {
+      return { type: 'clean', count: 0 }
+    } else if (untrackedCount > 0 || modifiedCount > 0) {
+      return { type: 'dirty', count: totalChanges }
+    } else {
+      return { type: 'staged', count: totalChanges }
+    }
+  }
+
+  const getStatusColor = (status) => {
+    switch (status.type) {
+      case 'clean':
+        return '#22c55e'
+      case 'staged':
+        return '#3b82f6'
+      case 'dirty':
+        return '#f59e0b'
+      default:
+        return '#6b7280'
+    }
+  }
+
+  const getProjectName = (path) => {
+    return path ? path.split(/[/\\]/).pop() : 'No Repository'
+  }
 
   const handleFetch = () => {
     onFetch(pruneBranches)
@@ -28,6 +80,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
       setShowCommitDialog(false)
     }
   }
+
+  const gitStatus = getGitStatus()
+  const projectName = getProjectName(repoPath)
 
   return (
     <>
@@ -77,6 +132,28 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
             </span>
             <span className={styles.toolbarText}>Commit</span>
           </button>
+        </div>
+        
+        <div className={styles.statusGroup}>
+          <div className={styles.projectInfo}>
+            <Folder size={12} className={styles.projectIcon} />
+            <span className={styles.projectName}>{projectName}</span>
+            {currentBranch && (
+              <span className={styles.branchName}>{currentBranch}</span>
+            )}
+          </div>
+          {gitStatus.count > 0 && (
+            <div 
+              className={styles.statusIndicator}
+              style={{ 
+                backgroundColor: `${getStatusColor(gitStatus)}20`,
+                borderColor: `${getStatusColor(gitStatus)}40`,
+                color: getStatusColor(gitStatus)
+              }}
+            >
+              <span className={styles.statusCount}>{gitStatus.count}</span>
+            </div>
+          )}
         </div>
       </div>
 
