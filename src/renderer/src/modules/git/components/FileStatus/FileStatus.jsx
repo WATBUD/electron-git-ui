@@ -77,6 +77,7 @@ export const FileStatus = ({
     }
   }, [])
 
+  
   const handleContextMenu = (e, fileName) => {
     e.preventDefault()
     setContextMenu({
@@ -206,6 +207,34 @@ export const FileStatus = ({
 
   const diffLines = parseDiff(selectedFileDiff)
   const _fileStatus = fileStatus?.data?.files || []
+
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        
+        const allFiles = _fileStatus
+        const currentIndex = allFiles.findIndex(
+          (file) => file.file === activeFile?.file && file.isStaged === activeFile?.isStaged
+        )
+        
+        let nextIndex
+        if (e.key === 'ArrowUp') {
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : allFiles.length - 1
+        } else {
+          nextIndex = currentIndex < allFiles.length - 1 ? currentIndex + 1 : 0
+        }
+        
+        if (nextIndex >= 0 && nextIndex < allFiles.length) {
+          const nextFile = allFiles[nextIndex]
+          handleFileItemClick(nextFile.file, nextFile.isStaged)
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [_fileStatus, activeFile])
 
   if (!loading && _fileStatus.length === 0) {
     return (
