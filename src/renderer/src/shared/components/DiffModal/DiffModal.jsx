@@ -47,10 +47,10 @@ export const DiffModal = ({ diff, onClose, show }) => {
       
       // AI Router with multi-model fallback
       const MODELS = [
-        'models/gemini-2.5-flash',
+        // 'models/gemini-2.5-flash',
         'models/gemini-2.5-flash-lite', 
-        'models/gemini-2.0-flash',
-        'models/gemini-2.0-flash-lite'
+        // 'models/gemini-2.0-flash',
+        // 'models/gemini-2.0-flash-lite'
       ]
 
       const callModelWithRetry = async (model, payload, retries = 2) => {
