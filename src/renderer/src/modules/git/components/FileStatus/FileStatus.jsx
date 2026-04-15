@@ -260,6 +260,9 @@ export const FileStatus = ({
               <div className={styles.sectionTitle}>
                 <ChevronDown size={14} />
                 <h3>Staging Area</h3>
+                <span className={styles.fileCount}>
+                  {_fileStatus.filter((f) => f.isStaged).length}
+                </span>
               </div>
               {_fileStatus.some((f) => f.isStaged) && (
                 <div className={styles.selectionActions}>
@@ -322,6 +325,9 @@ export const FileStatus = ({
               <div className={styles.sectionTitle}>
                 <ChevronDown size={14} />
                 <h3>Working Directory</h3>
+                <span className={styles.fileCount}>
+                  {_fileStatus.filter((f) => !f.isStaged).length}
+                </span>
               </div>
               {_fileStatus.some((f) => !f.isStaged) && (
                 <div className={styles.selectionActions}>
