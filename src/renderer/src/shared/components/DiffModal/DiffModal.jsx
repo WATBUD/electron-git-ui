@@ -8,6 +8,7 @@ export const DiffModal = ({ diff, onClose, show }) => {
   const [copied, setCopied] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedMessage, setGeneratedMessage] = useState('')
+  const [viewMode, setViewMode] = useState('diff') // 'diff' or 'message'
 
   // Clear generated message when modal opens
   React.useEffect(() => {
@@ -17,13 +18,30 @@ export const DiffModal = ({ diff, onClose, show }) => {
   }, [show])
 
   if (!show) return null
-  const displayDiff = diff || 'No staged changes found.'
+  const displayDiff = diff || (diff === '' ? 'No staged changes found. Stage some changes to see the diff.' : 'No staged changes found.')
+
+  const isValidMessage = (message) => {
+    if (!message) return false
+    const errorKeywords = ['API', 'Failed', 'quota', 'unavailable', 'forbidden', 'not found']
+    return !errorKeywords.some(keyword => message.includes(keyword))
+  }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(displayDiff).then(() => {
+    let textToCopy
+    if (viewMode === 'message' && isValidMessage(generatedMessage)) {
+      textToCopy = generatedMessage
+    } else {
+      textToCopy = displayDiff
+    }
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  const toggleViewMode = () => {
+    setViewMode(prev => prev === 'diff' ? 'message' : 'diff')
   }
 
   const generateCommitMessage = async () => {
@@ -185,6 +203,21 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
         <div className={styles.diffModalContent} onClick={(e) => e.stopPropagation()}>
           <div className={styles.diffModalHeader}>
             <h3>Git Cached Diff</h3>
+            <div className={styles.viewToggle}>
+              <button
+                className={`${styles.toggleBtn} ${viewMode === 'diff' ? styles.active : ''}`}
+                onClick={() => setViewMode('diff')}
+              >
+                Diff
+              </button>
+              <button
+                className={`${styles.toggleBtn} ${viewMode === 'message' ? styles.active : ''}`}
+                onClick={() => setViewMode('message')}
+                disabled={!isValidMessage(generatedMessage)}
+              >
+                AI Message
+              </button>
+            </div>
             <div className={styles.headerActions}>
               <button
                 className={`${styles.generateBtn} ${isGenerating ? styles.generating : ''}`}
@@ -207,7 +240,7 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
               <button
                 className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
                 onClick={handleCopy}
-                title="Copy diff to clipboard"
+                title={viewMode === 'message' && isValidMessage(generatedMessage) ? "Copy commit message to clipboard" : "Copy diff to clipboard"}
               >
                 {copied ? <Check size={18} /> : <Copy size={18} />}
                 <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -217,18 +250,11 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
               </button>
             </div>
           </div>
-          {generatedMessage && !generatedMessage.includes('API') && !generatedMessage.includes('Failed') && !generatedMessage.includes('quota') && !generatedMessage.includes('unavailable') && !generatedMessage.includes('forbidden') && !generatedMessage.includes('not found') ? (
+          {viewMode === 'message' && isValidMessage(generatedMessage) ? (
             <div className={styles.diffModalBody}>
               <div className={styles.generatedMessageContainer}>
                 <div className={styles.generatedMessageHeader}>
                   <h4>Generated Commit Message</h4>
-                  <button
-                    className={styles.copyGeneratedBtn}
-                    onClick={copyGeneratedMessage}
-                    title="Copy generated message"
-                  >
-                    <Copy size={16} />
-                  </button>
                 </div>
                 <div className={styles.generatedMessageContent}>
                   <pre style={{whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '14px', lineHeight: '1.5'}}>{generatedMessage}</pre>
@@ -236,21 +262,9 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
               </div>
             </div>
           ) : (
-            <>
-              {generatedMessage && (
-                <div className={styles.generatedMessageContainer}>
-                  <div className={styles.generatedMessageHeader}>
-                    <h4>Generated Commit Message</h4>
-                  </div>
-                  <div className={styles.generatedMessageContent}>
-                    <code>{generatedMessage}</code>
-                  </div>
-                </div>
-              )}
-              <div className={styles.diffModalBody}>
-                <pre className={styles.diffText}>{displayDiff}</pre>
-              </div>
-            </>
+            <div className={styles.diffModalBody}>
+              <pre className={styles.diffText}>{displayDiff}</pre>
+            </div>
           )}
         </div>
       </div>

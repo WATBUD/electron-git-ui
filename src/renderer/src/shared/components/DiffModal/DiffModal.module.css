@@ -97,6 +97,40 @@
   font-weight: 600;
 }
 
+.viewToggle {
+  display: flex;
+  gap: 4px;
+  margin-right: 16px;
+}
+
+.toggleBtn {
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.toggleBtn.active {
+  background-color: #007aff;
+  border-color: #007aff;
+  color: white;
+}
+
+.toggleBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .headerActions {
   display: flex;
   gap: 12px;
