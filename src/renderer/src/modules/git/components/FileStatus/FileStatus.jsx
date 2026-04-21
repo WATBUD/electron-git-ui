@@ -37,6 +37,8 @@ export const FileStatus = ({
   const [listWidth, setListWidth] = useState(350)
   const [isResizing, setIsResizing] = useState(false)
   const [activeFile, setActiveFile] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState(new Set())
+  const [lastSelectedFile, setLastSelectedFile] = useState(null)
   const [contextMenu, setContextMenu] = useState({
     show: false,
     x: 0,
@@ -78,13 +80,18 @@ export const FileStatus = ({
   }, [])
 
   
-  const handleContextMenu = (e, fileName) => {
+  const handleContextMenu = (e, fileName, isStaged) => {
     e.preventDefault()
+    const fileKey = `${fileName}-${isStaged}`
+    const isMultipleSelection = selectedFiles.size > 1 && selectedFiles.has(fileKey)
+    
     setContextMenu({
       show: true,
       x: e.clientX,
       y: e.clientY,
-      fileName: fileName
+      fileName: fileName,
+      isStaged: isStaged,
+      isMultipleSelection: isMultipleSelection
     })
   }
 
@@ -111,16 +118,78 @@ export const FileStatus = ({
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
 
-  const handleDiscardFromMenu = (fileName) => {
-    onDiscardChanges(fileName)
+  const handleDiscardFromMenu = async (fileName) => {
+    if (contextMenu.isMultipleSelection) {
+      // Handle multiple files
+      const selectedFilesList = Array.from(selectedFiles).map(fileKey => {
+        const [file] = fileKey.split('-')
+        return file
+      })
+      
+      try {
+        // Pass all files at once to discardFileChanges
+        await onDiscardChanges(selectedFilesList)
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+        message.success(`${selectedFilesList.length} files discarded`)
+      } catch (error) {
+        message.error('Failed to discard some files')
+        console.error('Discard error:', error)
+      }
+    } else {
+      // Handle single file
+      try {
+        await onDiscardChanges(fileName)
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+      } catch (error) {
+        message.error('Failed to discard file')
+        console.error('Discard error:', error)
+      }
+    }
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
 
-  const handleRemoveFromMenu = (fileName) => {
-    if (onRemoveFile) {
-      onRemoveFile(fileName)
+  const handleRemoveFromMenu = async (fileName) => {
+    if (contextMenu.isMultipleSelection) {
+      // Handle multiple files
+      const selectedFilesList = Array.from(selectedFiles).map(fileKey => {
+        const [file] = fileKey.split('-')
+        return file
+      })
+      
+      try {
+        // Pass all files at once to the remove function
+        if (onRemoveFile) {
+          await onRemoveFile(selectedFilesList)
+        } else {
+          await onDiscardChanges(selectedFilesList)
+        }
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+        message.success(`${selectedFilesList.length} files removed`)
+      } catch (error) {
+        message.error('Failed to remove some files')
+        console.error('Remove error:', error)
+      }
     } else {
-      onDiscardChanges(fileName)
+      // Handle single file
+      try {
+        if (onRemoveFile) {
+          await onRemoveFile(fileName)
+        } else {
+          await onDiscardChanges(fileName)
+        }
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+      } catch (error) {
+        message.error('Failed to remove file')
+        console.error('Remove error:', error)
+      }
     }
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
@@ -132,8 +201,37 @@ export const FileStatus = ({
     return staged === 'A' || working === 'A' || staged === '?' || working === '?'
   }
 
-  const handleStashFromMenu = (fileName) => {
-    onStashFile(fileName)
+  const handleStashFromMenu = async (fileName) => {
+    if (contextMenu.isMultipleSelection) {
+      // Handle multiple files
+      const selectedFilesList = Array.from(selectedFiles).map(fileKey => {
+        const [file] = fileKey.split('-')
+        return file
+      })
+      
+      try {
+        // Pass all files at once to onStashFile (which should use pushStash)
+        await onStashFile({ files: selectedFilesList })
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+        message.success(`${selectedFilesList.length} files stashed`)
+      } catch (error) {
+        message.error('Failed to stash some files')
+        console.error('Stash error:', error)
+      }
+    } else {
+      // Handle single file
+      try {
+        await onStashFile(fileName)
+        // Clear selection after successful operation
+        setSelectedFiles(new Set())
+        setLastSelectedFile(null)
+      } catch (error) {
+        message.error('Failed to stash file')
+        console.error('Stash error:', error)
+      }
+    }
     setContextMenu({ show: false, x: 0, y: 0, fileName: null })
   }
 
@@ -147,8 +245,55 @@ export const FileStatus = ({
     setSelectedFiles(newSelection)
   }
 
-  const handleFileItemClick = (file, isStaged) => {
+  const handleFileItemClick = (file, isStaged, e) => {
     setActiveFile({ file, isStaged })
+    
+    // Handle multi-selection with SHIFT + click
+    if (e && e.shiftKey && lastSelectedFile) {
+      // Only allow range selection within the same section (staged or unstaged)
+      if (lastSelectedFile.isStaged !== isStaged) {
+        // Different section, just select current file
+        setSelectedFiles(new Set([`${file}-${isStaged}`]))
+        setLastSelectedFile({ file, isStaged })
+      } else {
+        // Same section, perform range selection
+        const sectionFiles = _fileStatus.filter(f => f.isStaged === isStaged)
+        const currentIndex = sectionFiles.findIndex(f => f.file === file)
+        const lastIndex = sectionFiles.findIndex(f => f.file === lastSelectedFile.file)
+        
+        if (currentIndex !== -1 && lastIndex !== -1) {
+          const startIndex = Math.min(currentIndex, lastIndex)
+          const endIndex = Math.max(currentIndex, lastIndex)
+          const newSelection = new Set(selectedFiles)
+          
+          // Select all files in the range within the same section
+          for (let i = startIndex; i <= endIndex; i++) {
+            const targetFile = sectionFiles[i]
+            if (targetFile) {
+              newSelection.add(`${targetFile.file}-${targetFile.isStaged}`)
+            }
+          }
+          
+          setSelectedFiles(newSelection)
+        }
+      }
+    } else if (e && (e.metaKey || e.ctrlKey)) {
+      // Toggle selection with Cmd/Ctrl + click
+      const fileKey = `${file}-${isStaged}`
+      const newSelection = new Set(selectedFiles)
+      if (newSelection.has(fileKey)) {
+        newSelection.delete(fileKey)
+      } else {
+        newSelection.add(fileKey)
+      }
+      setSelectedFiles(newSelection)
+      setLastSelectedFile({ file, isStaged })
+    } else {
+      // Normal click - clear selection and select current file
+      setSelectedFiles(new Set([`${file}-${isStaged}`]))
+      setLastSelectedFile({ file, isStaged })
+    }
+    
     onFileClick({ file, isStaged })
   }
 
@@ -311,12 +456,12 @@ export const FileStatus = ({
                 .map((file, index) => (
                   <div
                     key={`staged-${index}`}
-                    className={`${styles.fileItem} ${activeFile?.file === file.file && activeFile?.isStaged ? styles.active : ''}`}
+                    className={`${styles.fileItem} ${activeFile?.file === file.file && activeFile?.isStaged ? styles.active : ''} ${selectedFiles.has(`${file.file}-true`) ? styles.selected : ''}`}
                     onClick={(e) => {
                       if (e.target.closest('input')) return
-                      handleFileItemClick(file.file, true)
+                      handleFileItemClick(file.file, true, e)
                     }}
-                    onContextMenu={(e) => handleContextMenu(e, file.file)}
+                    onContextMenu={(e) => handleContextMenu(e, file.file, true)}
                   >
                     <div className={styles.checkboxWrapper}>
                       <input
@@ -376,12 +521,12 @@ export const FileStatus = ({
                 .map((fileList, index) => (
                   <div
                     key={`working-${index}`}
-                    className={`${styles.fileItem} ${activeFile?.file === fileList.file && !activeFile?.isStaged ? styles.active : ''}`}
+                    className={`${styles.fileItem} ${activeFile?.file === fileList.file && !activeFile?.isStaged ? styles.active : ''} ${selectedFiles.has(`${fileList.file}-false`) ? styles.selected : ''}`}
                     onClick={(e) => {
                       if (e.target.closest('input') || e.target.closest('button')) return
-                      handleFileItemClick(fileList.file, false)
+                      handleFileItemClick(fileList.file, false, e)
                     }}
-                    onContextMenu={(e) => handleContextMenu(e, fileList.file)}
+                    onContextMenu={(e) => handleContextMenu(e, fileList.file, false)}
                   >
                     <div className={styles.checkboxWrapper}>
                       <input
@@ -471,37 +616,87 @@ export const FileStatus = ({
           }}
         >
           <div className={styles.contextMenuHeader}>
-            <span className={styles.contextMenuFileName}>{contextMenu.fileName}</span>
+            <span className={styles.contextMenuFileName}>
+              {contextMenu.isMultipleSelection 
+                ? `${selectedFiles.size} files selected` 
+                : contextMenu.fileName
+              }
+            </span>
           </div>
           <div className={styles.contextMenuContent}>
             <button
               className={styles.contextMenuItem}
-              onClick={() => handleCopyFileName(contextMenu.fileName)}
+              onClick={() => {
+                if (contextMenu.isMultipleSelection) {
+                  // Copy all selected file names
+                  const selectedFilesList = Array.from(selectedFiles).map(fileKey => {
+                    const [file] = fileKey.split('-')
+                    return file.split('/').pop()
+                  })
+                  navigator.clipboard.writeText(selectedFilesList.join('\n'))
+                  message.success(`${selectedFilesList.length} file names copied to clipboard`)
+                } else {
+                  handleCopyFileName(contextMenu.fileName)
+                }
+              }}
             >
               <Copy size={14} />
-              <span>Copy file name</span>
+              <span>{contextMenu.isMultipleSelection ? 'Copy file names' : 'Copy file name'}</span>
             </button>
             <button
               className={styles.contextMenuItem}
-              onClick={() => handleCopyPath(contextMenu.fileName)}
+              onClick={() => {
+                if (contextMenu.isMultipleSelection) {
+                  // Copy all selected paths
+                  const selectedFilesList = Array.from(selectedFiles).map(fileKey => {
+                    const [file] = fileKey.split('-')
+                    return file
+                  })
+                  navigator.clipboard.writeText(selectedFilesList.join('\n'))
+                  message.success(`${selectedFilesList.length} paths copied to clipboard`)
+                } else {
+                  handleCopyPath(contextMenu.fileName)
+                }
+              }}
             >
               <ExternalLink size={14} />
-              <span>Copy full path</span>
+              <span>{contextMenu.isMultipleSelection ? 'Copy full paths' : 'Copy full path'}</span>
             </button>
             <button
               className={styles.contextMenuItem}
               onClick={() => handleStashFromMenu(contextMenu.fileName)}
             >
               <Archive size={14} />
-              <span>Stash changes</span>
+              <span>{contextMenu.isMultipleSelection ? 'Stash changes' : 'Stash changes'}</span>
             </button>
             <div className={styles.contextMenuDivider} />
             <button
               className={`${styles.contextMenuItem} ${styles.danger}`}
-              onClick={() => isNewFile(contextMenu.fileName) ? handleRemoveFromMenu(contextMenu.fileName) : handleDiscardFromMenu(contextMenu.fileName)}
+              onClick={() => {
+                if (contextMenu.isMultipleSelection) {
+                  // Check if any selected files are new files
+                  const hasNewFiles = Array.from(selectedFiles).some(fileKey => {
+                    const [file] = fileKey.split('-')
+                    return isNewFile(file)
+                  })
+                  
+                  if (hasNewFiles) {
+                    handleRemoveFromMenu(contextMenu.fileName)
+                  } else {
+                    handleDiscardFromMenu(contextMenu.fileName)
+                  }
+                } else {
+                  isNewFile(contextMenu.fileName) ? handleRemoveFromMenu(contextMenu.fileName) : handleDiscardFromMenu(contextMenu.fileName)
+                }
+              }}
             >
               <Trash2 size={14} />
-              <span>{isNewFile(contextMenu.fileName) ? 'Remove file' : 'Discard changes'}</span>
+              <span>
+                {contextMenu.isMultipleSelection 
+                  ? 'Discard/Remove changes' 
+                  : (isNewFile(contextMenu.fileName) ? 'Remove file' : 'Discard changes')
+                }
+              </span>
             </button>
           </div>
         </div>
