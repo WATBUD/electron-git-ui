@@ -11,7 +11,8 @@ import {
   Code2,
   AlertCircle,
   FileCode,
-  Layout
+  Layout,
+  ChevronDown
 } from 'lucide-react'
 
 export const GitStashes = ({
@@ -28,6 +29,7 @@ export const GitStashes = ({
   const [stashMessage, setStashMessage] = useState('')
   const [confirmDrop, setConfirmDrop] = useState(null)
   const [selectedStashIndex, setSelectedStashIndex] = useState(null)
+  const [collapsedFiles, setCollapsedFiles] = useState(new Set())
 
   const handlePush = async () => {
     if (!stashMessage.trim()) return
@@ -54,6 +56,18 @@ export const GitStashes = ({
     if (selectedStashIndex === stashIndex) {
       setSelectedStashIndex(null)
     }
+  }
+
+  const toggleFileCollapse = (fileName) => {
+    setCollapsedFiles(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(fileName)) {
+        newSet.delete(fileName)
+      } else {
+        newSet.add(fileName)
+      }
+      return newSet
+    })
   }
 
   // Parse diff into file groups
@@ -268,14 +282,22 @@ export const GitStashes = ({
                 ) : fileGroups.length > 0 ? (
                   fileGroups.map((file, fidx) => (
                     <div key={fidx} className={styles.fileBlock}>
-                      <div className={styles.fileHeader}>
+                      <div 
+                        className={styles.fileHeader}
+                        onClick={() => toggleFileCollapse(file.fileName)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <div className={styles.fileName}>
+                          <ChevronDown 
+                            size={14} 
+                            className={`${styles.chevron} ${collapsedFiles.has(file.fileName) ? styles.chevronCollapsed : ''}`}
+                          />
                           <FileCode size={14} className={styles.fileIcon} />
                           <span>{file.fileName}</span>
                         </div>
                         <span className={styles.fileStatusBadge}>{file.status}</span>
                       </div>
-                      <div className={styles.diffBody}>
+                      <div className={`${styles.diffBody} ${collapsedFiles.has(file.fileName) ? styles.collapsed : ''}`}>
                         <div className={styles.diffLines}>
                           {file.lines.map((line, lidx) => (
                             <div key={lidx} className={`${styles.diffLine} ${styles[line.type]}`}>

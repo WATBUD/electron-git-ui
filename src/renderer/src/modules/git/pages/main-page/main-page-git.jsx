@@ -318,8 +318,8 @@ export const MainPageGit = () => {
                       await dispatch(loadFileStatus())
                     }}
                     onStashFile={async (file) => {
-                      const result = await dispatch(stashFile(file))
-                      if (stashFile.fulfilled.match(result)) {
+                      const result = await dispatch(pushStash(file))
+                      if (pushStash.fulfilled.match(result)) {
                         dispatch(loadFileStatus())
                       }
                     }}
