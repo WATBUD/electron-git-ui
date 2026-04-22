@@ -1,5 +1,5 @@
-import React from 'react'
-import { ChevronDown } from 'lucide-react'
+import React, { useState } from 'react'
+import { ChevronDown, FileText, FolderOpen } from 'lucide-react'
 import { FileItem } from './FileItem'
 import styles from './FileStatus.module.css'
 
@@ -19,6 +19,7 @@ export const FileList = ({
   loading
 }) => {
   const hasFiles = files.length > 0
+  const [showFullPath, setShowFullPath] = useState(false)
 
   return (
     <div className={styles.fileStatusSection}>
@@ -29,6 +30,13 @@ export const FileList = ({
           <span className={styles.fileCount}>
             {files.length}
           </span>
+          <button
+            onClick={() => setShowFullPath(!showFullPath)}
+            className={styles.pathToggleBtn}
+            title={showFullPath ? "Show file names only" : "Show full paths"}
+          >
+            {showFullPath ? <FileText size={14} /> : <FolderOpen size={14} />}
+          </button>
         </div>
         {hasFiles && (
           <div className={styles.selectionActions}>
@@ -69,6 +77,7 @@ export const FileList = ({
               onStageFile={onStageFile}
               onUnstageFile={onUnstageFile}
               getStatusIcon={getStatusIcon}
+              showFullPath={showFullPath}
             />
           )
         })}

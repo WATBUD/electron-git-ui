@@ -15,7 +15,8 @@ export const FileItem = ({
   onStageFile,
   onUnstageFile,
   getStatusIcon,
-  isStaged
+  isStaged,
+  showFullPath = false
 }) => {
   const handleClick = (e) => {
     if (e.target.closest('input') || e.target.closest('button')) return
@@ -43,7 +44,9 @@ export const FileItem = ({
       </div>
       <span className={styles.fileIcon}>{getStatusIcon(file)}</span>
       <div className={styles.fileInfo}>
-        <span className={styles.fileName}>{file.file}</span>
+        <span className={styles.fileName}>
+          {showFullPath ? file.file : file.file.split('/').pop()}
+        </span>
       </div>
       <div className={styles.fileActions}>
         {isStaged ? (
