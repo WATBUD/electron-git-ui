@@ -213,6 +213,33 @@ export const MainPageGit = () => {
             onCommit={async (commitMessage) => {
               await dispatch(commitChanges(commitMessage))
             }}
+            onStash={async (includeStaged) => {
+              try {
+                if (includeStaged) {
+                  // Stash all files (staged + unstaged)
+                  const result = await dispatch(pushStash('Auto stash from toolbar (all changes)'))
+                  if (pushStash.fulfilled.match(result)) {
+                    dispatch(loadFileStatus())
+                  }
+                } else {
+                  // Stash only unstaged files, preserve staged files
+                  const unstagedFiles = (fileStatus?.data?.files || fileStatus || [])
+                    .filter(f => !f.isStaged)
+                    .map(f => f.file)
+                  
+                  const result = await dispatch(pushStash({ 
+                    message: 'Auto stash from toolbar (unstaged only)',
+                    files: unstagedFiles.length > 0 ? unstagedFiles : undefined
+                  }))
+                  if (pushStash.fulfilled.match(result)) {
+                    dispatch(loadFileStatus())
+                  }
+                }
+              } catch (error) {
+                console.error('Stash error:', error)
+                dispatch(loadFileStatus()) // Refresh status in case of error
+              }
+            }}
             loading={loading}
           />
         )}

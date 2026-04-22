@@ -848,12 +848,15 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
     }
   })
 
-  ipcMain.handle('git:stashPush', async (_, message, files) => {
+  ipcMain.handle('git:stashPush', async (_, message, files, keepIndex) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {
       const args = ['stash', 'push']
       if (message) {
         args.push('-m', message)
+      }
+      if (keepIndex) {
+        args.push('--keep-index')
       }
       if (files && files.length > 0) {
         args.push('--')

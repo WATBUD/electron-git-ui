@@ -152,28 +152,6 @@ export const GitStashes = ({
       <div className={styles.container}>
         {/* Left Sidebar: Stash List */}
         <div className={styles.sidebar}>
-          <div className={styles.createSection}>
-            <div className={styles.createRow}>
-              <div className={styles.inputWrapper}>
-                <input
-                  className={styles.stashInput}
-                  type="text"
-                  placeholder="Stash message..."
-                  value={stashMessage}
-                  onChange={(e) => setStashMessage(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={loading}
-                />
-              </div>
-              <button
-                className={styles.pushBtn}
-                onClick={handlePush}
-                disabled={loading || !stashMessage.trim()}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
 
           <div className={styles.listWrapper}>
             {stashes.length === 0 ? (

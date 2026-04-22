@@ -2,14 +2,16 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import styles from './Toolbar.module.css'
-import { Download, RefreshCw, Upload, GitCommit, AlertTriangle, Circle, Folder } from 'lucide-react'
+import { Download, RefreshCw, Upload, GitCommit, AlertTriangle, Circle, Folder, Archive } from 'lucide-react'
 
-export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
+export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
   const [showPushDialog, setShowPushDialog] = useState(false)
   const [showCommitDialog, setShowCommitDialog] = useState(false)
+  const [showStashDialog, setShowStashDialog] = useState(false)
   const [pruneBranches, setPruneBranches] = useState(false)
   const [forcePush, setForcePush] = useState(false)
+  const [includeStaged, setIncludeStaged] = useState(true)
   const [commitMessage, setCommitMessage] = useState('')
 
   // Get Redux state
@@ -81,6 +83,11 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
     }
   }
 
+  const handleStash = () => {
+    onStash(includeStaged)
+    setShowStashDialog(false)
+  }
+
   const gitStatus = getGitStatus()
   const projectName = getProjectName(repoPath)
 
@@ -131,6 +138,17 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
               <GitCommit size={14} />
             </span>
             <span className={styles.toolbarText}>Commit</span>
+          </button>
+          <button
+            onClick={() => setShowStashDialog(true)}
+            className={styles.toolbarBtn}
+            disabled={loading}
+            title="Stash changes"
+          >
+            <span className={styles.toolbarIcon}>
+              <Archive size={14} />
+            </span>
+            <span className={styles.toolbarText}>Stash</span>
           </button>
         </div>
         
@@ -268,6 +286,55 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, loading }) => {
                   className={styles.confirmBtn}
                 >
                   Commit
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {showStashDialog && (
+        <ModalPortal>
+          <div className={styles.dialogOverlay} onClick={() => setShowStashDialog(false)}>
+            <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+              <h3>Stash Options</h3>
+              <div className={styles.dialogContent}>
+                <label className={styles.checkboxLabel}>
+                  <span>Include staged changes</span>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="checkbox"
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        zIndex: 1
+                      }}
+                      checked={includeStaged}
+                      onChange={(e) => setIncludeStaged(e.target.checked)}
+                    />
+                    <div className={styles.toggleSwitch}></div>
+                  </div>
+                </label>
+                <div className={styles.infoMessage}>
+                  <AlertTriangle
+                    size={14}
+                    style={{ marginRight: '8px', verticalAlign: 'middle' }}
+                  />
+                  {includeStaged 
+                    ? "All changes (staged and unstaged) will be stashed."
+                    : "Only unstaged changes will be stashed. Staged changes will remain."
+                  }
+                </div>
+              </div>
+              <div className={styles.dialogButtons}>
+                <button onClick={() => setShowStashDialog(false)} className={styles.cancelBtn}>
+                  Cancel
+                </button>
+                <button onClick={handleStash} disabled={loading} className={styles.confirmBtn}>
+                  Stash
                 </button>
               </div>
             </div>
