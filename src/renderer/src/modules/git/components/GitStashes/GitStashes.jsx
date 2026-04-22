@@ -192,7 +192,12 @@ export const GitStashes = ({
             <>
               <div className={styles.detailHeader}>
                 <div className={styles.detailMeta}>
-                  <span className={styles.detailTitle}>{selectedStash.message}</span>
+                  <div className={styles.detailTitleRow}>
+                    <span className={styles.detailTitle}>{selectedStash.message}</span>
+                    {fileGroups.length > 0 && (
+                      <span className={styles.fileCountBadge}>{fileGroups.length} files</span>
+                    )}
+                  </div>
                   <div className={styles.detailSubtitle}>
                     <Clock size={12} />
                     <span>{selectedStash.date}</span>

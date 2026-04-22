@@ -240,6 +240,25 @@ input[type="checkbox"]:checked + .toggleSwitch::after {
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
 }
 
+.stashMessageInput {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  margin-bottom: 12px;
+}
+
+.stashMessageInput:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
 /* Status display styles */
 .statusGroup {
   display: flex;

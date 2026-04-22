@@ -13,6 +13,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   const [forcePush, setForcePush] = useState(false)
   const [includeStaged, setIncludeStaged] = useState(true)
   const [commitMessage, setCommitMessage] = useState('')
+  const [stashMessage, setStashMessage] = useState('')
 
   // Get Redux state
   const fileStatus = useSelector((state) => state.git.fileStatus || [])
@@ -84,7 +85,8 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   }
 
   const handleStash = () => {
-    onStash(includeStaged)
+    onStash(includeStaged, stashMessage.trim() || undefined)
+    setStashMessage('')
     setShowStashDialog(false)
   }
 
@@ -299,6 +301,14 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
               <h3>Stash Options</h3>
               <div className={styles.dialogContent}>
+                <input
+                  type="text"
+                  value={stashMessage}
+                  onChange={(e) => setStashMessage(e.target.value)}
+                  placeholder="Stash message (optional)..."
+                  className={styles.stashMessageInput}
+                  autoFocus
+                />
                 <label className={styles.checkboxLabel}>
                   <span>Include staged changes</span>
                   <div style={{ position: 'relative' }}>

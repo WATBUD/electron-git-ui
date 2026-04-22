@@ -213,11 +213,16 @@ export const MainPageGit = () => {
             onCommit={async (commitMessage) => {
               await dispatch(commitChanges(commitMessage))
             }}
-            onStash={async (includeStaged) => {
+            onStash={async (includeStaged, customMessage) => {
               try {
+                const defaultMessage = includeStaged 
+                  ? 'Auto stash from toolbar (all changes)'
+                  : 'Auto stash from toolbar (unstaged only)'
+                const message = customMessage || defaultMessage
+                
                 if (includeStaged) {
                   // Stash all files (staged + unstaged)
-                  const result = await dispatch(pushStash('Auto stash from toolbar (all changes)'))
+                  const result = await dispatch(pushStash(message))
                   if (pushStash.fulfilled.match(result)) {
                     dispatch(loadFileStatus())
                   }
@@ -228,7 +233,7 @@ export const MainPageGit = () => {
                     .map(f => f.file)
                   
                   const result = await dispatch(pushStash({ 
-                    message: 'Auto stash from toolbar (unstaged only)',
+                    message: message,
                     files: unstagedFiles.length > 0 ? unstagedFiles : undefined
                   }))
                   if (pushStash.fulfilled.match(result)) {

@@ -555,7 +555,7 @@ export const getFileDiff = createAsyncThunk(
 
 // ── Stash thunks ────────────────────────────────────────────────────────────────────
 
-export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejectWithValue }) => {
+export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejectWithValue, dispatch }) => {
   const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
   if (rejectIfNotInitialized) return rejectIfNotInitialized
   const result = await callGit(
@@ -564,6 +564,7 @@ export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejec
     'Failed to load stashes',
     'stashList'
   )
+  await dispatch(updateCommandHistory())
   return result.data
 })
 
