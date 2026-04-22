@@ -38,6 +38,7 @@ import {
   applyStash,
   popStash,
   dropStash,
+  renameStash,
   getStashDiff
 } from '../../store/git'
 import styles from './main-page-git.module.css'
@@ -369,6 +370,7 @@ export const MainPageGit = () => {
                     onApply={async (stashIndex) => dispatch(applyStash(stashIndex))}
                     onPop={async (stashIndex) => dispatch(popStash(stashIndex))}
                     onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
+                    onRename={async (stashIndex, newMessage) => dispatch(renameStash({ stashIndex, newMessage }))}
                     onSelectStash={(stashIndex) => dispatch(getStashDiff(stashIndex))}
                   />
                 )}

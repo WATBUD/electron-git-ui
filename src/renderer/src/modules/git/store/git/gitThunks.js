@@ -642,13 +642,29 @@ export const getStashDiff = createAsyncThunk(
   'git/getStashDiff',
   async (stashIndex, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    if (rejectIfNotInitialized) return rejectIfNotInitialization
     const result = await callGit(
       () => window.git.getStashDiff(stashIndex),
       rejectWithValue,
-      'Failed to load stash diff',
+      'Failed to get stash diff',
       'getStashDiff'
     )
+    return result.data
+  }
+)
+
+export const renameStash = createAsyncThunk(
+  'git/renameStash',
+  async ({ stashIndex, newMessage }, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashRename(stashIndex, newMessage),
+      rejectWithValue,
+      'Failed to rename stash',
+      'stashRename'
+    )
+    await Promise.all([dispatch(loadStashes()), dispatch(updateCommandHistory())])
     return result.data
   }
 )

@@ -31,6 +31,7 @@ import {
   applyStash,
   popStash,
   dropStash,
+  renameStash,
   getStashDiff
 } from './gitThunks'
 

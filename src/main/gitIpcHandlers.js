@@ -938,4 +938,28 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
       return fail(error.message)
     }
   })
+
+  ipcMain.handle('git:stashRename', async (_, stashIndex, newMessage) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      // Apply the stash to restore changes
+      const applyCommand = `git stash apply --index ${stashIndex}`
+      commandHistory.push(applyCommand)
+      await execAsync(applyCommand, { cwd: currentRepoPath })
+      
+      // Drop the old stash
+      const dropCommand = `git stash drop ${stashIndex}`
+      commandHistory.push(dropCommand)
+      await execAsync(dropCommand, { cwd: currentRepoPath })
+      
+      // Create a new stash with the new message
+      const pushCommand = `git stash push -m "${newMessage.replace(/"/g, '\\"')}" --include-untracked`
+      commandHistory.push(pushCommand)
+      const { stdout, stderr } = await execAsync(pushCommand, { cwd: currentRepoPath })
+      
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
 }

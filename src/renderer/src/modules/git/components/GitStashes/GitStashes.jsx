@@ -12,7 +12,8 @@ import {
   AlertCircle,
   FileCode,
   Layout,
-  ChevronDown
+  ChevronDown,
+  Edit3
 } from 'lucide-react'
 
 export const GitStashes = ({
@@ -24,12 +25,17 @@ export const GitStashes = ({
   onApply,
   onPop,
   onDrop,
+  onRename,
   onSelectStash
 }) => {
   const [stashMessage, setStashMessage] = useState('')
   const [confirmDrop, setConfirmDrop] = useState(null)
   const [selectedStashIndex, setSelectedStashIndex] = useState(null)
   const [collapsedFiles, setCollapsedFiles] = useState(new Set())
+  const [renamingStash, setRenamingStash] = useState(null)
+  const [newStashMessage, setNewStashMessage] = useState('')
+  const [contextMenu, setContextMenu] = useState(null)
+  const [showRenameModal, setShowRenameModal] = useState(false)
 
   const handlePush = async () => {
     if (!stashMessage.trim()) return
@@ -56,6 +62,54 @@ export const GitStashes = ({
     if (selectedStashIndex === stashIndex) {
       setSelectedStashIndex(null)
     }
+  }
+
+  const handleRename = async () => {
+    if (!newStashMessage.trim() || !renamingStash) return
+    await onRename(renamingStash, newStashMessage.trim())
+    setShowRenameModal(false)
+    setRenamingStash(null)
+    setNewStashMessage('')
+  }
+
+  const handleCancelRename = () => {
+    setShowRenameModal(false)
+    setRenamingStash(null)
+    setNewStashMessage('')
+  }
+
+  const handleRenameKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleRename()
+    } else if (e.key === 'Escape') {
+      setRenamingStash(null)
+      setNewStashMessage('')
+    }
+  }
+
+  const handleContextMenu = (e, stashIndex, stashMessage) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      stashIndex,
+      stashMessage
+    })
+  }
+
+  const handleContextMenuRename = () => {
+    if (contextMenu) {
+      setRenamingStash(contextMenu.stashIndex)
+      setNewStashMessage(contextMenu.stashMessage)
+      setContextMenu(null)
+      setShowRenameModal(true)
+    }
+  }
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(null)
   }
 
   const toggleFileCollapse = (fileName) => {
@@ -140,7 +194,7 @@ export const GitStashes = ({
   )
 
   return (
-    <div className={styles.panel}>
+    <div className={styles.panel} onClick={handleCloseContextMenu}>
       <div className={styles.header}>
         <div className={styles.headerTitle}>
           <Archive size={16} className={styles.headerIcon} />
@@ -166,6 +220,7 @@ export const GitStashes = ({
                     key={stash.index}
                     className={`${styles.stashItem} ${selectedStashIndex === stash.index ? styles.active : ''}`}
                     onClick={() => handleSelectStash(stash.index)}
+                    onContextMenu={(e) => handleContextMenu(e, stash.index, stash.message)}
                   >
                     <div className={styles.stashSummary}>
                       <div className={styles.stashIndexBadge}>
@@ -309,6 +364,53 @@ export const GitStashes = ({
           )}
         </div>
       </div>
+
+      {contextMenu && (
+        <div
+          className={styles.contextMenu}
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className={styles.contextMenuItem}
+            onClick={handleContextMenuRename}
+          >
+            <Edit3 size={14} style={{ marginRight: 8 }} />
+            <span>Rename</span>
+          </div>
+        </div>
+      )}
+
+      {showRenameModal && (
+        <div className={styles.modalOverlay} onClick={handleCancelRename}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3>Rename Stash</h3>
+            <div className={styles.modalContent}>
+              <input
+                type="text"
+                value={newStashMessage}
+                onChange={(e) => setNewStashMessage(e.target.value)}
+                onKeyDown={handleRenameKeyDown}
+                placeholder="Enter new message..."
+                className={styles.modalInput}
+                autoFocus
+              />
+            </div>
+            <div className={styles.modalButtons}>
+              <button onClick={handleCancelRename} className={styles.cancelBtn}>
+                Cancel
+              </button>
+              <button
+                onClick={handleRename}
+                disabled={loading || !newStashMessage.trim()}
+                className={styles.confirmBtn}
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
