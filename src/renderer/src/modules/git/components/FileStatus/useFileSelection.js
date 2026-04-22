@@ -64,8 +64,15 @@ export const useFileSelection = () => {
 
   const getSelectedFiles = useCallback(() => {
     return Array.from(selectedFiles).map(fileKey => {
-      const [file] = fileKey.split('-')
-      return file
+      // Find the last occurrence of '-true' or '-false' to separate file path from staging status
+      const stagedIndex = fileKey.lastIndexOf('-true')
+      const unstagedIndex = fileKey.lastIndexOf('-false')
+      const statusIndex = Math.max(stagedIndex, unstagedIndex)
+      
+      if (statusIndex !== -1) {
+        return fileKey.substring(0, statusIndex)
+      }
+      return fileKey
     })
   }, [selectedFiles])
 
