@@ -41,13 +41,7 @@ export const loadCommitHistory = createAsyncThunk(
       'Failed to load commit history',
       'loadCommitHistory'
     )
-    const { commits = [], currentHead, currentBranch, unpushedCount = 0 } = result.data ?? {}
-    return {
-      commits,
-      currentHead,
-      currentBranch,
-      unpushedCount
-    }
+    return result
   }
 )
 
@@ -153,11 +147,7 @@ export const loadBranches = createAsyncThunk(
       'loadBranches'
     )
     await dispatch(updateCommandHistory())
-    return {
-      branches: result.data?.branches,
-      remoteBranches: result.data?.remoteBranches,
-      currentBranch: result.data?.currentBranch
-    }
+    return result
   }
 )
 
@@ -179,7 +169,7 @@ export const createBranch = createAsyncThunk(
 
     await dispatch(updateCommandHistory())
 
-    return { success: true, branchName }
+    return result
   }
 )
 
@@ -205,7 +195,7 @@ export const mergeBranch = createAsyncThunk(
       dispatch(loadFileStatus()),
       dispatch(loadCommitHistory())
     ])
-    return { success: true }
+    return result
   }
 )
 
@@ -228,7 +218,7 @@ export const checkoutCommit = createAsyncThunk(
       //dispatch(loadBranches()),
       //dispatch(loadFileStatus())
     ])
-    return { success: true }
+    return result
   }
 )
 
@@ -366,11 +356,7 @@ export const discardFileChanges = createAsyncThunk(
 
     // Update the status after successful discard
     await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory())])
-    return {
-      success: true,
-      files: Array.isArray(files) ? files : [files],
-      count: result.data?.count || (Array.isArray(files) ? files.length : 1)
-    }
+    return result
   }
 )
 
@@ -470,7 +456,7 @@ export const clearCommandHistory = createAsyncThunk(
 
     // Reset the previous history index when clearing history
     dispatch(updatePreviousHistoryIndex(-1))
-    return { success: true }
+    return result
   }
 )
 
@@ -519,15 +505,14 @@ export const getCachedDiff = createAsyncThunk(
       return rejectWithValue('Git API not initialized')
     }
 
-    try {
-      const result = await window.git.getCachedDiff()
-      if (result.success) {
-        return result.data
-      }
-      return rejectWithValue(result.message || 'Failed to get cached diff')
-    } catch (err) {
-      return rejectWithValue(err.message || 'Failed to get cached diff')
-    }
+    const result = await callGit(
+      () => window.git.getCachedDiff(),
+      rejectWithValue,
+      'Failed to get cached diff',
+      'getCachedDiff'
+    )
+
+    return result
   }
 )
 
@@ -549,7 +534,7 @@ export const getFileDiff = createAsyncThunk(
     )
 
     await dispatch(updateCommandHistory())
-    return result.data
+    return result
   }
 )
 
@@ -565,7 +550,7 @@ export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejec
     'stashList'
   )
   await dispatch(updateCommandHistory())
-  return result.data
+  return result
 })
 
 export const pushStash = createAsyncThunk(
@@ -586,7 +571,7 @@ export const pushStash = createAsyncThunk(
       'stashPush'
     )
     await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
-    return result.data
+    return result
   }
 )
 
@@ -602,7 +587,7 @@ export const applyStash = createAsyncThunk(
       'stashApply'
     )
     await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
-    return result.data
+    return result
   }
 )
 
@@ -618,7 +603,7 @@ export const popStash = createAsyncThunk(
       'stashPop'
     )
     await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
-    return result.data
+    return result
   }
 )
 
@@ -634,7 +619,7 @@ export const dropStash = createAsyncThunk(
       'stashDrop'
     )
     await dispatch(loadStashes())
-    return result.data
+    return result
   }
 )
 
@@ -649,7 +634,7 @@ export const getStashDiff = createAsyncThunk(
       'Failed to get stash diff',
       'getStashDiff'
     )
-    return result.data
+    return result
   }
 )
 
@@ -659,12 +644,13 @@ export const renameStash = createAsyncThunk(
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
     const result = await callGit(
-      () => window.git.stashRename(stashIndex, newMessage),
+      () => window.git.renameStash(stashIndex, newMessage),
       rejectWithValue,
       'Failed to rename stash',
-      'stashRename'
+      'renameStash'
     )
+    // Only proceed with updates if successful
     await Promise.all([dispatch(loadStashes()), dispatch(updateCommandHistory())])
-    return result.data
+    return result
   }
 )

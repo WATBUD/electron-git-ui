@@ -56,32 +56,35 @@ export function setupGitHandlers() {
       const command = isStaged ? `git diff --cached "${escapedFile}"` : `git diff "${escapedFile}"`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
-      
+
       // If git diff returns content, use it
       if (stdout || stderr) {
         return success(stdout || stderr)
       }
-      
+
       // For new files or files with no diff, try to read the full content
       if (!isStaged) {
         try {
           const fs = require('fs').promises
           const filePath = join(currentRepoPath, cleanFile)
           const fileContent = await fs.readFile(filePath, 'utf8')
-          
+
           // Format as a new file diff
           const formattedDiff = `--- /dev/null
 +++ a/${cleanFile}
 @@ -0,0 +1,${fileContent.split('\n').length} @@
-${fileContent.split('\n').map(line => '+' + line).join('\n')}`
-          
+${fileContent
+  .split('\n')
+  .map((line) => '+' + line)
+  .join('\n')}`
+
           return success(formattedDiff)
         } catch (readErr) {
           // If we can't read the file, return the original empty result
           return success('')
         }
       }
-      
+
       return success(stdout || stderr || '')
     } catch (err) {
       // If git diff fails, try to read the file content for new files
@@ -90,19 +93,22 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
           const fs = require('fs').promises
           const filePath = join(currentRepoPath, file.replace(/"/g, ''))
           const fileContent = await fs.readFile(filePath, 'utf8')
-          
+
           // Format as a new file diff
           const formattedDiff = `--- /dev/null
 +++ a/${file.replace(/"/g, '')}
 @@ -0,0 +1,${fileContent.split('\n').length} @@
-${fileContent.split('\n').map(line => '+' + line).join('\n')}`
-          
+${fileContent
+  .split('\n')
+  .map((line) => '+' + line)
+  .join('\n')}`
+
           return success(formattedDiff)
         } catch (readErr) {
           return fail(err.message)
         }
       }
-      
+
       return fail(err.message)
     }
   })
@@ -613,13 +619,13 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
           const statusCmd = `git status --porcelain "${escapedFile}"`
           const statusResult = await execAsync(statusCmd, { cwd: currentRepoPath })
           const isUntracked = statusResult.stdout.startsWith('??')
-          
+
           if (isUntracked) {
             // For untracked files, just delete them from file system
             const fs = require('fs')
             const path = require('path')
             const fullPath = path.join(currentRepoPath, cleanFile)
-            
+
             try {
               await fs.promises.unlink(fullPath)
               console.log(`Removed untracked file: ${fullPath}`)
@@ -939,25 +945,45 @@ ${fileContent.split('\n').map(line => '+' + line).join('\n')}`
     }
   })
 
-  ipcMain.handle('git:stashRename', async (_, stashIndex, newMessage) => {
+  ipcMain.handle('git:renameStash', async (_, stashRef, newMessage) => {
     if (!currentRepoPath) return fail('No repository selected')
+
     try {
-      // Apply the stash to restore changes
-      const applyCommand = `git stash apply --index ${stashIndex}`
-      commandHistory.push(applyCommand)
-      await execAsync(applyCommand, { cwd: currentRepoPath })
-      
-      // Drop the old stash
-      const dropCommand = `git stash drop ${stashIndex}`
-      commandHistory.push(dropCommand)
-      await execAsync(dropCommand, { cwd: currentRepoPath })
-      
-      // Create a new stash with the new message
-      const pushCommand = `git stash push -m "${newMessage.replace(/"/g, '\\"')}" --include-untracked`
-      commandHistory.push(pushCommand)
-      const { stdout, stderr } = await execAsync(pushCommand, { cwd: currentRepoPath })
-      
-      return success({ output: stdout || stderr })
+      // 1️⃣ normalize stash index
+      let stashIndex = stashRef
+      if (typeof stashRef === 'string' && stashRef.includes('stash@{')) {
+        const match = stashRef.match(/stash@\{(\d+)\}/)
+        if (match) stashIndex = parseInt(match[1])
+      }
+
+      // 2️⃣ get stash commit hash
+      const { stdout: hashOutput } = await execAsync(`git rev-parse stash@{${stashIndex}}`, {
+        cwd: currentRepoPath
+      })
+
+      const stashHash = hashOutput.trim()
+
+      // 3️⃣ create NEW stash commit (NO working tree change)
+      const { stdout: newCommit } = await execAsync(
+        `git commit-tree ${stashHash}^{tree} -p ${stashHash}^1 -p ${stashHash}^2 -m "${newMessage.replace(/"/g, '\\"')}"`,
+        { cwd: currentRepoPath }
+      )
+
+      const newHash = newCommit.trim()
+
+      // 4️⃣ replace stash ref (safe rewrite, no reorder explosion)5
+      await execAsync(`git update-ref refs/stash ${newHash}`, { cwd: currentRepoPath })
+
+      commandHistory.push('git update-ref refs/stash ' + newHash)
+
+      // 5️⃣ delete old stash
+      await execAsync(`git stash drop ${stashIndex + 1}`, { cwd: currentRepoPath })
+      commandHistory.push('git stash drop ' + (stashIndex + 1))
+
+      return success({
+        output: `Stash renamed to: ${newMessage}`,
+        stash: newHash
+      })
     } catch (error) {
       return fail(error.message)
     }

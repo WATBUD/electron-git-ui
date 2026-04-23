@@ -176,9 +176,11 @@ const gitSlice = createSlice({
       })
       .addCase(loadCommitHistory.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.commits = action.payload.commits
-        state.currentHead = action.payload.currentHead
-        state.unpushedCount = action.payload.unpushedCount
+        const data = action.payload?.data || action.payload
+        state.commits = data.commits || []
+        state.currentHead = data.currentHead
+        state.currentBranch = data.currentBranch
+        state.unpushedCount = data.unpushedCount || 0
       })
       .addCase(loadCommitHistory.rejected, (state, action) => {
         state.error = action.payload
@@ -234,7 +236,8 @@ const gitSlice = createSlice({
         state.error = action.payload
       })
       .addCase(checkMergeInProgress.fulfilled, (state, action) => {
-        state.hasMergeInProgress = action.payload.data?.hasMergeInProgress || false
+        const data = action.payload?.data || action.payload
+        state.hasMergeInProgress = data?.hasMergeInProgress || false
       })
       .addCase(checkMergeInProgress.rejected, (state, action) => {
         state.error = action.payload
@@ -249,9 +252,10 @@ const gitSlice = createSlice({
       })
       .addCase(loadBranches.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.currentBranch = action.payload?.currentBranch
-        state.branches = action.payload?.branches
-        state.remoteBranches = action.payload?.remoteBranches
+        const data = action.payload?.data || action.payload
+        state.currentBranch = data?.currentBranch
+        state.branches = data?.branches
+        state.remoteBranches = data?.remoteBranches
       })
       .addCase(loadBranches.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -264,7 +268,7 @@ const gitSlice = createSlice({
       })
       .addCase(createBranch.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.branches.push(action.payload.branchName)
+        // No state update needed, branches will be reloaded
       })
       .addCase(createBranch.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -380,15 +384,19 @@ const gitSlice = createSlice({
         state.loadingMessage = 'Discarding file changes...'
         state.error = null
       })
-      .addCase(discardFileChanges.fulfilled, (state) => {
+      .addCase(discardFileChanges.fulfilled, (state, action) => {
         state.loadingMessage = ''
+        const data = action.payload?.data || action.payload
+        // Can store discarded files info if needed for UI feedback
+        // state.lastDiscardedFiles = data.files
+        // state.lastDiscardedCount = data.count
       })
       .addCase(discardFileChanges.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
       })
       .addCase(updateCommandHistory.fulfilled, (state, action) => {
-        state.commandHistory = action.payload.data
+        state.commandHistory = action.payload?.data || action.payload
       })
       .addCase(updateCommandHistory.rejected, (state, action) => {
         state.error = action.payload
@@ -406,7 +414,8 @@ const gitSlice = createSlice({
       })
       .addCase(selectRepository.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.repoPath = action.payload.data.repoPath
+        const data = action.payload?.data || action.payload
+        state.repoPath = data?.repoPath
         if (state.repoPath && !state.projects.includes(state.repoPath)) {
           state.projects.push(state.repoPath)
           saveToStorage(STORAGE_KEYS.PROJECTS, state.projects)
@@ -422,7 +431,8 @@ const gitSlice = createSlice({
       })
       .addCase(openRepository.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.repoPath = action.payload.data.repoPath
+        const data = action.payload?.data || action.payload
+        state.repoPath = data?.repoPath
       })
       .addCase(openRepository.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -434,7 +444,7 @@ const gitSlice = createSlice({
       })
       .addCase(getCachedDiff.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.cachedDiff = action.payload
+        state.cachedDiff = action.payload?.data || action.payload
       })
       .addCase(getCachedDiff.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -446,7 +456,7 @@ const gitSlice = createSlice({
       })
       .addCase(getFileDiff.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.selectedFileDiff = action.payload
+        state.selectedFileDiff = action.payload?.data || action.payload
       })
       .addCase(getFileDiff.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -461,7 +471,7 @@ const gitSlice = createSlice({
       .addCase(loadStashes.fulfilled, (state, action) => {
         state.loadingMessage = ''
         state.stashLoading = false
-        state.stashes = action.payload || []
+        state.stashes = action.payload?.data || action.payload || []
         state.selectedStashDiff = null // 重載列表時清除預覽
       })
       .addCase(loadStashes.rejected, (state, action) => {
@@ -517,11 +527,27 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
         state.error = action.payload
       })
+      // renameStash
+      .addCase(renameStash.pending, (state) => {
+        console.log('renameStash.pending', state)
+        state.loadingMessage = 'Renaming stash...'
+        state.error = null
+      })
+      .addCase(renameStash.fulfilled, (state) => {
+        console.log('renameStash.fulfilled', state)
+        state.loadingMessage = ''
+      })
+      .addCase(renameStash.rejected, (state, action) => {
+        console.log('renameStash.rejected', state, action)
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
       .addCase(getStashDiff.pending, (state) => {
+        console.log('getStashDiff.pending', state)
         state.error = null
       })
       .addCase(getStashDiff.fulfilled, (state, action) => {
-        state.selectedStashDiff = action.payload
+        state.selectedStashDiff = action.payload?.data || action.payload
       })
       .addCase(getStashDiff.rejected, (state, action) => {
         state.error = action.payload
