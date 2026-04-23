@@ -2,7 +2,16 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import styles from './Toolbar.module.css'
-import { Download, RefreshCw, Upload, GitCommit, AlertTriangle, Circle, Folder, Archive } from 'lucide-react'
+import {
+  Download,
+  RefreshCw,
+  Upload,
+  GitCommit,
+  AlertTriangle,
+  Circle,
+  Folder,
+  Archive
+} from 'lucide-react'
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading }) => {
   const [showFetchDialog, setShowFetchDialog] = useState(false)
@@ -25,21 +34,21 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     if (!fileStatus || !Array.isArray(fileStatus) || fileStatus.length === 0) {
       return { type: 'clean', count: 0 }
     }
-    
+
     let stagedCount = 0
     let modifiedCount = 0
     let untrackedCount = 0
-    
-    fileStatus.forEach(file => {
+
+    fileStatus.forEach((file) => {
       if (file && file.statusType) {
         if (file.statusType.staged === 'M') stagedCount++
         if (file.statusType.working === 'M') modifiedCount++
         if (file.statusType.working === '??') untrackedCount++
       }
     })
-    
+
     const totalChanges = stagedCount + modifiedCount + untrackedCount
-    
+
     if (totalChanges === 0) {
       return { type: 'clean', count: 0 }
     } else if (untrackedCount > 0 || modifiedCount > 0) {
@@ -98,6 +107,17 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
       <div className={styles.toolbar}>
         <div className={styles.toolbarGroup}>
           <button
+            onClick={() => setShowPushDialog(true)}
+            className={styles.toolbarBtn}
+            disabled={loading}
+            title="Push to remote"
+          >
+            <span className={styles.toolbarIcon}>
+              <Upload size={14} />
+            </span>
+            <span className={styles.toolbarText}>Push</span>
+          </button>
+          <button
             onClick={onPull}
             className={styles.toolbarBtn}
             disabled={loading}
@@ -120,17 +140,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             <span className={styles.toolbarText}>Fetch</span>
           </button>
           <button
-            onClick={() => setShowPushDialog(true)}
-            className={styles.toolbarBtn}
-            disabled={loading}
-            title="Push to remote"
-          >
-            <span className={styles.toolbarIcon}>
-              <Upload size={14} />
-            </span>
-            <span className={styles.toolbarText}>Push</span>
-          </button>
-          <button
             onClick={() => setShowCommitDialog(true)}
             className={styles.toolbarBtn}
             disabled={loading}
@@ -141,6 +150,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             </span>
             <span className={styles.toolbarText}>Commit</span>
           </button>
+
           <button
             onClick={() => setShowStashDialog(true)}
             className={styles.toolbarBtn}
@@ -153,19 +163,17 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             <span className={styles.toolbarText}>Stash</span>
           </button>
         </div>
-        
+
         <div className={styles.statusGroup}>
           <div className={styles.projectInfo}>
             <Folder size={12} className={styles.projectIcon} />
             <span className={styles.projectName}>{projectName}</span>
-            {currentBranch && (
-              <span className={styles.branchName}>{currentBranch}</span>
-            )}
+            {currentBranch && <span className={styles.branchName}>{currentBranch}</span>}
           </div>
           {gitStatus.count > 0 && (
-            <div 
+            <div
               className={styles.statusIndicator}
-              style={{ 
+              style={{
                 backgroundColor: `${getStatusColor(gitStatus)}20`,
                 borderColor: `${getStatusColor(gitStatus)}40`,
                 color: getStatusColor(gitStatus)
@@ -333,10 +341,9 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                     size={14}
                     style={{ marginRight: '8px', verticalAlign: 'middle' }}
                   />
-                  {includeStaged 
-                    ? "All changes (staged and unstaged) will be stashed."
-                    : "Only unstaged changes will be stashed. Staged changes will remain."
-                  }
+                  {includeStaged
+                    ? 'All changes (staged and unstaged) will be stashed.'
+                    : 'Only unstaged changes will be stashed. Staged changes will remain.'}
                 </div>
               </div>
               <div className={styles.dialogButtons}>
