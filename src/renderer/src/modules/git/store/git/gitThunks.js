@@ -61,6 +61,38 @@ export const refreshTags = createAsyncThunk(
   }
 )
 
+export const loadTags = createAsyncThunk(
+  'git/loadTags',
+  async (_, { rejectWithValue }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    const result = await callGit(
+      () => window.git.loadTags(),
+      rejectWithValue,
+      'Failed to load tags',
+      'loadTags'
+    )
+    return result
+  }
+)
+
+export const deleteTag = createAsyncThunk(
+  'git/deleteTag',
+  async ({ tagName, isRemote }, { rejectWithValue }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    const result = await callGit(
+      () => window.git.deleteTag(tagName, isRemote),
+      rejectWithValue,
+      'Failed to delete tag',
+      'deleteTag'
+    )
+    return result
+  }
+)
+
 export const abortMerge = createAsyncThunk(
   'git/abortMerge',
   async (_, { rejectWithValue }) => {

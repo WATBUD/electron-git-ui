@@ -5,6 +5,8 @@ import {
   mergeBranch,
   checkMergeInProgress,
   refreshTags,
+  loadTags,
+  deleteTag,
   abortMerge,
   deleteBranch,
   loadBranches,
@@ -93,7 +95,10 @@ const initialState = {
   selectedFileDiff: null,
   stashes: [],
   stashLoading: false,
-  selectedStashDiff: null
+  selectedStashDiff: null,
+  localTags: [],
+  remoteTags: [],
+  tagsLoading: false
 }
 
 const gitSlice = createSlice({
@@ -227,6 +232,31 @@ const gitSlice = createSlice({
       })
       .addCase(refreshTags.rejected, (state, action) => {
         state.isRefreshingTags = false
+        state.error = action.payload
+      })
+      .addCase(loadTags.pending, (state) => {
+        state.tagsLoading = true
+        state.error = null
+      })
+      .addCase(loadTags.fulfilled, (state, action) => {
+        state.tagsLoading = false
+        const data = action.payload?.data || action.payload
+        state.localTags = data?.localTags || []
+        // Deduplicate remote tags to prevent duplicate keys
+        const remoteTags = data?.remoteTags || []
+        state.remoteTags = remoteTags.filter((tag, index, self) => self.indexOf(tag) === index)
+      })
+      .addCase(loadTags.rejected, (state, action) => {
+        state.tagsLoading = false
+        state.error = action.payload
+      })
+      .addCase(deleteTag.pending, (state) => {
+        state.error = null
+      })
+      .addCase(deleteTag.fulfilled, (state) => {
+        // Tags will be reloaded after deletion
+      })
+      .addCase(deleteTag.rejected, (state, action) => {
         state.error = action.payload
       })
       .addCase(abortMerge.fulfilled, (state) => {

@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld('git', {
   mergeBranch: (sourceBranch) => ipcRenderer.invoke('git:mergeBranch', sourceBranch),
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
+  loadTags: () => ipcRenderer.invoke('git:loadTags'),
+  deleteTag: (tagName, isRemote) => ipcRenderer.invoke('git:deleteTag', tagName, isRemote),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),

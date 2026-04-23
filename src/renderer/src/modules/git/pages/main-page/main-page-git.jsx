@@ -9,6 +9,7 @@ import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
 import ProjectList from '../../components/ProjectList'
+import { TagList } from '../../components/TagList'
 import { GitGraphContainer } from './GitGraphContainer'
 import {
   checkMergeInProgress,
@@ -39,7 +40,8 @@ import {
   popStash,
   dropStash,
   renameStash,
-  getStashDiff
+  getStashDiff,
+  loadTags
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -110,6 +112,9 @@ export const MainPageGit = () => {
         }
         if (activeTab === GIT_TABS.STASHES) {
           dispatch(loadStashes())
+        }
+        if (activeTab === GIT_TABS.TAGS) {
+          dispatch(loadTags())
         }
       }
     }
@@ -192,6 +197,9 @@ export const MainPageGit = () => {
     }
     if (tab === GIT_TABS.STASHES) {
       dispatch(loadStashes())
+    }
+    if (tab === GIT_TABS.TAGS) {
+      dispatch(loadTags())
     }
   }
 
@@ -372,6 +380,12 @@ export const MainPageGit = () => {
                     onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
                     onRename={async (stashIndex, newMessage) => dispatch(renameStash({ stashIndex, newMessage }))}
                     onSelectStash={(stashIndex) => dispatch(getStashDiff(stashIndex))}
+                  />
+                )}
+
+                {activeTab === GIT_TABS.TAGS && (
+                  <TagList
+                    onTagClick={(tag, isRemote) => console.log('Tag clicked:', tag, isRemote)}
                   />
                 )}
               </>

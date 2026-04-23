@@ -421,6 +421,63 @@ ${fileContent
     }
   })
 
+  ipcMain.handle('git:loadTags', async () => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      // Get local tags
+      const localTagsCommand = 'git tag -l'
+      commandHistory.push(localTagsCommand)
+      const { stdout: localOutput } = await execAsync(localTagsCommand, { cwd: currentRepoPath })
+      const localTags = localOutput.trim().split('\n').filter(tag => tag.trim())
+
+      // Get remote tags
+      const remoteTagsCommand = 'git ls-remote --tags origin'
+      commandHistory.push(remoteTagsCommand)
+      const { stdout: remoteOutput } = await execAsync(remoteTagsCommand, { cwd: currentRepoPath })
+      const remoteTags = remoteOutput
+        .trim()
+        .split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          const match = line.match(/refs\/tags\/(.+?)(\^\{\})?$/)
+          return match ? match[1] : null
+        })
+        .filter(tag => tag && !tag.endsWith('^{}'))
+        // Deduplicate tags
+        .filter((tag, index, self) => self.indexOf(tag) === index)
+
+      return success({
+        localTags,
+        remoteTags
+      })
+    } catch (error) {
+      console.error('Error loading tags:', error)
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:deleteTag', async (_, tagName, isRemote) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      let command
+      if (isRemote) {
+        command = `git push origin --delete refs/tags/${tagName}`
+      } else {
+        command = `git tag -d ${tagName}`
+      }
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return success({ command })
+    } catch (error) {
+      console.error('Error deleting tag:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:refreshTags', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')
