@@ -107,17 +107,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
       <div className={styles.toolbar}>
         <div className={styles.toolbarGroup}>
           <button
-            onClick={() => setShowPushDialog(true)}
-            className={styles.toolbarBtn}
-            disabled={loading}
-            title="Push to remote"
-          >
-            <span className={styles.toolbarIcon}>
-              <Upload size={14} />
-            </span>
-            <span className={styles.toolbarText}>Push</span>
-          </button>
-          <button
             onClick={onPull}
             className={styles.toolbarBtn}
             disabled={loading}
@@ -127,6 +116,17 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
               <Download size={14} />
             </span>
             <span className={styles.toolbarText}>Pull</span>
+          </button>
+          <button
+            onClick={() => setShowPushDialog(true)}
+            className={styles.toolbarBtn}
+            disabled={loading}
+            title="Push to remote"
+          >
+            <span className={styles.toolbarIcon}>
+              <Upload size={14} />
+            </span>
+            <span className={styles.toolbarText}>Push</span>
           </button>
           <button
             onClick={() => setShowFetchDialog(true)}

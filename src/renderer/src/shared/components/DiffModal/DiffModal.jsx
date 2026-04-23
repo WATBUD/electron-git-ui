@@ -162,6 +162,7 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
       
       if (message) {
         setGeneratedMessage(message)
+        setViewMode('message')
         console.log('Generated message:', message)
         // Auto-copy only successful commit messages to clipboard
         await navigator.clipboard.writeText(message)
