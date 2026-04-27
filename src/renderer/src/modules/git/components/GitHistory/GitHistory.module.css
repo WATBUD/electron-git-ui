@@ -1,10 +1,18 @@
+.historyContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .historyHeader {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .clearHistoryBtn {
@@ -36,9 +44,10 @@
 }
 
 .commandList {
-  max-height: 200px;
+  flex: 1;
   overflow-y: auto;
   padding: 8px 0;
+  min-height: 0;
 }
 
 .commandItem {

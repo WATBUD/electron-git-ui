@@ -29,7 +29,7 @@ export const GitHistory = () => {
   }
 
   return (
-    <>
+    <div className={styles.historyContainer}>
       <div className={styles.historyHeader}>
         <button
           onClick={handleClearHistory}
@@ -70,6 +70,6 @@ export const GitHistory = () => {
             ))
         )}
       </div>
-    </>
+    </div>
   )
 }

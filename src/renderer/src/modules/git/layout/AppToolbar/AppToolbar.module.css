@@ -178,18 +178,6 @@
   color: white;
 }
 
-.refreshTagsBtn.refreshing::after {
-  content: '↻';
-  display: inline-block;
-  margin-left: 8px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* Prefix Management UI */
 .prefixInputContainer {
   display: flex;
