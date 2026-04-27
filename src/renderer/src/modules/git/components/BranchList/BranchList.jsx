@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
+import { BranchContextMenu } from './BranchContextMenu'
 import styles from './BranchList.module.css'
 
 const BranchList = ({
@@ -34,7 +35,8 @@ const BranchList = ({
   prefixes = [],
   selectedPrefixes = [],
   onAddPrefix,
-  onRename
+  onRename,
+  onCreateTag
 }) => {
   const { modal, message: messageApi } = App.useApp()
   const [contextMenu, setContextMenu] = React.useState({
@@ -48,7 +50,11 @@ const BranchList = ({
     oldName: '',
     newName: ''
   })
-  const contextMenuRef = React.useRef(null)
+  const [createTagState, setCreateTagState] = useState({
+    show: false,
+    branchName: '',
+    tagName: ''
+  })
 
   const handleContextMenu = (e, branchName) => {
     e.preventDefault()
@@ -59,16 +65,6 @@ const BranchList = ({
       branchName: branchName
     })
   }
-
-  React.useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target)) {
-        setContextMenu({ show: false, x: 0, y: 0, branchName: null })
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   const [searchTerm, setSearchTerm] = useState('')
   const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
@@ -110,6 +106,24 @@ const BranchList = ({
       newName: oldName
     })
     setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+  }
+
+  const handleCreateTag = (branchName) => {
+    setCreateTagState({
+      show: true,
+      branchName: branchName,
+      tagName: ''
+    })
+    setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+  }
+
+  const submitCreateTag = async () => {
+    if (createTagState.tagName && createTagState.tagName.trim()) {
+      if (onCreateTag) {
+        await onCreateTag(createTagState.tagName, createTagState.branchName)
+      }
+    }
+    setCreateTagState({ show: false, branchName: '', tagName: '' })
   }
 
   const submitRename = () => {
@@ -197,7 +211,7 @@ const BranchList = ({
                     {sortBranches(branches).length > 0 ? (
                       sortBranches(branches).map((branchObj) => {
                         const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
-                        const { ahead = 0, behind = 0 } = branchObj || {}
+                        const { ahead = 0, behind = 0, tags = [] } = branchObj || {}
                         const isActive = branch === currentBranch
 
                         return (
@@ -212,6 +226,21 @@ const BranchList = ({
                               <span className={styles.branchNameText}>{branch}</span>
                               {isActive && (
                                 <CheckCircle2 size={12} className={styles.activeCheck} />
+                              )}
+                              {tags.length > 0 && (
+                                <div className={styles.tagBadges}>
+                                  {tags.slice(0, 2).map((tag) => (
+                                    <span key={tag} className={styles.tagBadge} title={tag}>
+                                      <Tag size={9} />
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {tags.length > 2 && (
+                                    <span className={styles.tagBadge} title={tags.slice(2).join(', ')}>
+                                      +{tags.length - 2}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </div>
 
@@ -374,52 +403,62 @@ const BranchList = ({
         </div>
       )}
 
-      {contextMenu.show && (
+      {createTagState.show && (
         <div
-          ref={contextMenuRef}
-          className={styles.contextMenu}
-          style={{
-            top: contextMenu.y,
-            left: contextMenu.x
-          }}
+          className={styles.modalOverlay}
+          onClick={() => setCreateTagState({ show: false, branchName: '', tagName: '' })}
         >
-          <div className={styles.contextMenuHeader}>
-            {contextMenu.branchName?.replace('origin/', '')}
-          </div>
-          <div className={styles.contextMenuContent}>
-            <button
-              className={styles.contextMenuItem}
-              onClick={() => {
-                onMerge(contextMenu.branchName)
-                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
-              }}
-              disabled={contextMenu.branchName === currentBranch}
-            >
-              <GitMerge size={14} />
-              <span>Merge into {currentBranch}</span>
-            </button>
-            <button
-              className={styles.contextMenuItem}
-              onClick={() => {
-                onCheckout(contextMenu.branchName)
-                setContextMenu({ show: false, x: 0, y: 0, branchName: null })
-              }}
-              disabled={contextMenu.branchName === currentBranch}
-            >
-              <ArrowDownLeft size={14} />
-              <span>Checkout</span>
-            </button>
-            <button
-              className={styles.contextMenuItem}
-              onClick={() => handleRenameBranch(contextMenu.branchName)}
-              disabled={!contextMenu.branchName || contextMenu.branchName.includes('origin/')}
-            >
-              <Edit3 size={14} />
-              <span>Rename</span>
-            </button>
+          <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
+            <h3>Create Tag</h3>
+            <div className={styles.modalBody}>
+              <div className={styles.modalOldName}>
+                <span>Branch:</span>
+                <code>{createTagState.branchName?.replace('origin/', '')}</code>
+              </div>
+              <input
+                value={createTagState.tagName}
+                onChange={(e) =>
+                  setCreateTagState((prev) => ({ ...prev, tagName: e.target.value }))
+                }
+                placeholder="Tag name (e.g., v1.0.0)"
+                className={styles.modalInput}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') submitCreateTag()
+                }}
+              />
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setCreateTagState({ show: false, branchName: '', tagName: '' })}
+                className={styles.modalCancel}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitCreateTag}
+                disabled={!createTagState.tagName || !createTagState.tagName.trim()}
+                className={styles.modalConfirm}
+              >
+                Create Tag
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      <BranchContextMenu
+        show={contextMenu.show}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        branchName={contextMenu.branchName}
+        currentBranch={currentBranch}
+        onMerge={onMerge}
+        onCheckout={onCheckout}
+        onRename={handleRenameBranch}
+        onCreateTag={handleCreateTag}
+        onClose={() => setContextMenu({ show: false, x: 0, y: 0, branchName: null })}
+      />
     </div>
   )
 }

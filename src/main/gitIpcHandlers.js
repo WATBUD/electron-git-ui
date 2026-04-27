@@ -187,14 +187,47 @@ ${fileContent
         execAsync(remoteCommand, { cwd: currentRepoPath })
       ])
 
+      // Get all tags with their commit hashes
+      const tagsCommand = 'git show-ref --tags'
+      commandHistory.push(tagsCommand)
+      let tagsByCommit = {}
+      try {
+        const { stdout: tagsOutput } = await execAsync(tagsCommand, { cwd: currentRepoPath })
+        tagsOutput.split('\n').forEach(line => {
+          if (line.trim()) {
+            const [fullCommitHash, ref] = line.split(' ')
+            const tagName = ref.replace('refs/tags/', '')
+            // Store both full hash and short hash (first 7 chars)
+            const shortHash = fullCommitHash.substring(0, 7)
+            
+            if (!tagsByCommit[fullCommitHash]) {
+              tagsByCommit[fullCommitHash] = []
+            }
+            tagsByCommit[fullCommitHash].push(tagName)
+            
+            // Also store by short hash for matching with branch output
+            if (!tagsByCommit[shortHash]) {
+              tagsByCommit[shortHash] = []
+            }
+            tagsByCommit[shortHash].push(tagName)
+          }
+        })
+      } catch (err) {
+        // No tags or error, continue without tags
+      }
+
       const localBranches = localOutput
         .split('\n')
         .filter((line) => line.trim().length > 0)
         .map((line) => {
           const isCurrent = line.startsWith('*')
-          const cleanLine = line.substring(2)
+          const cleanLine = line.substring(2).trim()
           const nameMatch = cleanLine.match(/^([^\s]+)/)
           const name = nameMatch ? nameMatch[1] : ''
+
+          // Extract commit hash (7-40 characters hex)
+          const commitMatch = cleanLine.match(/^[^\s]+\s+([a-f0-9]{7,40})/)
+          const commitHash = commitMatch ? commitMatch[1] : null
 
           const bracketsMatch = line.match(/\[([^\]]+)\]/)
           let upstream = null
@@ -215,12 +248,16 @@ ${fileContent
             }
           }
 
+          // Get tags for this branch's commit
+          const tags = commitHash && tagsByCommit[commitHash] ? tagsByCommit[commitHash] : []
+
           return {
             name,
             isCurrent,
             upstream,
             ahead,
-            behind
+            behind,
+            tags
           }
         })
 
@@ -448,9 +485,16 @@ ${fileContent
         // Deduplicate tags
         .filter((tag, index, self) => self.indexOf(tag) === index)
 
+      // Categorize tags
+      const localOnlyTags = localTags.filter(tag => !remoteTags.includes(tag))
+      const remoteOnlyTags = remoteTags.filter(tag => !localTags.includes(tag))
+      const commonTags = localTags.filter(tag => remoteTags.includes(tag))
+
       return success({
-        localTags,
-        remoteTags
+        localTags: [...commonTags, ...localOnlyTags], // All local tags
+        remoteTags: remoteOnlyTags, // Only remote-only tags
+        localOnlyTags, // Tags that exist locally but not on remote (for UI indication)
+        commonTags // Tags that exist both locally and remotely
       })
     } catch (error) {
       console.error('Error loading tags:', error)
@@ -474,6 +518,29 @@ ${fileContent
       return success({ command })
     } catch (error) {
       console.error('Error deleting tag:', error)
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:createTag', async (_, { tagName, branchName, message }) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      // Create tag on the specified branch
+      let command
+      if (message) {
+        // Annotated tag with message
+        command = `git tag -a "${tagName}" -m "${message}" ${branchName}`
+      } else {
+        // Lightweight tag
+        command = `git tag "${tagName}" ${branchName}`
+      }
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return success({ tagName, branchName, command })
+    } catch (error) {
+      console.error('Error creating tag:', error)
       return fail(error.message)
     }
   })

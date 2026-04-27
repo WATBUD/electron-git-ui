@@ -41,7 +41,8 @@ import {
   dropStash,
   renameStash,
   getStashDiff,
-  loadTags
+  loadTags,
+  createTag
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -94,6 +95,8 @@ export const MainPageGit = () => {
       dispatch(loadBranches())
       dispatch(loadFileStatus())
       dispatch(checkMergeInProgress())
+      dispatch(loadTags())
+
     }
   }, [repoPath, dispatch])
 
@@ -295,6 +298,13 @@ export const MainPageGit = () => {
                     }}
                     onRename={async (oldName, newName) => {
                       await dispatch(renameBranch({ oldName, newName }))
+                    }}
+                    onCreateTag={async (tagName, branchName) => {
+                      const result = await dispatch(createTag({ tagName, branchName, message: '' }))
+                      if (createTag.fulfilled.match(result)) {
+                        dispatch(loadBranches())
+                        dispatch(loadTags())
+                      }
                     }}
                     prefixes={prefixes}
                     selectedPrefixes={selectedPrefixes}

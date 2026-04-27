@@ -93,6 +93,22 @@ export const deleteTag = createAsyncThunk(
   }
 )
 
+export const createTag = createAsyncThunk(
+  'git/createTag',
+  async ({ tagName, branchName, message }, { rejectWithValue }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    const result = await callGit(
+      () => window.git.createTag(tagName, branchName, message),
+      rejectWithValue,
+      'Failed to create tag',
+      'createTag'
+    )
+    return result
+  }
+)
+
 export const abortMerge = createAsyncThunk(
   'git/abortMerge',
   async (_, { rejectWithValue }) => {

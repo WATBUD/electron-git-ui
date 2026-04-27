@@ -7,6 +7,7 @@ import {
   refreshTags,
   loadTags,
   deleteTag,
+  createTag,
   abortMerge,
   deleteBranch,
   loadBranches,
@@ -98,6 +99,7 @@ const initialState = {
   selectedStashDiff: null,
   localTags: [],
   remoteTags: [],
+  localOnlyTags: [],
   tagsLoading: false
 }
 
@@ -247,6 +249,7 @@ const gitSlice = createSlice({
         // Deduplicate remote tags to prevent duplicate keys
         const remoteTags = data?.remoteTags || []
         state.remoteTags = remoteTags.filter((tag, index, self) => self.indexOf(tag) === index)
+        state.localOnlyTags = data?.localOnlyTags || []
       })
       .addCase(loadTags.rejected, (state, action) => {
         state.tagsLoading = false
@@ -260,6 +263,18 @@ const gitSlice = createSlice({
         // Tags will be reloaded after deletion
       })
       .addCase(deleteTag.rejected, (state, action) => {
+        state.error = action.payload
+      })
+      .addCase(createTag.pending, (state) => {
+        state.loadingMessage = 'Creating tag...'
+        state.error = null
+      })
+      .addCase(createTag.fulfilled, (state) => {
+        state.loadingMessage = ''
+        // Tags will be reloaded after creation
+      })
+      .addCase(createTag.rejected, (state, action) => {
+        state.loadingMessage = ''
         state.error = action.payload
       })
       .addCase(abortMerge.fulfilled, (state) => {

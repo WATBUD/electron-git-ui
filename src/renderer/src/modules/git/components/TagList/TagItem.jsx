@@ -1,9 +1,9 @@
 import React from 'react'
-import { Copy, Tag, Trash2 } from 'lucide-react'
+import { Copy, Tag, Trash2, Upload } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './TagList.module.css'
 
-export const TagItem = ({ tag, isRemote, isActive, onClick, onDelete }) => {
+export const TagItem = ({ tag, isRemote, isActive, onClick, onDelete, isLocalOnly }) => {
   return (
     <div
       className={`${styles.tagItem} ${isActive ? styles.active : ''}`}
@@ -12,6 +12,12 @@ export const TagItem = ({ tag, isRemote, isActive, onClick, onDelete }) => {
       <div className={styles.tagMain}>
         <Tag size={14} className={styles.itemIcon} />
         <span className={styles.tagNameText}>{tag}</span>
+        {isLocalOnly && (
+          <span className={styles.localOnlyBadge} title="Local only (not pushed to remote)">
+            <Upload size={10} />
+            Local
+          </span>
+        )}
       </div>
       <div className={styles.tagActions}>
         <CopyButton textToCopy={tag} size={12} showCopiedText={false} />
