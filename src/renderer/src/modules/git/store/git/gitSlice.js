@@ -236,10 +236,12 @@ const gitSlice = createSlice({
       })
       .addCase(loadTags.pending, (state) => {
         state.tagsLoading = true
+        // state.loadingMessage = 'Loading tags...'
         state.error = null
       })
       .addCase(loadTags.fulfilled, (state, action) => {
         state.tagsLoading = false
+        state.loadingMessage = ''
         const data = action.payload?.data || action.payload
         state.localTags = data?.localTags || []
         // Deduplicate remote tags to prevent duplicate keys
@@ -248,6 +250,7 @@ const gitSlice = createSlice({
       })
       .addCase(loadTags.rejected, (state, action) => {
         state.tagsLoading = false
+        state.loadingMessage = ''
         state.error = action.payload
       })
       .addCase(deleteTag.pending, (state) => {
