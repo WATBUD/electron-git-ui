@@ -129,7 +129,7 @@ export const BranchContextMenu = ({
               }}
               disabled={isPushing}
             >
-              <Upload size={14} className={isPushing ? styles.spinning : ''} />
+              <Upload size={14} />
               <span>{isPushing ? 'Pushing...' : 'Push to origin'}</span>
             </button>
           )}
@@ -404,7 +404,7 @@ export const BranchContextMenu = ({
               }}
               disabled={isPushing}
             >
-              <Upload size={14} className={isPushing ? styles.spinning : ''} />
+              <Upload size={14} />
               <span>{isPushing ? 'Pushing...' : 'Push to origin'}</span>
             </button>
           )}
