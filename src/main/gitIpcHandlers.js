@@ -545,6 +545,55 @@ ${fileContent
     }
   })
 
+  ipcMain.handle('git:pushTag', async (_, tagName) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = `git push origin ${tagName}`
+      commandHistory.push(command)
+      await execAsync(command, { cwd: currentRepoPath })
+      return success({ tagName, command })
+    } catch (error) {
+      console.error('Error pushing tag:', error)
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:getBranchCommits', async (_, branchName, limit = 10) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = `git log ${branchName} --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+      
+      const commits = stdout
+        .trim()
+        .split('\n')
+        .filter(line => line.trim())
+        .map(line => {
+          const [hash, shortHash, author, email, date, message, refs] = line.split('|')
+          const tags = refs ? refs.split(',').map(r => r.trim()).filter(r => r.startsWith('tag:')) : []
+          return {
+            hash,
+            shortHash,
+            author,
+            email,
+            date,
+            message,
+            tags: tags.map(t => t.replace('tag: ', '').trim())
+          }
+        })
+      
+      return success(commits)
+    } catch (error) {
+      console.error('Error getting branch commits:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:refreshTags', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')

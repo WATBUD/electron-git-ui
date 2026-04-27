@@ -9,7 +9,6 @@ import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
 import ProjectList from '../../components/ProjectList'
-import { TagList } from '../../components/TagList'
 import { GitGraphContainer } from './GitGraphContainer'
 import {
   checkMergeInProgress,
@@ -42,7 +41,8 @@ import {
   renameStash,
   getStashDiff,
   loadTags,
-  createTag
+  createTag,
+  deleteTag
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -80,6 +80,8 @@ export const MainPageGit = () => {
   const stashes = useSelector((state) => state.git.stashes)
   const stashLoading = useSelector((state) => state.git.stashLoading)
   const selectedStashDiff = useSelector((state) => state.git.selectedStashDiff)
+  const localTags = useSelector((state) => state.git.localTags || [])
+  const localOnlyTags = useSelector((state) => state.git.localOnlyTags || [])
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -115,9 +117,6 @@ export const MainPageGit = () => {
         }
         if (activeTab === GIT_TABS.STASHES) {
           dispatch(loadStashes())
-        }
-        if (activeTab === GIT_TABS.TAGS) {
-          dispatch(loadTags())
         }
       }
     }
@@ -201,9 +200,6 @@ export const MainPageGit = () => {
     if (tab === GIT_TABS.STASHES) {
       dispatch(loadStashes())
     }
-    if (tab === GIT_TABS.TAGS) {
-      dispatch(loadTags())
-    }
   }
 
   return (
@@ -281,6 +277,7 @@ export const MainPageGit = () => {
                     remoteBranches={remoteBranches}
                     currentBranch={currentBranch}
                     loading={loading}
+                    localOnlyTags={localOnlyTags}
                     onCheckout={async (branchName) => {
                       await dispatch(checkoutBranch(branchName))
                     }}
@@ -289,6 +286,27 @@ export const MainPageGit = () => {
                     }}
                     onDeleteRemote={async (branchName) => {
                       const result = await dispatch(deleteRemoteBranch(branchName))
+                    }}
+                    onDeleteTag={async (tagName, isRemote) => {
+                      try {
+                        await dispatch(deleteTag({ tagName, isRemote }))
+                        // Wait for both to complete before UI updates
+                        await dispatch(loadTags())
+                        await dispatch(loadBranches())
+                      } catch (error) {
+                        console.error('Error deleting tag:', error)
+                      }
+                    }}
+                    onPushTag={async (tagName) => {
+                      try {
+                        await window.git.pushTag(tagName)
+                        // Wait for both to complete before UI updates
+                        await dispatch(loadTags())
+                        await dispatch(loadBranches())
+                      } catch (error) {
+                        console.error('Error pushing tag:', error)
+                        throw error
+                      }
                     }}
                     onRefresh={() => {
                       dispatch(loadBranches())
@@ -300,15 +318,16 @@ export const MainPageGit = () => {
                       await dispatch(renameBranch({ oldName, newName }))
                     }}
                     onCreateTag={async (tagName, branchName) => {
-                      const result = await dispatch(createTag({ tagName, branchName, message: '' }))
-                      if (createTag.fulfilled.match(result)) {
-                        dispatch(loadBranches())
-                        dispatch(loadTags())
+                      try {
+                        await dispatch(createTag({ tagName, branchName, message: '' }))
+                        // Wait for both to complete before UI updates
+                        await dispatch(loadTags())
+                        await dispatch(loadBranches())
+                      } catch (error) {
+                        console.error('Error creating tag:', error)
                       }
                     }}
-                    prefixes={prefixes}
                     selectedPrefixes={selectedPrefixes}
-                    onAddPrefix={(prefix) => dispatch(addPrefix(prefix))}
                     newBranchName={newBranchName}
                     setNewBranchName={(e) => setNewBranchName(e.target.value)}
                     createBranchByNewBranchName={async (fullName) => {
@@ -390,12 +409,6 @@ export const MainPageGit = () => {
                     onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
                     onRename={async (stashIndex, newMessage) => dispatch(renameStash({ stashIndex, newMessage }))}
                     onSelectStash={(stashIndex) => dispatch(getStashDiff(stashIndex))}
-                  />
-                )}
-
-                {activeTab === GIT_TABS.TAGS && (
-                  <TagList
-                    onTagClick={(tag, isRemote) => console.log('Tag clicked:', tag, isRemote)}
                   />
                 )}
               </>

@@ -1,25 +1,39 @@
-import React, { useRef, useEffect } from 'react'
-import { GitMerge, ArrowDownLeft, Edit3, Tag } from 'lucide-react'
+import { useRef, useEffect, useState } from 'react'
+import { GitMerge, ArrowDownLeft, Edit3, Tag, Copy, GitBranch, Upload, ChevronRight, Trash2 } from 'lucide-react'
 import styles from './BranchList.module.css'
 
 export const BranchContextMenu = ({
   show,
   x,
   y,
-  branchName,
+  type, // 'branch', 'commit', or 'tag'
+  target, // branchName, commit object, or tag object
   currentBranch,
   onMerge,
   onCheckout,
   onRename,
   onCreateTag,
-  onClose
+  onDeleteTag,
+  onPushTag,
+  onClose,
+  branchTags = [], // tags associated with this branch/commit
+  localOnlyTags = [], // list of local-only tag names
+  onRefreshCommits // callback to refresh commits after tag operations
 }) => {
   const contextMenuRef = useRef(null)
+  const submenuRef = useRef(null)
+  const [expandedTagSubmenu, setExpandedTagSubmenu] = useState(null)
+  const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 })
+  const [isPushing, setIsPushing] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target)) {
+      const clickedInMenu = contextMenuRef.current?.contains(e.target)
+      const clickedInSubmenu = submenuRef.current?.contains(e.target)
+      
+      if (!clickedInMenu && !clickedInSubmenu) {
         onClose()
+        setExpandedTagSubmenu(null)
       }
     }
 
@@ -32,69 +46,413 @@ export const BranchContextMenu = ({
     }
   }, [show, onClose])
 
+  const handleTagHover = (e, tagName) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setSubmenuPosition({
+      top: rect.top,
+      left: rect.right
+    })
+    setExpandedTagSubmenu(tagName)
+  }
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      console.log('Copied to clipboard:', text)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      // Fallback method for older browsers or restricted contexts
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      textArea.style.position = 'fixed'
+      textArea.style.left = '-999999px'
+      textArea.style.top = '-999999px'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        console.log('Copied to clipboard (fallback):', text)
+      } catch (err2) {
+        console.error('Fallback copy failed:', err2)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
+
   if (!show) return null
 
-  const isRemoteBranch = branchName?.includes('origin/')
-  const isCurrentBranch = branchName === currentBranch
+  // Render tag submenu
+  const renderTagSubmenu = () => {
+    if (!expandedTagSubmenu) return null
 
-  return (
-    <div
-      ref={contextMenuRef}
-      className={styles.contextMenu}
-      style={{
-        top: y,
-        left: x
-      }}
-    >
-      <div className={styles.contextMenuHeader}>
-        {branchName?.replace('origin/', '')}
+    return (
+      <div
+        ref={submenuRef}
+        className={styles.contextMenu}
+        style={{
+          top: submenuPosition.top,
+          left: submenuPosition.left,
+          zIndex: 3001
+        }}
+        onMouseEnter={() => setExpandedTagSubmenu(expandedTagSubmenu)}
+      >
+        <div className={styles.contextMenuHeader}>
+          {expandedTagSubmenu}
+        </div>
+        <div className={styles.contextMenuContent}>
+          {localOnlyTags.includes(expandedTagSubmenu) && (
+            <button
+              className={styles.contextMenuItem}
+              onMouseDown={async (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                
+                if (onPushTag && !isPushing) {
+                  setIsPushing(true)
+                  try {
+                    await onPushTag(expandedTagSubmenu)
+                    
+                    // Refresh commits immediately after push
+                    if (onRefreshCommits) {
+                      onRefreshCommits()
+                    }
+                  } catch (error) {
+                    console.error('Error pushing tag:', error)
+                  } finally {
+                    setIsPushing(false)
+                  }
+                }
+                
+                setExpandedTagSubmenu(null)
+                onClose()
+              }}
+              disabled={isPushing}
+            >
+              <Upload size={14} className={isPushing ? styles.spinning : ''} />
+              <span>{isPushing ? 'Pushing...' : 'Push to origin'}</span>
+            </button>
+          )}
+          <button
+            className={styles.contextMenuItem}
+            onMouseDown={async (e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Copy button clicked for tag:', expandedTagSubmenu)
+              await copyToClipboard(expandedTagSubmenu)
+              setExpandedTagSubmenu(null)
+              onClose()
+            }}
+          >
+            <Copy size={14} />
+            <span>Copy Tag Name</span>
+          </button>
+          <button
+            className={styles.contextMenuItem}
+            onMouseDown={async (e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('Delete tag clicked:', expandedTagSubmenu)
+              
+              if (onDeleteTag) {
+                // Show confirmation
+                if (window.confirm(`Are you sure you want to delete the tag "${expandedTagSubmenu}"?`)) {
+                  console.log('Deleting tag:', expandedTagSubmenu)
+                  
+                  // Delete tag and refresh immediately
+                  await onDeleteTag(expandedTagSubmenu, false)
+                  
+                  // Refresh commits immediately after deletion
+                  if (onRefreshCommits) {
+                    onRefreshCommits()
+                  }
+                }
+              } else {
+                console.error('onDeleteTag is not defined')
+              }
+              
+              setExpandedTagSubmenu(null)
+              onClose()
+            }}
+            style={{ color: '#ff3b30' }}
+          >
+            <Trash2 size={14} />
+            <span>Delete Tag</span>
+          </button>
+        </div>
       </div>
-      <div className={styles.contextMenuContent}>
-        <button
-          className={styles.contextMenuItem}
-          onClick={() => {
-            onMerge(branchName)
-            onClose()
+    )
+  }
+
+  // Branch context menu
+  if (type === 'branch') {
+    const branchName = target
+    const isRemoteBranch = branchName?.includes('origin/')
+    const isCurrentBranch = branchName === currentBranch
+
+    return (
+      <>
+        <div
+          ref={contextMenuRef}
+          className={styles.contextMenu}
+          style={{
+            top: y,
+            left: x
           }}
-          disabled={isCurrentBranch}
         >
-          <GitMerge size={14} />
-          <span>Merge into {currentBranch}</span>
-        </button>
-        <button
-          className={styles.contextMenuItem}
-          onClick={() => {
-            onCheckout(branchName)
-            onClose()
+          <div className={styles.contextMenuHeader}>
+            {branchName?.replace('origin/', '')}
+          </div>
+          <div className={styles.contextMenuContent}>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onMerge(branchName)
+                onClose()
+              }}
+              disabled={isCurrentBranch}
+            >
+              <GitMerge size={14} />
+              <span>Merge into {currentBranch}</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onCheckout(branchName)
+                onClose()
+              }}
+              disabled={isCurrentBranch}
+            >
+              <ArrowDownLeft size={14} />
+              <span>Checkout</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onRename(branchName)
+                onClose()
+              }}
+              disabled={!branchName || isRemoteBranch}
+            >
+              <Edit3 size={14} />
+              <span>Rename</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onCreateTag(branchName)
+                onClose()
+              }}
+              disabled={isRemoteBranch}
+            >
+              <Tag size={14} />
+              <span>Create Tag</span>
+            </button>
+            
+            {/* Tag submenus */}
+            {branchTags && branchTags.length > 0 && (
+              <>
+                <div className={styles.contextMenuDivider} />
+                {branchTags.map((tagName) => (
+                  <button
+                    key={tagName}
+                    className={`${styles.contextMenuItem} ${styles.hasSubmenu}`}
+                    onMouseEnter={(e) => handleTagHover(e, tagName)}
+                    onMouseLeave={() => setExpandedTagSubmenu(null)}
+                  >
+                    <Tag size={14} />
+                    <span>{tagName}</span>
+                    <ChevronRight size={14} className={styles.submenuArrow} />
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+        {renderTagSubmenu()}
+      </>
+    )
+  }
+
+  // Commit context menu
+  if (type === 'commit') {
+    const commit = target
+
+    return (
+      <>
+        <div
+          ref={contextMenuRef}
+          className={styles.contextMenu}
+          style={{
+            top: y,
+            left: x
           }}
-          disabled={isCurrentBranch}
         >
-          <ArrowDownLeft size={14} />
-          <span>Checkout</span>
-        </button>
-        <button
-          className={styles.contextMenuItem}
-          onClick={() => {
-            onRename(branchName)
-            onClose()
-          }}
-          disabled={!branchName || isRemoteBranch}
-        >
-          <Edit3 size={14} />
-          <span>Rename</span>
-        </button>
-        <button
-          className={styles.contextMenuItem}
-          onClick={() => {
-            onCreateTag(branchName)
-            onClose()
-          }}
-          disabled={isRemoteBranch}
-        >
-          <Tag size={14} />
-          <span>Create Tag</span>
-        </button>
+          <div className={styles.contextMenuHeader}>
+            {commit?.shortHash}
+          </div>
+          <div className={styles.contextMenuContent}>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onCreateTag(commit?.hash)
+                onClose()
+              }}
+            >
+              <Tag size={14} />
+              <span>Create Tag</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={() => {
+                onCheckout(commit?.hash)
+                onClose()
+              }}
+            >
+              <GitBranch size={14} />
+              <span>Checkout Commit</span>
+            </button>
+            <button
+              className={styles.contextMenuItem}
+              onClick={async (e) => {
+                e.stopPropagation()
+                await copyToClipboard(commit?.hash)
+                onClose()
+              }}
+            >
+              <Copy size={14} />
+              <span>Copy Hash</span>
+            </button>
+
+            {/* Tag submenus for commit */}
+            {commit?.tags && commit.tags.length > 0 && (
+              <>
+                <div className={styles.contextMenuDivider} />
+                {commit.tags.map((tagName) => (
+                  <button
+                    key={tagName}
+                    className={`${styles.contextMenuItem} ${styles.hasSubmenu}`}
+                    onMouseEnter={(e) => handleTagHover(e, tagName)}
+                    onMouseLeave={() => setExpandedTagSubmenu(null)}
+                  >
+                    <Tag size={14} />
+                    <span>{tagName}</span>
+                    <ChevronRight size={14} className={styles.submenuArrow} />
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+        {renderTagSubmenu()}
+      </>
+    )
+  }
+
+  // Tag context menu
+  if (type === 'tag') {
+    const tag = target
+
+    return (
+      <div
+        ref={contextMenuRef}
+        className={styles.contextMenu}
+        style={{
+          top: y,
+          left: x
+        }}
+      >
+        <div className={styles.contextMenuHeader}>
+          {tag?.name}
+        </div>
+        <div className={styles.contextMenuContent}>
+          <button
+            className={styles.contextMenuItem}
+            onClick={() => {
+              onCheckout(tag?.name)
+              onClose()
+            }}
+          >
+            <GitBranch size={14} />
+            <span>Checkout Tag</span>
+          </button>
+          {tag?.isLocalOnly && (
+            <button
+              className={styles.contextMenuItem}
+              onClick={async (e) => {
+                e.stopPropagation()
+                
+                if (onPushTag && !isPushing) {
+                  setIsPushing(true)
+                  try {
+                    await onPushTag(tag?.name)
+                    
+                    // Refresh commits immediately after push
+                    if (onRefreshCommits) {
+                      onRefreshCommits()
+                    }
+                  } catch (error) {
+                    console.error('Error pushing tag:', error)
+                  } finally {
+                    setIsPushing(false)
+                  }
+                }
+                
+                onClose()
+              }}
+              disabled={isPushing}
+            >
+              <Upload size={14} className={isPushing ? styles.spinning : ''} />
+              <span>{isPushing ? 'Pushing...' : 'Push to origin'}</span>
+            </button>
+          )}
+          <button
+            className={styles.contextMenuItem}
+            onClick={async (e) => {
+              e.stopPropagation()
+              await copyToClipboard(tag?.name)
+              onClose()
+            }}
+          >
+            <Copy size={14} />
+            <span>Copy Tag Name</span>
+          </button>
+          <button
+            className={styles.contextMenuItem}
+            onClick={async (e) => {
+              e.stopPropagation()
+              console.log('Delete tag clicked (tag menu):', tag?.name)
+              
+              if (onDeleteTag) {
+                // Show confirmation
+                if (window.confirm(`Are you sure you want to delete the tag "${tag?.name}"?`)) {
+                  console.log('Deleting tag:', tag?.name)
+                  
+                  // Delete tag and refresh immediately
+                  await onDeleteTag(tag?.name, false)
+                  
+                  // Refresh commits immediately after deletion
+                  if (onRefreshCommits) {
+                    onRefreshCommits()
+                  }
+                }
+              } else {
+                console.error('onDeleteTag is not defined')
+              }
+              
+              onClose()
+            }}
+            style={{ color: '#ff3b30' }}
+          >
+            <Tag size={14} />
+            <span>Delete Tag</span>
+          </button>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  return null
 }

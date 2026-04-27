@@ -73,6 +73,75 @@
   gap: 10px;
 }
 
+.searchContainer {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+.tagLegend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--input-radius);
+  margin-bottom: 10px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.legendBadge.localOnly {
+  background-color: rgba(255, 149, 0, 0.15);
+  border: 1px solid rgba(255, 149, 0, 0.4);
+  color: #ff9500;
+}
+
+.legendBadge.synced {
+  background-color: rgba(52, 199, 89, 0.15);
+  border: 1px solid rgba(52, 199, 89, 0.4);
+  color: #34c759;
+}
+
+.legendText {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.loadingHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: rgba(0, 122, 255, 0.1);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: var(--input-radius);
+  font-size: 11px;
+  color: #007aff;
+  margin-bottom: 10px;
+}
+
+.loadingHint svg {
+  flex-shrink: 0;
+}
+
 
 
 .prefixChips {
@@ -240,6 +309,112 @@
   box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.2);
 }
 
+.branchItem.expanded {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Commit History */
+.commitHistory {
+  padding: 8px 12px 8px 32px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-left: 2px solid rgba(0, 122, 255, 0.3);
+  margin-left: 12px;
+}
+
+.commitItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: context-menu;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 2px 0;
+}
+
+.commitItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.commitItem:last-child {
+  border-bottom: none;
+}
+
+.commitDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #007aff;
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.commitDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.commitMessage {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commitMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.commitHash {
+  font-family: 'Monaco', 'Menlo', monospace;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.commitAuthor {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commitTags {
+  display: flex;
+  gap: 4px;
+}
+
+.commitTag {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.commitTag.localOnly {
+  background-color: rgba(255, 149, 0, 0.2);
+  border: 1px solid rgba(255, 149, 0, 0.4);
+  color: #ff9500;
+}
+
+.commitTag.synced {
+  background-color: rgba(52, 199, 89, 0.2);
+  border: 1px solid rgba(52, 199, 89, 0.4);
+  color: #34c759;
+}
+
 .branchMain {
   display: flex;
   align-items: center;
@@ -284,16 +459,43 @@
   align-items: center;
   gap: 2px;
   padding: 2px 5px;
-  background-color: rgba(255, 149, 0, 0.15);
-  border: 1px solid rgba(255, 149, 0, 0.3);
   border-radius: 3px;
-  color: #ff9500;
   font-size: 9px;
   font-weight: 600;
   white-space: nowrap;
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: all 0.2s;
+}
+
+.tagBadge.localOnly {
+  background-color: rgba(255, 149, 0, 0.15);
+  border: 1px solid rgba(255, 149, 0, 0.4);
+  color: #ff9500;
+}
+
+.tagBadge.synced {
+  background-color: rgba(52, 199, 89, 0.15);
+  border: 1px solid rgba(52, 199, 89, 0.4);
+  color: #34c759;
+}
+
+.localOnlyBadge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background-color: rgba(255, 149, 0, 0.15);
+  border: 1px solid rgba(255, 149, 0, 0.3);
+  border-radius: 3px;
+  color: #ff9500;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .activeCheck {
@@ -456,6 +658,22 @@
 .contextMenuItem:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.contextMenuItem.hasSubmenu {
+  justify-content: space-between;
+  padding-right: 6px;
+}
+
+.submenuArrow {
+  margin-left: auto;
+  opacity: 0.5;
+}
+
+.contextMenuDivider {
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
 }
 
 /* --- Modal Styles --- */

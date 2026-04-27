@@ -1,14 +1,9 @@
 import React, { useState } from 'react'
-import { Modal, Input, App } from 'antd'
 import {
-  Copy,
   ChevronDown,
   Plus,
   RefreshCw,
   Trash2,
-  GitMerge,
-  Edit3,
-  Search,
   GitBranch,
   Tag,
   ArrowUpRight,
@@ -32,18 +27,20 @@ const BranchList = ({
   newBranchName,
   setNewBranchName,
   createBranchByNewBranchName,
-  prefixes = [],
   selectedPrefixes = [],
-  onAddPrefix,
   onRename,
-  onCreateTag
+  onCreateTag,
+  localOnlyTags = [],
+  onDeleteTag,
+  onPushTag
 }) => {
-  const { modal, message: messageApi } = App.useApp()
   const [contextMenu, setContextMenu] = React.useState({
     show: false,
     x: 0,
     y: 0,
-    branchName: null
+    type: null, // 'branch', 'commit', or 'tag'
+    target: null, // branchName, commit object, or tag object
+    tags: [] // tags associated with the branch/commit
   })
   const [renameBranchState, setRenameBranchState] = useState({
     show: false,
@@ -56,25 +53,65 @@ const BranchList = ({
     tagName: ''
   })
 
-  const handleContextMenu = (e, branchName) => {
+  const handleContextMenu = (e, type, target) => {
     e.preventDefault()
+    
+    let tags = []
+    if (type === 'branch') {
+      // Find the branch object to get its tags
+      const branchObj = branches.find(b => (typeof b === 'string' ? b : b.name) === target)
+      tags = branchObj?.tags || []
+    } else if (type === 'commit') {
+      // Commit already has tags in the object
+      tags = target?.tags || []
+    }
+    
     setContextMenu({
       show: true,
       x: e.clientX,
       y: e.clientY,
-      branchName: branchName
+      type,
+      target,
+      tags
     })
   }
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [tagSearchTerm, setTagSearchTerm] = useState('')
   const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
   const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
+  const [expandedBranch, setExpandedBranch] = useState(null)
+  const [branchCommits, setBranchCommits] = useState({})
+  const [loadingCommits, setLoadingCommits] = useState(false)
 
   const sortBranches = (branchesList) => {
     return [...branchesList]
       .filter((branch) => {
         const name = typeof branch === 'string' ? branch : branch.name
-        return searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
+        
+        // Filter by branch name
+        const matchesBranchName = searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
+        
+        // Filter by tag if tag search is active
+        if (tagSearchTerm) {
+          const branchObj = typeof branch === 'string' 
+            ? branches.find(b => (typeof b === 'string' ? b : b.name) === name)
+            : branch
+          const tags = branchObj?.tags || []
+          
+          // Check if branch itself has the tag
+          const branchHasTag = tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
+          
+          // Check if any commit in this branch has the tag
+          const commits = branchCommits[name] || []
+          const commitsHaveTag = commits.some(commit => 
+            commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
+          )
+          
+          return matchesBranchName && (branchHasTag || commitsHaveTag)
+        }
+        
+        return matchesBranchName
       })
       .sort((a, b) => {
         const nameA = typeof a === 'string' ? a : a.name
@@ -84,6 +121,56 @@ const BranchList = ({
         return nameA.localeCompare(nameB)
       })
   }
+
+  const filterCommitsByTag = (commits) => {
+    if (!tagSearchTerm) {
+      return commits
+    }
+    return commits.filter(commit => 
+      commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
+    )
+  }
+
+  // Auto-load commits for all branches when tag search is active
+  React.useEffect(() => {
+    const loadAllCommits = async () => {
+      if (tagSearchTerm && branches.length > 0) {
+        setLoadingCommits(true)
+        
+        // Load commits for all branches
+        const loadPromises = branches.map(async (branchObj) => {
+          const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
+          if (!branchCommits[branchName]) {
+            try {
+              const result = await window.git.getBranchCommits(branchName, 10)
+              if (result.success) {
+                return { branchName, commits: result.data }
+              }
+            } catch (err) {
+              console.error('Error loading branch commits:', err)
+            }
+          }
+          return null
+        })
+
+        const results = await Promise.all(loadPromises)
+        const newCommits = {}
+        results.forEach(result => {
+          if (result) {
+            newCommits[result.branchName] = result.commits
+          }
+        })
+
+        if (Object.keys(newCommits).length > 0) {
+          setBranchCommits(prev => ({ ...prev, ...newCommits }))
+        }
+        
+        setLoadingCommits(false)
+      }
+    }
+
+    loadAllCommits()
+  }, [tagSearchTerm, branches.length])
 
   const branchPrefix = selectedPrefixes.join(',')
 
@@ -105,7 +192,7 @@ const BranchList = ({
       oldName: oldName,
       newName: oldName
     })
-    setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
   }
 
   const handleCreateTag = (branchName) => {
@@ -114,13 +201,28 @@ const BranchList = ({
       branchName: branchName,
       tagName: ''
     })
-    setContextMenu({ show: false, x: 0, y: 0, branchName: null })
+    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
   }
 
   const submitCreateTag = async () => {
     if (createTagState.tagName && createTagState.tagName.trim()) {
       if (onCreateTag) {
         await onCreateTag(createTagState.tagName, createTagState.branchName)
+        
+        // Refresh commits immediately for the currently expanded branch
+        if (expandedBranch) {
+          // Don't await - trigger refresh immediately
+          window.git.getBranchCommits(expandedBranch, 10).then(result => {
+            if (result.success) {
+              setBranchCommits(prev => ({
+                ...prev,
+                [expandedBranch]: result.data
+              }))
+            }
+          }).catch(err => {
+            console.error('Error refreshing branch commits:', err)
+          })
+        }
       }
     }
     setCreateTagState({ show: false, branchName: '', tagName: '' })
@@ -131,6 +233,73 @@ const BranchList = ({
       onRename(renameBranchState.oldName, renameBranchState.newName)
     }
     setRenameBranchState({ show: false, oldName: '', newName: '' })
+  }
+
+  const handleBranchClick = async (branchName) => {
+    if (expandedBranch === branchName) {
+      setExpandedBranch(null)
+    } else {
+      setExpandedBranch(branchName)
+      // Load commits for this branch if not already loaded
+      if (!branchCommits[branchName]) {
+        try {
+          const result = await window.git.getBranchCommits(branchName, 10)
+          if (result.success) {
+            setBranchCommits(prev => ({
+              ...prev,
+              [branchName]: result.data
+            }))
+          }
+        } catch (err) {
+          console.error('Error loading branch commits:', err)
+        }
+      }
+    }
+  }
+
+  const handleRefreshCommits = () => {
+    // Refresh commits for the currently expanded branch (non-blocking)
+    if (expandedBranch) {
+      window.git.getBranchCommits(expandedBranch, 10).then(result => {
+        if (result.success) {
+          setBranchCommits(prev => ({
+            ...prev,
+            [expandedBranch]: result.data
+          }))
+        }
+      }).catch(err => {
+        console.error('Error refreshing branch commits:', err)
+      })
+    }
+    
+    // Also refresh commits for tag search if active (non-blocking)
+    if (tagSearchTerm && branches.length > 0) {
+      const loadPromises = branches.map(async (branchObj) => {
+        const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
+        try {
+          const result = await window.git.getBranchCommits(branchName, 10)
+          if (result.success) {
+            return { branchName, commits: result.data }
+          }
+        } catch (err) {
+          console.error('Error loading branch commits:', err)
+        }
+        return null
+      })
+
+      Promise.all(loadPromises).then(results => {
+        const newCommits = {}
+        results.forEach(result => {
+          if (result) {
+            newCommits[result.branchName] = result.commits
+          }
+        })
+
+        if (Object.keys(newCommits).length > 0) {
+          setBranchCommits(prev => ({ ...prev, ...newCommits }))
+        }
+      })
+    }
   }
 
   return (
@@ -179,12 +348,45 @@ const BranchList = ({
           </button>
         </div>
       </div>
-      <SearchInput
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search branches..."
-        customStyle={{ marginTop: '10px', marginBottom: '10px' }}
-      />
+      
+      {/* Search inputs */}
+      <div className={styles.searchContainer}>
+        <SearchInput
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search branches..."
+          customStyle={{ flex: 1 }}
+        />
+        <SearchInput
+          value={tagSearchTerm}
+          onChange={(e) => setTagSearchTerm(e.target.value)}
+          placeholder="Search tags..."
+          customStyle={{ flex: 1 }}
+        />
+      </div>
+      
+      {/* Tag legend */}
+      <div className={styles.tagLegend}>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendBadge} ${styles.localOnly}`}>
+            <Tag size={8} />
+          </span>
+          <span className={styles.legendText}>Local only</span>
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendBadge} ${styles.synced}`}>
+            <Tag size={8} />
+          </span>
+          <span className={styles.legendText}>Synced</span>
+        </span>
+      </div>
+      
+      {loadingCommits && tagSearchTerm && (
+        <div className={styles.loadingHint}>
+          <RefreshCw size={12} className={styles.spinning} />
+          <span>Loading commits...</span>
+        </div>
+      )}
       <div className={styles.listSection}>
         <div className={styles.branchListContainer}>
           {loading && !branches.length ? (
@@ -215,66 +417,124 @@ const BranchList = ({
                         const isActive = branch === currentBranch
 
                         return (
-                          <div
-                            key={`local-${branch}`}
-                            onDoubleClick={() => !isActive && onCheckout(branch)}
-                            className={`${styles.branchItem} ${isActive ? styles.active : ''}`}
-                            onContextMenu={(e) => handleContextMenu(e, branch)}
-                          >
-                            <div className={styles.branchMain}>
-                              <GitBranch size={14} className={styles.itemIcon} />
-                              <span className={styles.branchNameText}>{branch}</span>
-                              {isActive && (
-                                <CheckCircle2 size={12} className={styles.activeCheck} />
-                              )}
-                              {tags.length > 0 && (
-                                <div className={styles.tagBadges}>
-                                  {tags.slice(0, 2).map((tag) => (
-                                    <span key={tag} className={styles.tagBadge} title={tag}>
-                                      <Tag size={9} />
-                                      {tag}
+                          <div key={`local-${branch}`}>
+                            <div
+                              onDoubleClick={() => !isActive && onCheckout(branch)}
+                              onClick={() => handleBranchClick(branch)}
+                              className={`${styles.branchItem} ${isActive ? styles.active : ''} ${expandedBranch === branch || (tagSearchTerm && branchCommits[branch]) ? styles.expanded : ''}`}
+                              onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
+                            >
+                              <div className={styles.branchMain}>
+                                <GitBranch size={14} className={styles.itemIcon} />
+                                <span className={styles.branchNameText}>{branch}</span>
+                                {isActive && (
+                                  <CheckCircle2 size={12} className={styles.activeCheck} />
+                                )}
+                                {tags.length > 0 && (
+                                  <div className={styles.tagBadges}>
+                                    {tags.slice(0, 2).map((tag) => {
+                                      const isLocalOnly = localOnlyTags.includes(tag)
+                                      return (
+                                        <span 
+                                          key={tag} 
+                                          className={`${styles.tagBadge} ${isLocalOnly ? styles.localOnly : styles.synced}`} 
+                                          title={isLocalOnly ? `${tag} (Local only)` : `${tag} (Synced)`}
+                                        >
+                                          <Tag size={9} />
+                                          {tag}
+                                        </span>
+                                      )
+                                    })}
+                                    {tags.length > 2 && (
+                                      <span className={styles.tagBadge} title={tags.slice(2).join(', ')}>
+                                        +{tags.length - 2}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className={styles.branchMeta}>
+                                <div className={styles.syncStatus}>
+                                  {ahead > 0 && (
+                                    <span className={styles.ahead}>
+                                      <ArrowUpRight size={10} />
+                                      {ahead}
                                     </span>
-                                  ))}
-                                  {tags.length > 2 && (
-                                    <span className={styles.tagBadge} title={tags.slice(2).join(', ')}>
-                                      +{tags.length - 2}
+                                  )}
+                                  {behind > 0 && (
+                                    <span className={styles.behind}>
+                                      <ArrowDownLeft size={10} />
+                                      {behind}
                                     </span>
                                   )}
                                 </div>
-                              )}
-                            </div>
 
-                            <div className={styles.branchMeta}>
-                              <div className={styles.syncStatus}>
-                                {ahead > 0 && (
-                                  <span className={styles.ahead}>
-                                    <ArrowUpRight size={10} />
-                                    {ahead}
-                                  </span>
-                                )}
-                                {behind > 0 && (
-                                  <span className={styles.behind}>
-                                    <ArrowDownLeft size={10} />
-                                    {behind}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className={styles.itemActions}>
-                                <CopyButton textToCopy={branch} size={12} showCopiedText={false} />
-                                {!isActive && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onDelete(branch)
-                                    }}
-                                    className={styles.itemDeleteBtn}
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                )}
+                                <div className={styles.itemActions}>
+                                  <CopyButton textToCopy={branch} size={12} showCopiedText={false} />
+                                  {!isActive && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDelete(branch)
+                                      }}
+                                      className={styles.itemDeleteBtn}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
+                            
+                            {/* Show commits when expanded or when tag search is active */}
+                            {(expandedBranch === branch || (tagSearchTerm && branchCommits[branch])) && branchCommits[branch] && (
+                              <div className={styles.commitHistory}>
+                                {filterCommitsByTag(branchCommits[branch]).length > 0 ? (
+                                  filterCommitsByTag(branchCommits[branch]).map((commit) => (
+                                    <div 
+                                      key={commit.hash} 
+                                      className={styles.commitItem}
+                                      onContextMenu={(e) => handleContextMenu(e, 'commit', commit)}
+                                    >
+                                      <div className={styles.commitDot} />
+                                      <div className={styles.commitDetails}>
+                                        <div className={styles.commitMessage}>{commit.message}</div>
+                                        <div className={styles.commitMeta}>
+                                          <span className={styles.commitHash}>
+                                            {commit.shortHash}
+                                          </span>
+                                          <span className={styles.commitAuthor}>{commit.author}</span>
+                                          {commit.tags.length > 0 && (
+                                            <div className={styles.commitTags}>
+                                              {commit.tags.map((tag) => {
+                                                const isLocalOnly = localOnlyTags.includes(tag)
+                                                return (
+                                                  <span 
+                                                    key={tag} 
+                                                    className={`${styles.commitTag} ${isLocalOnly ? styles.localOnly : styles.synced}`}
+                                                    title={isLocalOnly ? `${tag} (Local only)` : `${tag} (Synced)`}
+                                                  >
+                                                    <Tag size={8} />
+                                                    {tag}
+                                                  </span>
+                                                )
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : tagSearchTerm ? (
+                                  <div className={styles.noCommits}>
+                                    <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.3)', padding: '8px' }}>
+                                      No commits with tag "{tagSearchTerm}"
+                                    </p>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
                           </div>
                         )
                       })
@@ -311,7 +571,7 @@ const BranchList = ({
                               key={`remote-${branch}`}
                               onDoubleClick={() => !isActive && onCheckout(branch)}
                               className={`${styles.branchItem} ${isActive ? styles.active : ''}`}
-                              onContextMenu={(e) => handleContextMenu(e, branch)}
+                              onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                             >
                               <div className={styles.branchMain}>
                                 <GitBranch size={14} className={styles.itemIcon} />
@@ -451,13 +711,19 @@ const BranchList = ({
         show={contextMenu.show}
         x={contextMenu.x}
         y={contextMenu.y}
-        branchName={contextMenu.branchName}
+        type={contextMenu.type}
+        target={contextMenu.target}
+        branchTags={contextMenu.tags}
+        localOnlyTags={localOnlyTags}
         currentBranch={currentBranch}
         onMerge={onMerge}
         onCheckout={onCheckout}
         onRename={handleRenameBranch}
         onCreateTag={handleCreateTag}
-        onClose={() => setContextMenu({ show: false, x: 0, y: 0, branchName: null })}
+        onDeleteTag={onDeleteTag}
+        onPushTag={onPushTag}
+        onRefreshCommits={handleRefreshCommits}
+        onClose={() => setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })}
       />
     </div>
   )

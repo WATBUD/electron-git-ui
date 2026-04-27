@@ -238,7 +238,7 @@ const gitSlice = createSlice({
       })
       .addCase(loadTags.pending, (state) => {
         state.tagsLoading = true
-        // state.loadingMessage = 'Loading tags...'
+        state.loadingMessage = 'Loading tags...'
         state.error = null
       })
       .addCase(loadTags.fulfilled, (state, action) => {
@@ -257,12 +257,15 @@ const gitSlice = createSlice({
         state.error = action.payload
       })
       .addCase(deleteTag.pending, (state) => {
+        state.loadingMessage = 'Deleting tag...'
         state.error = null
       })
       .addCase(deleteTag.fulfilled, (state) => {
+        // Keep loading message until refresh completes
         // Tags will be reloaded after deletion
       })
       .addCase(deleteTag.rejected, (state, action) => {
+        state.loadingMessage = ''
         state.error = action.payload
       })
       .addCase(createTag.pending, (state) => {
