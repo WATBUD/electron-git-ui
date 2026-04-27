@@ -45,22 +45,6 @@ export const loadCommitHistory = createAsyncThunk(
   }
 )
 
-export const refreshTags = createAsyncThunk(
-  'git/refreshTags',
-  async (_, { rejectWithValue }) => {
-    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-    if (rejectIfNotInitialized) return rejectIfNotInitialized
-
-    const result = await callGit(
-      () => window.git.refreshTags(),
-      rejectWithValue,
-      'Failed to refresh tags',
-      'refreshTags'
-    )
-    return result
-  }
-)
-
 export const loadTags = createAsyncThunk(
   'git/loadTags',
   async (_, { rejectWithValue }) => {

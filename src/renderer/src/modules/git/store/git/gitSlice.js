@@ -4,7 +4,6 @@ import {
   checkoutCommit,
   mergeBranch,
   checkMergeInProgress,
-  refreshTags,
   loadTags,
   deleteTag,
   createTag,
@@ -76,7 +75,6 @@ const DEFAULT_PREFIXES = ['feature/PT-', 'promote-prod/PT-', 'promote-stg2602/PT
 const initialState = {
   ...initialGraphState,
   showFooter: false,
-  isRefreshingTags: false,
   hasMergeInProgress: false,
   error: null,
   branches: [],
@@ -225,17 +223,6 @@ const gitSlice = createSlice({
 
     // Existing reducers
     builder
-      .addCase(refreshTags.pending, (state) => {
-        state.isRefreshingTags = true
-        state.error = null
-      })
-      .addCase(refreshTags.fulfilled, (state) => {
-        state.isRefreshingTags = false
-      })
-      .addCase(refreshTags.rejected, (state, action) => {
-        state.isRefreshingTags = false
-        state.error = action.payload
-      })
       .addCase(loadTags.pending, (state) => {
         state.tagsLoading = true
         state.loadingMessage = 'Loading tags...'

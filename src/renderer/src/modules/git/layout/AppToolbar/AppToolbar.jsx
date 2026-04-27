@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   toggleFooter,
-  refreshTags,
   abortMerge,
   checkMergeInProgress,
   getCachedDiff,
@@ -14,7 +13,7 @@ import {
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './AppToolbar.module.css'
-import { Trash2, Plus, Check, Eye, GitMerge, Tag, Type, Clock } from 'lucide-react'
+import { Trash2, Plus, Check, Eye, GitMerge, Type, Clock } from 'lucide-react'
 import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
 
 const PrefixItem = React.memo(({ prefix, onRemove }) => {
@@ -68,13 +67,11 @@ const PrefixList = React.memo(({ onRemove }) => {
 export const AppToolbar = () => {
   const [activeMenu, setActiveMenu] = useState(null)
   const mergeMenuRef = useRef(null)
-  const tagsMenuRef = useRef(null)
   const viewMenuRef = useRef(null)
   const prefixMenuRef = useRef(null)
   const [newPrefix, setNewPrefix] = useState('')
   const dispatch = useDispatch()
   const showFooter = useSelector((state) => state.git.showFooter)
-  const isRefreshingTags = useSelector((state) => state.git.isRefreshingTags)
   const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const cachedDiff = useSelector((state) => state.git.cachedDiff)
   const [showDiffModal, setShowDiffModal] = useState(false)
@@ -85,8 +82,6 @@ export const AppToolbar = () => {
       if (
         mergeMenuRef.current &&
         !mergeMenuRef.current.contains(event.target) &&
-        tagsMenuRef.current &&
-        !tagsMenuRef.current.contains(event.target) &&
         viewMenuRef.current &&
         !viewMenuRef.current.contains(event.target) &&
         prefixMenuRef.current &&
@@ -102,15 +97,10 @@ export const AppToolbar = () => {
       // Unbind the event listener on clean up
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [mergeMenuRef, tagsMenuRef, viewMenuRef, prefixMenuRef])
+  }, [mergeMenuRef, viewMenuRef, prefixMenuRef])
 
   const toggleMenu = (menuName) => {
     setActiveMenu(activeMenu === menuName ? null : menuName)
-  }
-
-  const handleRefreshTags = () => {
-    if (isRefreshingTags) return
-    dispatch(refreshTags())
   }
 
   const handleMergeAbort = () => {
@@ -207,31 +197,6 @@ export const AppToolbar = () => {
               disabled={!hasMergeInProgress}
             >
               Abort Merge
-            </button>
-          </CustomTooltip>
-        </div>
-      </div>
-
-      <div
-        className={`${styles.toolbarMenu} ${activeMenu === 'tags' ? styles.active : ''}`}
-        ref={tagsMenuRef}
-      >
-        <span className={styles.menuLabel} onClick={() => toggleMenu('tags')}>
-          <Tag size={14} style={{ marginRight: '6px' }} />
-          Tags
-        </span>
-        <div className={styles.menuContent}>
-          <CustomTooltip title="Refresh tags from remote">
-            <button
-              className={`${styles.menuItem} ${styles.refreshTagsBtn} ${isRefreshingTags ? styles.refreshing : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                handleRefreshTags()
-                setActiveMenu(null)
-              }}
-              disabled={isRefreshingTags}
-            >
-              {isRefreshingTags ? 'Refreshing...' : 'Refresh Tags'}
             </button>
           </CustomTooltip>
         </div>
