@@ -20,25 +20,48 @@ export const FileList = ({
 }) => {
   const hasFiles = files.length > 0
   const [showFullPath, setShowFullPath] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const handleHeaderClick = () => {
+    if (hasFiles) {
+      setIsCollapsed(!isCollapsed)
+    }
+  }
+
+  // Force collapsed when no files
+  const effectiveCollapsed = !hasFiles || isCollapsed
 
   return (
     <div className={styles.fileStatusSection}>
       <div className={styles.sectionHeader}>
-        <div className={styles.sectionTitle}>
-          <ChevronDown size={14} />
+        <div 
+          className={styles.sectionTitle}
+          onClick={handleHeaderClick}
+          style={{ cursor: hasFiles ? 'pointer' : 'default' }}
+        >
+          <ChevronDown 
+            size={14} 
+            className={`${styles.chevronIcon} ${effectiveCollapsed ? styles.collapsed : ''}`}
+            style={{ opacity: hasFiles ? 1 : 0.3 }}
+          />
           <h3>{title}</h3>
           <span className={styles.fileCount}>
             {files.length}
           </span>
           <button
-            onClick={() => setShowFullPath(!showFullPath)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowFullPath(!showFullPath)
+            }}
             className={styles.pathToggleBtn}
             title={showFullPath ? "Show file names only" : "Show full paths"}
+            disabled={!hasFiles}
+            style={{ opacity: hasFiles ? 1 : 0.3 }}
           >
             {showFullPath ? <FileText size={14} /> : <FolderOpen size={14} />}
           </button>
         </div>
-        {hasFiles && (
+        {hasFiles && !effectiveCollapsed && (
           <div className={styles.selectionActions}>
             {isStaged ? (
               <button
@@ -60,28 +83,30 @@ export const FileList = ({
           </div>
         )}
       </div>
-      <div className={styles.fileList}>
-        {files.map((file, index) => {
-          const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
-          const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
-          
-          return (
-            <FileItem
-              key={`${isStaged ? 'staged' : 'working'}-${index}`}
-              file={file}
-              isActive={isActive}
-              isSelected={isSelected}
-              isStaged={isStaged}
-              onFileClick={onFileClick}
-              onContextMenu={onContextMenu}
-              onStageFile={onStageFile}
-              onUnstageFile={onUnstageFile}
-              getStatusIcon={getStatusIcon}
-              showFullPath={showFullPath}
-            />
-          )
-        })}
-      </div>
+      {!effectiveCollapsed && (
+        <div className={styles.fileList}>
+          {files.map((file, index) => {
+            const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
+            const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
+            
+            return (
+              <FileItem
+                key={`${isStaged ? 'staged' : 'working'}-${index}`}
+                file={file}
+                isActive={isActive}
+                isSelected={isSelected}
+                isStaged={isStaged}
+                onFileClick={onFileClick}
+                onContextMenu={onContextMenu}
+                onStageFile={onStageFile}
+                onUnstageFile={onUnstageFile}
+                getStatusIcon={getStatusIcon}
+                showFullPath={showFullPath}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

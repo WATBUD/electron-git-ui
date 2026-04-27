@@ -75,6 +75,15 @@
   color: var(--text-muted);
 }
 
+.chevronIcon {
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+
+.chevronIcon.collapsed {
+  transform: rotate(-90deg);
+}
+
 .fileCount {
   background-color: rgba(255, 255, 255, 0.15);
   color: var(--text-muted);
