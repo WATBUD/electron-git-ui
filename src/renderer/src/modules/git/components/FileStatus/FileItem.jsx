@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import styles from './FileStatus.module.css'
 
-export const FileItem = ({
+export const FileItem = React.memo(({
   file,
   isActive,
   isSelected,
@@ -79,4 +79,13 @@ export const FileItem = ({
       </div>
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better performance
+  return (
+    prevProps.file.file === nextProps.file.file &&
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isStaged === nextProps.isStaged &&
+    prevProps.showFullPath === nextProps.showFullPath
+  )
+})

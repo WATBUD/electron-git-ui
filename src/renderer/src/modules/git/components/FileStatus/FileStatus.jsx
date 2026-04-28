@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { LoadingModal } from '../../../../shared/components/LoadingModal'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import { FileCode, FolderOpen, ExternalLink } from 'lucide-react'
 import { FileList } from './FileList'
@@ -17,7 +16,6 @@ export const FileStatus = ({
   onDiscardChanges,
   onRemoveFile,
   getStatusIcon,
-  getStatusText,
   onRefresh,
   onStashFile,
   loading
@@ -25,6 +23,7 @@ export const FileStatus = ({
   const [listWidth, setListWidth] = useState(350)
   const [isResizing, setIsResizing] = useState(false)
   const [activeFile, setActiveFile] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
   const [contextMenu, setContextMenu] = useState({
     show: false,
     x: 0,
@@ -34,15 +33,25 @@ export const FileStatus = ({
 
   const {
     selectedFiles,
-    lastSelectedFile,
     handleFileClick: handleSelectionClick,
     clearSelection,
     isFileSelected,
     getSelectedFiles,
-    isMultipleSelection
+    isMultipleSelection,
+    cleanupInvalidSelections
   } = useFileSelection()
 
   const _fileStatus = fileStatus?.data?.files || []
+
+  // Clean up invalid selections when file list changes
+  useEffect(() => {
+    if (_fileStatus.length > 0) {
+      const validFileKeys = new Set(
+        _fileStatus.map(f => `${f.file}-${f.isStaged}`)
+      )
+      cleanupInvalidSelections(validFileKeys)
+    }
+  }, [_fileStatus, cleanupInvalidSelections])
 
   // Resize handlers
   const handleMouseDown = (e) => {
@@ -77,15 +86,25 @@ export const FileStatus = ({
 
   // File click handler
   const handleFileClick = (file, isStaged, e) => {
-    setActiveFile({ file, isStaged })
-    handleSelectionClick(file, isStaged, e, _fileStatus)
-    onFileClick({ file, isStaged })
+    // Pass ALL files with their staging status (not filtered by search)
+    // This ensures shift-select can find the correct indices
+    const allFilesWithStatus = _fileStatus.map(f => ({ file: f.file, isStaged: f.isStaged }))
+    
+    // Perform selection logic
+    handleSelectionClick(file, isStaged, e, allFilesWithStatus)
+    
+    // Only load diff for normal clicks (not shift multi-select)
+    // Cmd/Ctrl clicks should still load diff as they toggle individual files
+    const isShiftClick = e && e.shiftKey
+    if (!isShiftClick) {
+      setActiveFile({ file, isStaged })
+      onFileClick({ file, isStaged })
+    }
   }
 
   // Context menu handlers
   const handleContextMenu = (e, fileName, isStaged) => {
     e.preventDefault()
-    const fileKey = `${fileName}-${isStaged}`
     const isMultiSelect = isMultipleSelection() && isFileSelected(fileName, isStaged)
     
     setContextMenu({
@@ -131,41 +150,43 @@ export const FileStatus = ({
     }
   }
 
-  // Parse diff for display
-  const parseDiff = (diffText) => {
-    if (!diffText) return []
-    const lines = diffText.split('\n')
-    const result = []
-    let leftLine = 0
-    let rightLine = 0
+  // Parse diff for display (memoized)
+  const parseDiff = React.useMemo(() => {
+    return (diffText) => {
+      if (!diffText) return []
+      const lines = diffText.split('\n')
+      const result = []
+      let leftLine = 0
+      let rightLine = 0
 
-    lines.forEach((line) => {
-      if (line.startsWith('@@')) {
-        const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/)
-        if (match) {
-          leftLine = parseInt(match[1])
-          rightLine = parseInt(match[2])
-          result.push({ type: 'hunk', content: line, leftLine: '...', rightLine: '...' })
+      lines.forEach((line) => {
+        if (line.startsWith('@@')) {
+          const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/)
+          if (match) {
+            leftLine = parseInt(match[1])
+            rightLine = parseInt(match[2])
+            result.push({ type: 'hunk', content: line, leftLine: '...', rightLine: '...' })
+          }
+        } else if (line.startsWith('+') && !line.startsWith('+++')) {
+          result.push({ type: 'add', content: line, leftLine: '', rightLine: rightLine++ })
+        } else if (line.startsWith('-') && !line.startsWith('---')) {
+          result.push({ type: 'del', content: line, leftLine: leftLine++, rightLine: '' })
+        } else if (line.startsWith(' ') || line === '') {
+          result.push({
+            type: 'context',
+            content: line,
+            leftLine: leftLine++,
+            rightLine: rightLine++
+          })
+        } else {
+          result.push({ type: 'info', content: line, leftLine: '', rightLine: '' })
         }
-      } else if (line.startsWith('+') && !line.startsWith('+++')) {
-        result.push({ type: 'add', content: line, leftLine: '', rightLine: rightLine++ })
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
-        result.push({ type: 'del', content: line, leftLine: leftLine++, rightLine: '' })
-      } else if (line.startsWith(' ') || line === '') {
-        result.push({
-          type: 'context',
-          content: line,
-          leftLine: leftLine++,
-          rightLine: rightLine++
-        })
-      } else {
-        result.push({ type: 'info', content: line, leftLine: '', rightLine: '' })
-      }
-    })
-    return result
-  }
+      })
+      return result
+    }
+  }, [])
 
-  const diffLines = parseDiff(selectedFileDiff)
+  const diffLines = React.useMemo(() => parseDiff(selectedFileDiff), [selectedFileDiff, parseDiff])
 
   // Keyboard navigation
   useEffect(() => {
@@ -186,7 +207,7 @@ export const FileStatus = ({
         
         if (nextIndex >= 0 && nextIndex < _fileStatus.length) {
           const nextFile = _fileStatus[nextIndex]
-          handleFileClick(nextFile.file, nextFile.isStaged)
+          handleFileClick(nextFile.file, nextFile.isStaged, null)
         }
       } else if (e.key === 'Escape') {
         clearSelection()
@@ -197,9 +218,19 @@ export const FileStatus = ({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [_fileStatus, activeFile])
 
-  // Separate files by staging status
-  const stagedFiles = _fileStatus.filter((file) => file.isStaged)
-  const unstagedFiles = _fileStatus.filter((file) => !file.isStaged)
+  // Separate files by staging status and apply search filter
+  const filteredFiles = React.useMemo(() => {
+    const filtered = _fileStatus.filter(file => 
+      file.file.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    return {
+      staged: filtered.filter(file => file.isStaged),
+      unstaged: filtered.filter(file => !file.isStaged)
+    }
+  }, [_fileStatus, searchTerm])
+
+  const stagedFiles = filteredFiles.staged
+  const unstagedFiles = filteredFiles.unstaged
 
   if (!loading && _fileStatus.length === 0) {
     return (
@@ -236,13 +267,25 @@ export const FileStatus = ({
         <div className={styles.headerTitle}>
           <FileCode size={18} />
           <span>Changes</span>
+          <span className={styles.totalCount}>
+            ({_fileStatus.length} {searchTerm && `/ ${stagedFiles.length + unstagedFiles.length} filtered`})
+          </span>
         </div>
-        <RefreshButton
-          onClick={onRefresh}
-          disabled={loading}
-          title="Refresh status"
-          text="Refresh"
-        />
+        <div className={styles.headerActions}>
+          <input
+            type="text"
+            placeholder="Search files..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
+          <RefreshButton
+            onClick={onRefresh}
+            disabled={loading}
+            title="Refresh status"
+            text="Refresh"
+          />
+        </div>
       </div>
       <div className={styles.fileStatusContainer}>
         <div

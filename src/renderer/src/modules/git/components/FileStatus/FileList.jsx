@@ -1,7 +1,94 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, FileText, FolderOpen } from 'lucide-react'
 import { FileItem } from './FileItem'
 import styles from './FileStatus.module.css'
+
+// Virtual scrolling component for large file lists
+const VirtualFileList = ({ 
+  files, 
+  isStaged, 
+  activeFile, 
+  selectedFiles, 
+  onFileClick, 
+  onContextMenu, 
+  onStageFile, 
+  onUnstageFile, 
+  getStatusIcon, 
+  showFullPath 
+}) => {
+  const [scrollTop, setScrollTop] = useState(0)
+  const [containerHeight, setContainerHeight] = useState(600)
+  const containerRef = useRef(null)
+  
+  const itemHeight = 32 // Height of each file item in pixels
+  const overscan = 5 // Number of items to render outside visible area
+  
+  // Calculate visible range
+  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan)
+  const endIndex = Math.min(
+    files.length,
+    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  )
+  
+  const visibleFiles = files.slice(startIndex, endIndex)
+  const totalHeight = files.length * itemHeight
+  const offsetY = startIndex * itemHeight
+  
+  const handleScroll = useCallback((e) => {
+    setScrollTop(e.target.scrollTop)
+  }, [])
+  
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        setContainerHeight(containerRef.current.clientHeight)
+      }
+    }
+    
+    updateHeight()
+    window.addEventListener('resize', updateHeight)
+    return () => window.removeEventListener('resize', updateHeight)
+  }, [])
+  
+  return (
+    <div 
+      ref={containerRef}
+      className={styles.fileList}
+      onScroll={handleScroll}
+      style={{ 
+        position: 'relative', 
+        overflow: 'auto',
+        scrollBehavior: 'smooth'
+      }}
+    >
+      <div style={{ height: `${totalHeight}px`, position: 'relative' }}>
+        <div style={{ transform: `translateY(${offsetY}px)` }}>
+          {visibleFiles.map((file, index) => {
+            const actualIndex = startIndex + index
+            const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
+            const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
+            
+            return (
+              <FileItem
+                key={`${isStaged ? 'staged' : 'working'}-${actualIndex}`}
+                file={file}
+                isActive={isActive}
+                isSelected={isSelected}
+                isStaged={isStaged}
+                onFileClick={onFileClick}
+                onContextMenu={onContextMenu}
+                onStageFile={onStageFile}
+                onUnstageFile={onUnstageFile}
+                getStatusIcon={getStatusIcon}
+                showFullPath={showFullPath}
+              />
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export const FileList = ({
   title,
@@ -21,6 +108,9 @@ export const FileList = ({
   const hasFiles = files.length > 0
   const [showFullPath, setShowFullPath] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Use virtual scrolling for large lists
+  const useVirtualScrolling = files.length > 100
 
   const handleHeaderClick = () => {
     if (hasFiles) {
@@ -84,28 +174,43 @@ export const FileList = ({
         )}
       </div>
       {!effectiveCollapsed && (
-        <div className={styles.fileList}>
-          {files.map((file, index) => {
-            const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
-            const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
-            
-            return (
-              <FileItem
-                key={`${isStaged ? 'staged' : 'working'}-${index}`}
-                file={file}
-                isActive={isActive}
-                isSelected={isSelected}
-                isStaged={isStaged}
-                onFileClick={onFileClick}
-                onContextMenu={onContextMenu}
-                onStageFile={onStageFile}
-                onUnstageFile={onUnstageFile}
-                getStatusIcon={getStatusIcon}
-                showFullPath={showFullPath}
-              />
-            )
-          })}
-        </div>
+        useVirtualScrolling ? (
+          <VirtualFileList
+            files={files}
+            isStaged={isStaged}
+            activeFile={activeFile}
+            selectedFiles={selectedFiles}
+            onFileClick={onFileClick}
+            onContextMenu={onContextMenu}
+            onStageFile={onStageFile}
+            onUnstageFile={onUnstageFile}
+            getStatusIcon={getStatusIcon}
+            showFullPath={showFullPath}
+          />
+        ) : (
+          <div className={styles.fileList}>
+            {files.map((file, index) => {
+              const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
+              const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
+              
+              return (
+                <FileItem
+                  key={`${isStaged ? 'staged' : 'working'}-${index}`}
+                  file={file}
+                  isActive={isActive}
+                  isSelected={isSelected}
+                  isStaged={isStaged}
+                  onFileClick={onFileClick}
+                  onContextMenu={onContextMenu}
+                  onStageFile={onStageFile}
+                  onUnstageFile={onUnstageFile}
+                  getStatusIcon={getStatusIcon}
+                  showFullPath={showFullPath}
+                />
+              )
+            })}
+          </div>
+        )
       )}
     </div>
   )

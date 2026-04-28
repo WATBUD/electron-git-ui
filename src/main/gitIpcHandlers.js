@@ -5,6 +5,31 @@ import { join } from 'path'
 
 const execAsync = promisify(exec)
 
+// Increase maxBuffer to handle large git outputs (50MB)
+const execOptions = { maxBuffer: 50 * 1024 * 1024 }
+
+// Helper function to execute git commands with proper options
+const execGit = async (command, cwd = currentRepoPath) => {
+  return execAsync(command, { cwd, ...execOptions })
+}
+
+// Helper function to escape file names for git commands
+const escapeFileName = (fileName) => {
+  // Remove existing quotes if present
+  let cleanFile = fileName
+  if (fileName.startsWith('"') && fileName.endsWith('"')) {
+    cleanFile = fileName.slice(1, -1)
+  }
+  
+  // Escape special characters that could be interpreted by shell or git
+  return cleanFile
+    .replace(/\\/g, '\\\\')  // Escape backslashes first
+    .replace(/"/g, '\\"')     // Escape double quotes
+    .replace(/\$/g, '\\$')    // Escape dollar signs
+    .replace(/`/g, '\\`')     // Escape backticks
+    .replace(/!/g, '\\!')     // Escape exclamation marks
+}
+
 let currentRepoPath = null
 let commandHistory = []
 const success = (data, message = 'ok') => ({ success: true, data, message })
@@ -34,7 +59,7 @@ export function setupGitHandlers() {
     try {
       const command = 'git diff --cached'
       commandHistory.push(command)
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
       return success(stdout || stderr || '')
     } catch (err) {
       return fail(err.message)
@@ -47,15 +72,16 @@ export function setupGitHandlers() {
     }
 
     try {
-      // 如果文件名已经有引号，先移除它们，然后重新添加
-      let cleanFile = file
-      if (file.startsWith('"') && file.endsWith('"')) {
-        cleanFile = file.slice(1, -1)
-      }
-      const escapedFile = cleanFile.replace(/"/g, '\\"')
-      const command = isStaged ? `git diff --cached "${escapedFile}"` : `git diff "${escapedFile}"`
+      const escapedFile = escapeFileName(file)
+      const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+      
+      // Use -- to separate options from file paths
+      const command = isStaged 
+        ? `git diff --cached -- "${escapedFile}"` 
+        : `git diff -- "${escapedFile}"`
+      
       commandHistory.push(command)
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
 
       // If git diff returns content, use it
       if (stdout || stderr) {
@@ -623,7 +649,7 @@ ${fileContent
     try {
       const command = 'git status --porcelain'
       commandHistory.push(command)
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
 
       const files = stdout
         .split('\n')
@@ -686,7 +712,8 @@ ${fileContent
       // 添加未追蹤的檔案
       const untrackedCommand = 'git ls-files --others --exclude-standard'
       const { stdout: untrackedOutput } = await execAsync(untrackedCommand, {
-        cwd: currentRepoPath
+        cwd: currentRepoPath,
+        ...execOptions
       })
       const untrackedFiles = untrackedOutput
         .split('\n')
@@ -719,12 +746,7 @@ ${fileContent
 
       // 为每个文件单独构建命令，避免空格问题
       for (const file of fileList) {
-        // 如果文件名已经有引号，先移除它们，然后重新添加
-        let cleanFile = file
-        if (file.startsWith('"') && file.endsWith('"')) {
-          cleanFile = file.slice(1, -1)
-        }
-        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const escapedFile = escapeFileName(file)
         const command = `git add -- "${escapedFile}"`
         commandHistory.push(command)
         await execAsync(command, { cwd: currentRepoPath })
@@ -746,12 +768,7 @@ ${fileContent
 
       // 为每个文件单独构建命令，避免空格问题
       for (const file of fileList) {
-        // 如果文件名已经有引号，先移除它们，然后重新添加
-        let cleanFile = file
-        if (file.startsWith('"') && file.endsWith('"')) {
-          cleanFile = file.slice(1, -1)
-        }
-        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const escapedFile = escapeFileName(file)
         const command = `git reset HEAD -- "${escapedFile}"`
         commandHistory.push(command)
         await execAsync(command, { cwd: currentRepoPath })
@@ -775,12 +792,8 @@ ${fileContent
     try {
       // Process each file individually to avoid path parsing issues
       for (const file of files) {
-        // 如果文件名已经有引号，先移除它们，然后重新添加
-        let cleanFile = file
-        if (file.startsWith('"') && file.endsWith('"')) {
-          cleanFile = file.slice(1, -1)
-        }
-        const escapedFile = cleanFile.replace(/"/g, '\\"')
+        const escapedFile = escapeFileName(file)
+        const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
         const unstageCmd = `git reset HEAD -- "${escapedFile}"`
         const discardCmd = `git checkout -- "${escapedFile}"`
 
@@ -789,7 +802,7 @@ ${fileContent
 
         try {
           // Check if file is untracked (new file)
-          const statusCmd = `git status --porcelain "${escapedFile}"`
+          const statusCmd = `git status --porcelain -- "${escapedFile}"`
           const statusResult = await execAsync(statusCmd, { cwd: currentRepoPath })
           const isUntracked = statusResult.stdout.startsWith('??')
 
@@ -878,7 +891,7 @@ ${fileContent
       // 4️⃣ 取得所有 commit
       const { stdout } = await execAsync(
         'git log --pretty=format:"%H|%an|%ad|%s|%d" --date=iso --all',
-        { cwd: currentRepoPath }
+        { cwd: currentRepoPath, ...execOptions }
       )
 
       const commits = stdout

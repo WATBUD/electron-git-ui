@@ -1,44 +1,90 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export const useFileSelection = () => {
   const [selectedFiles, setSelectedFiles] = useState(new Set())
   const [lastSelectedFile, setLastSelectedFile] = useState(null)
+  const allFilesRef = useRef([])
+  const selectedFilesRef = useRef(new Set())
+  const lastSelectedFileRef = useRef(null)
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    selectedFilesRef.current = selectedFiles
+  }, [selectedFiles])
+
+  useEffect(() => {
+    lastSelectedFileRef.current = lastSelectedFile
+  }, [lastSelectedFile])
 
   const handleFileClick = useCallback((file, isStaged, e, allFiles) => {
+    // Always update the ref with current files list
+    if (allFiles && allFiles.length > 0) {
+      allFilesRef.current = allFiles
+    }
+    
     const fileKey = `${file}-${isStaged}`
     
     // Handle multi-selection with SHIFT + click
-    if (e && e.shiftKey && lastSelectedFile) {
+    if (e && e.shiftKey && lastSelectedFileRef.current) {
+      e.preventDefault() // Prevent text selection
+      e.stopPropagation() // Prevent event bubbling
+      
       // Only allow range selection within the same section (staged or unstaged)
-      if (lastSelectedFile.isStaged !== isStaged) {
+      if (lastSelectedFileRef.current.isStaged !== isStaged) {
         // Different section, just select current file
         setSelectedFiles(new Set([fileKey]))
         setLastSelectedFile({ file, isStaged })
-      } else {
-        // Same section, perform range selection
-        const sectionFiles = allFiles.filter(f => f.isStaged === isStaged)
-        const currentIndex = sectionFiles.findIndex(f => f.file === file)
-        const lastIndex = sectionFiles.findIndex(f => f.file === lastSelectedFile.file)
+        return
+      }
+      
+      // Same section, perform range selection
+      // Use the most recent allFiles if available, otherwise use ref
+      const filesList = (allFiles && allFiles.length > 0) ? allFiles : allFilesRef.current
+      
+      if (!filesList || filesList.length === 0) {
+        setSelectedFiles(new Set([fileKey]))
+        setLastSelectedFile({ file, isStaged })
+        return
+      }
+      
+      // Filter to get only files from the current section
+      const sectionFiles = filesList.filter(f => f.isStaged === isStaged)
+      
+      if (sectionFiles.length === 0) {
+        setSelectedFiles(new Set([fileKey]))
+        setLastSelectedFile({ file, isStaged })
+        return
+      }
+      
+      const currentIndex = sectionFiles.findIndex(f => f.file === file)
+      const lastIndex = sectionFiles.findIndex(f => f.file === lastSelectedFileRef.current.file)
+      
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const startIndex = Math.min(currentIndex, lastIndex)
+        const endIndex = Math.max(currentIndex, lastIndex)
+        const newSelection = new Set()
         
-        if (currentIndex !== -1 && lastIndex !== -1) {
-          const startIndex = Math.min(currentIndex, lastIndex)
-          const endIndex = Math.max(currentIndex, lastIndex)
-          const newSelection = new Set(selectedFiles)
-          
-          // Select all files in the range within the same section
-          for (let i = startIndex; i <= endIndex; i++) {
-            const targetFile = sectionFiles[i]
-            if (targetFile) {
-              newSelection.add(`${targetFile.file}-${targetFile.isStaged}`)
-            }
+        // Select all files in the range within the same section
+        for (let i = startIndex; i <= endIndex; i++) {
+          const targetFile = sectionFiles[i]
+          if (targetFile) {
+            newSelection.add(`${targetFile.file}-${isStaged}`)
           }
-          
-          setSelectedFiles(newSelection)
         }
+        
+        setSelectedFiles(newSelection)
+        // Update lastSelectedFile to current file for next shift-click
+        setLastSelectedFile({ file, isStaged })
+      } else {
+        // Fallback: just select current file
+        setSelectedFiles(new Set([fileKey]))
+        setLastSelectedFile({ file, isStaged })
       }
     } else if (e && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault() // Prevent default behavior
+      
       // Toggle selection with Cmd/Ctrl + click
-      const newSelection = new Set(selectedFiles)
+      const newSelection = new Set(selectedFilesRef.current)
       if (newSelection.has(fileKey)) {
         newSelection.delete(fileKey)
       } else {
@@ -51,7 +97,7 @@ export const useFileSelection = () => {
       setSelectedFiles(new Set([fileKey]))
       setLastSelectedFile({ file, isStaged })
     }
-  }, [selectedFiles, lastSelectedFile])
+  }, [])
 
   const clearSelection = useCallback(() => {
     setSelectedFiles(new Set())
@@ -80,6 +126,32 @@ export const useFileSelection = () => {
     return selectedFiles.size > 1
   }, [selectedFiles])
 
+  const cleanupInvalidSelections = useCallback((validFileKeys) => {
+    // Remove selections for files that no longer exist
+    const newSelection = new Set()
+    let hasChanges = false
+    
+    selectedFilesRef.current.forEach(fileKey => {
+      if (validFileKeys.has(fileKey)) {
+        newSelection.add(fileKey)
+      } else {
+        hasChanges = true
+      }
+    })
+    
+    if (hasChanges) {
+      setSelectedFiles(newSelection)
+    }
+    
+    // Clear lastSelectedFile if it no longer exists
+    if (lastSelectedFileRef.current) {
+      const lastFileKey = `${lastSelectedFileRef.current.file}-${lastSelectedFileRef.current.isStaged}`
+      if (!validFileKeys.has(lastFileKey)) {
+        setLastSelectedFile(null)
+      }
+    }
+  }, [])
+
   return {
     selectedFiles,
     lastSelectedFile,
@@ -89,6 +161,7 @@ export const useFileSelection = () => {
     getSelectedFiles,
     isMultipleSelection,
     setSelectedFiles,
-    setLastSelectedFile
+    setLastSelectedFile,
+    cleanupInvalidSelections
   }
 }
