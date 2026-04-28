@@ -430,6 +430,20 @@ const BranchList = ({
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />
                                 )}
+                                <div className={styles.syncStatus}>
+                                  {ahead > 0 && (
+                                    <span className={styles.ahead}>
+                                      <ArrowUpRight size={10} />
+                                      {ahead}
+                                    </span>
+                                  )}
+                                  {behind > 0 && (
+                                    <span className={styles.behind}>
+                                      <ArrowDownLeft size={10} />
+                                      {behind}
+                                    </span>
+                                  )}
+                                </div>
                                 {tags.length > 0 && (
                                   <div className={styles.tagBadges}>
                                     {tags.slice(0, 2).map((tag) => {
@@ -452,24 +466,6 @@ const BranchList = ({
                                     )}
                                   </div>
                                 )}
-                              </div>
-
-                              <div className={styles.branchMeta}>
-                                <div className={styles.syncStatus}>
-                                  {ahead > 0 && (
-                                    <span className={styles.ahead}>
-                                      <ArrowUpRight size={10} />
-                                      {ahead}
-                                    </span>
-                                  )}
-                                  {behind > 0 && (
-                                    <span className={styles.behind}>
-                                      <ArrowDownLeft size={10} />
-                                      {behind}
-                                    </span>
-                                  )}
-                                </div>
-
                                 <div className={styles.itemActions}>
                                   <CopyButton textToCopy={branch} size={12} showCopiedText={false} />
                                   {!isActive && (
@@ -579,9 +575,6 @@ const BranchList = ({
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />
                                 )}
-                              </div>
-
-                              <div className={styles.branchMeta}>
                                 <div className={styles.itemActions}>
                                   <CopyButton
                                     textToCopy={branch}
