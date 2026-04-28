@@ -19,7 +19,8 @@ export const BranchContextMenu = ({
   branchTags = [], // tags associated with this branch/commit
   localOnlyTags = [], // list of local-only tag names
   onRefreshCommits, // callback to refresh commits after tag operations
-  onRequestDeleteTag // callback to request tag deletion confirmation from parent
+  onRequestDeleteTag, // callback to request tag deletion confirmation from parent
+  onRequestDeleteBranch // callback to request branch deletion confirmation from parent
 }) => {
   const contextMenuRef = useRef(null)
   const submenuRef = useRef(null)
@@ -239,6 +240,23 @@ export const BranchContextMenu = ({
               <Tag size={14} />
               <span>Create Tag</span>
             </button>
+            
+            {/* Delete branch option */}
+            {!isCurrentBranch && (
+              <button
+                className={styles.contextMenuItem}
+                onClick={() => {
+                  onClose()
+                  if (onRequestDeleteBranch) {
+                    onRequestDeleteBranch(branchName, isRemoteBranch)
+                  }
+                }}
+                style={{ color: '#ff3b30' }}
+              >
+                <Trash2 size={14} />
+                <span>Delete Branch</span>
+              </button>
+            )}
             
             {/* Tag submenus */}
             {branchTags && branchTags.length > 0 && (

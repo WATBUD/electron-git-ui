@@ -36,6 +36,7 @@ const BranchList = ({
   localOnlyTags = [],
   onDeleteTag,
   onRequestDeleteTag,
+  onRequestDeleteBranch,
   onPushTag
 }) => {
   const [contextMenu, setContextMenu] = useState({
@@ -463,7 +464,9 @@ const BranchList = ({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        onDelete(branch)
+                                        if (onRequestDeleteBranch) {
+                                          onRequestDeleteBranch(branch, false)
+                                        }
                                       }}
                                       className={styles.itemDeleteBtn}
                                     >
@@ -575,7 +578,9 @@ const BranchList = ({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      onDeleteRemote(branch)
+                                      if (onRequestDeleteBranch) {
+                                        onRequestDeleteBranch(branch, true)
+                                      }
                                     }}
                                     className={styles.itemDeleteBtn}
                                   >
@@ -706,6 +711,7 @@ const BranchList = ({
         onCreateTag={handleCreateTag}
         onDeleteTag={onDeleteTag}
         onRequestDeleteTag={onRequestDeleteTag}
+        onRequestDeleteBranch={onRequestDeleteBranch}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
         onClose={closeContextMenu}

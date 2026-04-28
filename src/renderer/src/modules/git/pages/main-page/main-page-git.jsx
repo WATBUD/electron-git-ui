@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ErrorModal } from '../../../../shared/components/ErrorModal'
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog'
+import { useConfirmDialog } from '../../../../shared/hooks/useConfirmDialog'
 import { Toolbar } from '../../components/Toolbar'
 import { FileStatus } from '../../components/FileStatus'
 import { GitStashes } from '../../components/GitStashes'
@@ -62,12 +63,7 @@ import {
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
   const [activeTab, setActiveTab] = useState(GIT_TABS.PROJECTS)
-  const [confirmDialog, setConfirmDialog] = useState({
-    show: false,
-    tagName: '',
-    onConfirm: null,
-    refreshCallback: null
-  })
+  const { confirmDialog, requestConfirm, handleConfirm, handleCancel, getTitle } = useConfirmDialog()
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -211,9 +207,9 @@ export const MainPageGit = () => {
 
   // Handle delete tag confirmation request from BranchContextMenu
   const handleRequestDeleteTag = (tagName, refreshCallback) => {
-    setConfirmDialog({
-      show: true,
-      tagName,
+    requestConfirm({
+      type: 'tag',
+      name: tagName,
       refreshCallback,
       onConfirm: async () => {
         try {
@@ -221,13 +217,31 @@ export const MainPageGit = () => {
           // Wait for both to complete before UI updates
           await dispatch(loadTags())
           await dispatch(loadBranches())
-          
-          // Call the refresh callback if provided
-          if (refreshCallback) {
-            refreshCallback()
-          }
         } catch (error) {
           console.error('Error deleting tag:', error)
+          throw error
+        }
+      }
+    })
+  }
+
+  // Handle delete branch confirmation request
+  const handleRequestDeleteBranch = (branchName, isRemote = false) => {
+    requestConfirm({
+      type: 'branch',
+      name: branchName,
+      isRemote,
+      onConfirm: async () => {
+        try {
+          if (isRemote) {
+            await dispatch(deleteRemoteBranch(branchName))
+          } else {
+            await dispatch(deleteBranch(branchName))
+          }
+          await dispatch(loadBranches())
+        } catch (error) {
+          console.error('Error deleting branch:', error)
+          throw error
         }
       }
     })
@@ -329,6 +343,7 @@ export const MainPageGit = () => {
                       }
                     }}
                     onRequestDeleteTag={handleRequestDeleteTag}
+                    onRequestDeleteBranch={handleRequestDeleteBranch}
                     onPushTag={async (tagName) => {
                       try {
                         await window.git.pushTag(tagName)
@@ -455,23 +470,16 @@ export const MainPageGit = () => {
       <LoadingModal message={loadingMessage} />
       <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
       
-      {/* Global ConfirmDialog for tag deletion */}
+      {/* Global ConfirmDialog for tag and branch deletion */}
       <ConfirmDialog
         show={confirmDialog.show}
-        title="Delete Tag"
-        message={`Are you sure you want to delete the tag "${confirmDialog.tagName}"? This will remove the tag from both local and remote repositories.`}
+        title={getTitle(confirmDialog.type)}
+        message={confirmDialog.message}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
-        onConfirm={() => {
-          if (confirmDialog.onConfirm) {
-            confirmDialog.onConfirm()
-          }
-          setConfirmDialog({ show: false, tagName: '', onConfirm: null, refreshCallback: null })
-        }}
-        onCancel={() => {
-          setConfirmDialog({ show: false, tagName: '', onConfirm: null, refreshCallback: null })
-        }}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
       />
     </div>
   )
