@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ErrorModal } from '../../../../shared/components/ErrorModal'
+import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog'
 import { Toolbar } from '../../components/Toolbar'
 import { FileStatus } from '../../components/FileStatus'
 import { GitStashes } from '../../components/GitStashes'
@@ -61,6 +62,12 @@ import {
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
   const [activeTab, setActiveTab] = useState(GIT_TABS.PROJECTS)
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    tagName: '',
+    onConfirm: null,
+    refreshCallback: null
+  })
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -202,6 +209,30 @@ export const MainPageGit = () => {
     }
   }
 
+  // Handle delete tag confirmation request from BranchContextMenu
+  const handleRequestDeleteTag = (tagName, refreshCallback) => {
+    setConfirmDialog({
+      show: true,
+      tagName,
+      refreshCallback,
+      onConfirm: async () => {
+        try {
+          await dispatch(deleteTag({ tagName, isRemote: false }))
+          // Wait for both to complete before UI updates
+          await dispatch(loadTags())
+          await dispatch(loadBranches())
+          
+          // Call the refresh callback if provided
+          if (refreshCallback) {
+            refreshCallback()
+          }
+        } catch (error) {
+          console.error('Error deleting tag:', error)
+        }
+      }
+    })
+  }
+
   return (
     <div className={styles.gitUi}>
       <div className={styles.toolbarContainer}>
@@ -297,6 +328,7 @@ export const MainPageGit = () => {
                         console.error('Error deleting tag:', error)
                       }
                     }}
+                    onRequestDeleteTag={handleRequestDeleteTag}
                     onPushTag={async (tagName) => {
                       try {
                         await window.git.pushTag(tagName)
@@ -422,6 +454,25 @@ export const MainPageGit = () => {
       </div>
       <LoadingModal message={loadingMessage} />
       <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
+      
+      {/* Global ConfirmDialog for tag deletion */}
+      <ConfirmDialog
+        show={confirmDialog.show}
+        title="Delete Tag"
+        message={`Are you sure you want to delete the tag "${confirmDialog.tagName}"? This will remove the tag from both local and remote repositories.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDialog.onConfirm) {
+            confirmDialog.onConfirm()
+          }
+          setConfirmDialog({ show: false, tagName: '', onConfirm: null, refreshCallback: null })
+        }}
+        onCancel={() => {
+          setConfirmDialog({ show: false, tagName: '', onConfirm: null, refreshCallback: null })
+        }}
+      />
     </div>
   )
 }

@@ -35,6 +35,7 @@ const BranchList = ({
   onCreateTag,
   localOnlyTags = [],
   onDeleteTag,
+  onRequestDeleteTag,
   onPushTag
 }) => {
   const [contextMenu, setContextMenu] = useState({
@@ -704,6 +705,7 @@ const BranchList = ({
         onRename={handleRenameBranch}
         onCreateTag={handleCreateTag}
         onDeleteTag={onDeleteTag}
+        onRequestDeleteTag={onRequestDeleteTag}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
         onClose={closeContextMenu}

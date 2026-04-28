@@ -18,7 +18,8 @@ export const BranchContextMenu = ({
   onClose,
   branchTags = [], // tags associated with this branch/commit
   localOnlyTags = [], // list of local-only tag names
-  onRefreshCommits // callback to refresh commits after tag operations
+  onRefreshCommits, // callback to refresh commits after tag operations
+  onRequestDeleteTag // callback to request tag deletion confirmation from parent
 }) => {
   const contextMenuRef = useRef(null)
   const submenuRef = useRef(null)
@@ -149,30 +150,20 @@ export const BranchContextMenu = ({
           </button>
           <button
             className={styles.contextMenuItem}
-            onMouseDown={async (e) => {
+            onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              console.log('Delete tag clicked:', expandedTagSubmenu)
               
-              if (onDeleteTag) {
-                // Show confirmation
-                if (window.confirm(`Are you sure you want to delete the tag "${expandedTagSubmenu}"?`)) {
-                  console.log('Deleting tag:', expandedTagSubmenu)
-                  
-                  // Delete tag and refresh immediately
-                  await onDeleteTag(expandedTagSubmenu, false)
-                  
-                  // Refresh commits immediately after deletion
-                  if (onRefreshCommits) {
-                    onRefreshCommits()
-                  }
-                }
-              } else {
-                console.error('onDeleteTag is not defined')
-              }
+              const tagToDelete = expandedTagSubmenu
               
+              // Close menus first
               setExpandedTagSubmenu(null)
               onClose()
+              
+              // Then request confirmation dialog from parent
+              if (onRequestDeleteTag) {
+                onRequestDeleteTag(tagToDelete, onRefreshCommits)
+              }
             }}
             style={{ color: '#ff3b30' }}
           >
@@ -356,7 +347,8 @@ export const BranchContextMenu = ({
     const tag = target
 
     return (
-      <div
+      <>
+        <div
         ref={contextMenuRef}
         className={styles.contextMenu}
         style={{
@@ -421,28 +413,18 @@ export const BranchContextMenu = ({
           </button>
           <button
             className={styles.contextMenuItem}
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation()
-              console.log('Delete tag clicked (tag menu):', tag?.name)
               
-              if (onDeleteTag) {
-                // Show confirmation
-                if (window.confirm(`Are you sure you want to delete the tag "${tag?.name}"?`)) {
-                  console.log('Deleting tag:', tag?.name)
-                  
-                  // Delete tag and refresh immediately
-                  await onDeleteTag(tag?.name, false)
-                  
-                  // Refresh commits immediately after deletion
-                  if (onRefreshCommits) {
-                    onRefreshCommits()
-                  }
-                }
-              } else {
-                console.error('onDeleteTag is not defined')
-              }
+              const tagToDelete = tag?.name
               
+              // Close menu first
               onClose()
+              
+              // Then request confirmation dialog from parent
+              if (onRequestDeleteTag) {
+                onRequestDeleteTag(tagToDelete, onRefreshCommits)
+              }
             }}
             style={{ color: '#ff3b30' }}
           >
@@ -451,8 +433,10 @@ export const BranchContextMenu = ({
           </button>
         </div>
       </div>
+      </>
     )
   }
 
   return null
 }
+
