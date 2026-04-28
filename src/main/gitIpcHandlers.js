@@ -533,15 +533,29 @@ ${fileContent
       return fail('No repository selected')
     }
     try {
-      let command
-      if (isRemote) {
-        command = `git push origin --delete refs/tags/${tagName}`
-      } else {
-        command = `git tag -d ${tagName}`
+      const commands = []
+      
+      // Always delete local tag first
+      const localCommand = `git tag -d ${tagName}`
+      commands.push(localCommand)
+      commandHistory.push(localCommand)
+      await execAsync(localCommand, { cwd: currentRepoPath })
+      
+      // If the tag exists on remote, also delete it from remote
+      // Check if tag exists on remote
+      try {
+        await execAsync(`git ls-remote --tags origin refs/tags/${tagName}`, { cwd: currentRepoPath })
+        // Tag exists on remote, delete it
+        const remoteCommand = `git push origin --delete refs/tags/${tagName}`
+        commands.push(remoteCommand)
+        commandHistory.push(remoteCommand)
+        await execAsync(remoteCommand, { cwd: currentRepoPath })
+      } catch (err) {
+        // Tag doesn't exist on remote or error checking, that's okay
+        console.log('Tag not found on remote or already deleted:', tagName)
       }
-      commandHistory.push(command)
-      await execAsync(command, { cwd: currentRepoPath })
-      return success({ command })
+      
+      return success({ commands })
     } catch (error) {
       console.error('Error deleting tag:', error)
       return fail(error.message)

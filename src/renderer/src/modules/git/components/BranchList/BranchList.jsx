@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import {
   ChevronDown,
   Plus,
@@ -14,6 +14,9 @@ import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenu } from './BranchContextMenu'
 import styles from './BranchList.module.css'
+
+// Constants
+const BRANCH_COMMITS_LIMIT = 50
 
 const BranchList = ({
   branches = [],
@@ -34,13 +37,13 @@ const BranchList = ({
   onDeleteTag,
   onPushTag
 }) => {
-  const [contextMenu, setContextMenu] = React.useState({
+  const [contextMenu, setContextMenu] = useState({
     show: false,
     x: 0,
     y: 0,
-    type: null, // 'branch', 'commit', or 'tag'
-    target: null, // branchName, commit object, or tag object
-    tags: [] // tags associated with the branch/commit
+    type: null,
+    target: null,
+    tags: []
   })
   const [renameBranchState, setRenameBranchState] = useState({
     show: false,
@@ -52,17 +55,26 @@ const BranchList = ({
     branchName: '',
     tagName: ''
   })
+  const [searchTerm, setSearchTerm] = useState('')
+  const [tagSearchTerm, setTagSearchTerm] = useState('')
+  const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
+  const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
+  const [expandedBranches, setExpandedBranches] = useState(new Set())
+  const [branchCommits, setBranchCommits] = useState({})
+  const [loadingCommits, setLoadingCommits] = useState(false)
 
-  const handleContextMenu = (e, type, target) => {
+  // Memoized branch prefix
+  const branchPrefix = useMemo(() => selectedPrefixes.join(','), [selectedPrefixes])
+
+  // Handle context menu
+  const handleContextMenu = useCallback((e, type, target) => {
     e.preventDefault()
     
     let tags = []
     if (type === 'branch') {
-      // Find the branch object to get its tags
       const branchObj = branches.find(b => (typeof b === 'string' ? b : b.name) === target)
       tags = branchObj?.tags || []
     } else if (type === 'commit') {
-      // Commit already has tags in the object
       tags = target?.tags || []
     }
     
@@ -74,35 +86,26 @@ const BranchList = ({
       target,
       tags
     })
-  }
+  }, [branches])
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [tagSearchTerm, setTagSearchTerm] = useState('')
-  const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
-  const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
-  const [expandedBranch, setExpandedBranch] = useState(null)
-  const [branchCommits, setBranchCommits] = useState({})
-  const [loadingCommits, setLoadingCommits] = useState(false)
+  // Close context menu
+  const closeContextMenu = useCallback(() => {
+    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
+  }, [])
 
-  const sortBranches = (branchesList) => {
+  // Sort and filter branches
+  const sortBranches = useCallback((branchesList) => {
     return [...branchesList]
       .filter((branch) => {
         const name = typeof branch === 'string' ? branch : branch.name
-        
-        // Filter by branch name
         const matchesBranchName = searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
         
-        // Filter by tag if tag search is active
         if (tagSearchTerm) {
           const branchObj = typeof branch === 'string' 
             ? branches.find(b => (typeof b === 'string' ? b : b.name) === name)
             : branch
           const tags = branchObj?.tags || []
-          
-          // Check if branch itself has the tag
           const branchHasTag = tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
-          
-          // Check if any commit in this branch has the tag
           const commits = branchCommits[name] || []
           const commitsHaveTag = commits.some(commit => 
             commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
@@ -120,187 +123,174 @@ const BranchList = ({
         if (nameA === currentBranch) return -1
         return nameA.localeCompare(nameB)
       })
-  }
+  }, [searchTerm, tagSearchTerm, branches, branchCommits, currentBranch])
 
-  const filterCommitsByTag = (commits) => {
-    if (!tagSearchTerm) {
-      return commits
-    }
+  // Filter commits by tag
+  const filterCommitsByTag = useCallback((commits) => {
+    if (!tagSearchTerm) return commits
     return commits.filter(commit => 
       commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
     )
-  }
+  }, [tagSearchTerm])
+
+  // Memoized sorted branches
+  const sortedLocalBranches = useMemo(() => sortBranches(branches), [sortBranches, branches])
+  const sortedRemoteBranches = useMemo(() => sortBranches(remoteBranches), [sortBranches, remoteBranches])
 
   // Auto-load commits for all branches when tag search is active
   React.useEffect(() => {
+    if (!tagSearchTerm || branches.length === 0) {
+      setLoadingCommits(false)
+      return
+    }
+
     const loadAllCommits = async () => {
-      if (tagSearchTerm && branches.length > 0) {
-        setLoadingCommits(true)
+      setLoadingCommits(true)
+      
+      const loadPromises = branches.map(async (branchObj) => {
+        const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
+        if (branchCommits[branchName]) return null
         
-        // Load commits for all branches
-        const loadPromises = branches.map(async (branchObj) => {
-          const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
-          if (!branchCommits[branchName]) {
-            try {
-              const result = await window.git.getBranchCommits(branchName, 10)
-              if (result.success) {
-                return { branchName, commits: result.data }
-              }
-            } catch (err) {
-              console.error('Error loading branch commits:', err)
-            }
-          }
+        try {
+          const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
+          return result.success ? { branchName, commits: result.data } : null
+        } catch (err) {
+          console.error('Error loading branch commits:', err)
           return null
-        })
-
-        const results = await Promise.all(loadPromises)
-        const newCommits = {}
-        results.forEach(result => {
-          if (result) {
-            newCommits[result.branchName] = result.commits
-          }
-        })
-
-        if (Object.keys(newCommits).length > 0) {
-          setBranchCommits(prev => ({ ...prev, ...newCommits }))
         }
-        
-        setLoadingCommits(false)
+      })
+
+      const results = await Promise.all(loadPromises)
+      const newCommits = results.reduce((acc, result) => {
+        if (result) acc[result.branchName] = result.commits
+        return acc
+      }, {})
+
+      if (Object.keys(newCommits).length > 0) {
+        setBranchCommits(prev => ({ ...prev, ...newCommits }))
       }
+      
+      setLoadingCommits(false)
     }
 
     loadAllCommits()
-  }, [tagSearchTerm, branches.length])
+  }, [tagSearchTerm, branches.length, branchCommits])
 
-  const branchPrefix = selectedPrefixes.join(',')
-
-  const handleCreateBranch = () => {
+  // Handle create branch
+  const handleCreateBranch = useCallback(() => {
     if (!newBranchName.trim()) return
 
     const branchNames = branchPrefix
-      ? branchPrefix
-          .split(',')
-          .map((p) => `${p.trim()}${newBranchName}`)
-          .join(',')
+      ? branchPrefix.split(',').map((p) => `${p.trim()}${newBranchName}`).join(',')
       : newBranchName
     createBranchByNewBranchName(branchNames)
-  }
+  }, [newBranchName, branchPrefix, createBranchByNewBranchName])
 
-  const handleRenameBranch = (oldName) => {
-    setRenameBranchState({
-      show: true,
-      oldName: oldName,
-      newName: oldName
-    })
-    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
-  }
+  // Handle rename branch
+  const handleRenameBranch = useCallback((oldName) => {
+    setRenameBranchState({ show: true, oldName, newName: oldName })
+    closeContextMenu()
+  }, [closeContextMenu])
 
-  const handleCreateTag = (branchName) => {
-    setCreateTagState({
-      show: true,
-      branchName: branchName,
-      tagName: ''
-    })
-    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
-  }
+  // Handle create tag
+  const handleCreateTag = useCallback((branchName) => {
+    setCreateTagState({ show: true, branchName, tagName: '' })
+    closeContextMenu()
+  }, [closeContextMenu])
 
-  const submitCreateTag = async () => {
-    if (createTagState.tagName && createTagState.tagName.trim()) {
-      if (onCreateTag) {
-        await onCreateTag(createTagState.tagName, createTagState.branchName)
-        
-        // Refresh commits immediately for the currently expanded branch
-        if (expandedBranch) {
-          // Don't await - trigger refresh immediately
-          window.git.getBranchCommits(expandedBranch, 10).then(result => {
-            if (result.success) {
-              setBranchCommits(prev => ({
-                ...prev,
-                [expandedBranch]: result.data
-              }))
-            }
-          }).catch(err => {
-            console.error('Error refreshing branch commits:', err)
-          })
-        }
-      }
+  // Submit create tag
+  const submitCreateTag = useCallback(async () => {
+    if (!createTagState.tagName?.trim() || !onCreateTag) {
+      setCreateTagState({ show: false, branchName: '', tagName: '' })
+      return
     }
-    setCreateTagState({ show: false, branchName: '', tagName: '' })
-  }
 
-  const submitRename = () => {
+    await onCreateTag(createTagState.tagName, createTagState.branchName)
+    
+    // Refresh commits for all expanded branches
+    expandedBranches.forEach(branchName => {
+      window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
+        .then(result => {
+          if (result.success) {
+            setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
+          }
+        })
+        .catch(err => console.error('Error refreshing branch commits:', err))
+    })
+    
+    setCreateTagState({ show: false, branchName: '', tagName: '' })
+  }, [createTagState, onCreateTag, expandedBranches])
+
+  // Submit rename
+  const submitRename = useCallback(() => {
     if (renameBranchState.newName && renameBranchState.newName !== renameBranchState.oldName) {
       onRename(renameBranchState.oldName, renameBranchState.newName)
     }
     setRenameBranchState({ show: false, oldName: '', newName: '' })
-  }
+  }, [renameBranchState, onRename])
 
-  const handleBranchClick = async (branchName) => {
-    if (expandedBranch === branchName) {
-      setExpandedBranch(null)
-    } else {
-      setExpandedBranch(branchName)
-      // Load commits for this branch if not already loaded
-      if (!branchCommits[branchName]) {
-        try {
-          const result = await window.git.getBranchCommits(branchName, 10)
-          if (result.success) {
-            setBranchCommits(prev => ({
-              ...prev,
-              [branchName]: result.data
-            }))
-          }
-        } catch (err) {
-          console.error('Error loading branch commits:', err)
+  // Handle branch click
+  const handleBranchClick = useCallback(async (branchName) => {
+    setExpandedBranches(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(branchName)) {
+        newSet.delete(branchName)
+      } else {
+        newSet.add(branchName)
+      }
+      return newSet
+    })
+    
+    if (!branchCommits[branchName]) {
+      try {
+        const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
+        if (result.success) {
+          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
         }
+      } catch (err) {
+        console.error('Error loading branch commits:', err)
       }
     }
-  }
+  }, [branchCommits])
 
-  const handleRefreshCommits = () => {
-    // Refresh commits for the currently expanded branch (non-blocking)
-    if (expandedBranch) {
-      window.git.getBranchCommits(expandedBranch, 10).then(result => {
-        if (result.success) {
-          setBranchCommits(prev => ({
-            ...prev,
-            [expandedBranch]: result.data
-          }))
-        }
-      }).catch(err => {
-        console.error('Error refreshing branch commits:', err)
-      })
-    }
+  // Handle refresh commits
+  const handleRefreshCommits = useCallback(() => {
+    // Refresh all expanded branches commits
+    expandedBranches.forEach(branchName => {
+      window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
+        .then(result => {
+          if (result.success) {
+            setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
+          }
+        })
+        .catch(err => console.error('Error refreshing branch commits:', err))
+    })
     
-    // Also refresh commits for tag search if active (non-blocking)
+    // Refresh tag search commits
     if (tagSearchTerm && branches.length > 0) {
       const loadPromises = branches.map(async (branchObj) => {
         const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
         try {
-          const result = await window.git.getBranchCommits(branchName, 10)
-          if (result.success) {
-            return { branchName, commits: result.data }
-          }
+          const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
+          return result.success ? { branchName, commits: result.data } : null
         } catch (err) {
           console.error('Error loading branch commits:', err)
+          return null
         }
-        return null
       })
 
       Promise.all(loadPromises).then(results => {
-        const newCommits = {}
-        results.forEach(result => {
-          if (result) {
-            newCommits[result.branchName] = result.commits
-          }
-        })
+        const newCommits = results.reduce((acc, result) => {
+          if (result) acc[result.branchName] = result.commits
+          return acc
+        }, {})
 
         if (Object.keys(newCommits).length > 0) {
           setBranchCommits(prev => ({ ...prev, ...newCommits }))
         }
       })
     }
-  }
+  }, [expandedBranches, tagSearchTerm, branches])
 
   return (
     <div className={styles.branchManagement}>
@@ -410,8 +400,8 @@ const BranchList = ({
                 </div>
                 {!isLocalBranchesCollapsed && (
                   <div className={styles.groupContent}>
-                    {sortBranches(branches).length > 0 ? (
-                      sortBranches(branches).map((branchObj) => {
+                    {sortedLocalBranches.length > 0 ? (
+                      sortedLocalBranches.map((branchObj) => {
                         const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
                         const { ahead = 0, behind = 0, tags = [] } = branchObj || {}
                         const isActive = branch === currentBranch
@@ -421,7 +411,7 @@ const BranchList = ({
                             <div
                               onDoubleClick={() => !isActive && onCheckout(branch)}
                               onClick={() => handleBranchClick(branch)}
-                              className={`${styles.branchItem} ${isActive ? styles.active : ''} ${expandedBranch === branch || (tagSearchTerm && branchCommits[branch]) ? styles.expanded : ''}`}
+                              className={`${styles.branchItem} ${isActive ? styles.active : ''} ${expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch]) ? styles.expanded : ''}`}
                               onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                             >
                               <div className={styles.branchMain}>
@@ -484,7 +474,7 @@ const BranchList = ({
                             </div>
                             
                             {/* Show commits when expanded or when tag search is active */}
-                            {(expandedBranch === branch || (tagSearchTerm && branchCommits[branch])) && branchCommits[branch] && (
+                            {(expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])) && branchCommits[branch] && (
                               <div className={styles.commitHistory}>
                                 {filterCommitsByTag(branchCommits[branch]).length > 0 ? (
                                   filterCommitsByTag(branchCommits[branch]).map((commit) => (
@@ -558,8 +548,8 @@ const BranchList = ({
                   </div>
                   {!isRemoteBranchesCollapsed && (
                     <div className={styles.groupContent}>
-                      {sortBranches(remoteBranches).length > 0 ? (
-                        sortBranches(remoteBranches).map((branchObj) => {
+                      {sortedRemoteBranches.length > 0 ? (
+                        sortedRemoteBranches.map((branchObj) => {
                           const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
                           const isActive = branch === currentBranch
                           return (
@@ -716,7 +706,7 @@ const BranchList = ({
         onDeleteTag={onDeleteTag}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
-        onClose={() => setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })}
+        onClose={closeContextMenu}
       />
     </div>
   )
