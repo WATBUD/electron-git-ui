@@ -89,14 +89,17 @@ export const FileStatus = ({
     // Pass ALL files with their staging status (not filtered by search)
     // This ensures shift-select can find the correct indices
     const allFilesWithStatus = _fileStatus.map(f => ({ file: f.file, isStaged: f.isStaged }))
-    
+
     // Perform selection logic
     handleSelectionClick(file, isStaged, e, allFilesWithStatus)
-    
-    // Only load diff for normal clicks (not shift multi-select)
-    // Cmd/Ctrl clicks should still load diff as they toggle individual files
+
     const isShiftClick = e && e.shiftKey
-    if (!isShiftClick) {
+    const isSameActiveFile =
+      activeFile?.file === file && activeFile?.isStaged === isStaged
+
+    // Only load diff for normal clicks (not shift multi-select)
+    // Skip reload when the file is already the active/focused one
+    if (!isShiftClick && !isSameActiveFile) {
       setActiveFile({ file, isStaged })
       onFileClick({ file, isStaged })
     }
