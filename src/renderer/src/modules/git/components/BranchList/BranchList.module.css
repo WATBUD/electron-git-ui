@@ -505,6 +505,22 @@
   flex-shrink: 0;
 }
 
+.detachedBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background-color: rgba(255, 59, 48, 0.15);
+  border: 1px solid rgba(255, 59, 48, 0.4);
+  border-radius: 3px;
+  color: #ff3b30;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .branchMeta {
   display: flex;
   align-items: center;

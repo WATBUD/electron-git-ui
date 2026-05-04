@@ -382,7 +382,7 @@ export const BranchContextMenu = ({
           <button
             className={styles.contextMenuItem}
             onClick={() => {
-              onCheckout(tag?.name)
+              ;(onCheckoutCommit || onCheckout)(tag?.name)
               onClose()
             }}
           >

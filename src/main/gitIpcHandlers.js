@@ -248,6 +248,25 @@ ${fileContent
         .map((line) => {
           const isCurrent = line.startsWith('*')
           const cleanLine = line.substring(2).trim()
+
+          // Handle detached HEAD: "(HEAD detached at <hash>)" / "(HEAD detached from <hash>)"
+          const detachedMatch = cleanLine.match(/^\(HEAD detached (?:at|from) ([^)]+)\)/)
+          if (detachedMatch) {
+            const ref = detachedMatch[1].trim()
+            const commitMatch = cleanLine.match(/\)\s+([a-f0-9]{7,40})/)
+            const commitHash = commitMatch ? commitMatch[1] : null
+            const tags = commitHash && tagsByCommit[commitHash] ? tagsByCommit[commitHash] : []
+            return {
+              name: ref,
+              isCurrent,
+              isDetached: true,
+              upstream: null,
+              ahead: 0,
+              behind: 0,
+              tags
+            }
+          }
+
           const nameMatch = cleanLine.match(/^([^\s]+)/)
           const name = nameMatch ? nameMatch[1] : ''
 

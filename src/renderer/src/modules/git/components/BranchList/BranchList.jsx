@@ -406,8 +406,8 @@ const BranchList = ({
                     {sortedLocalBranches.length > 0 ? (
                       sortedLocalBranches.map((branchObj) => {
                         const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
-                        const { ahead = 0, behind = 0, tags = [] } = branchObj || {}
-                        const isActive = branch === currentBranch
+                        const { ahead = 0, behind = 0, tags = [], isDetached = false, isCurrent = false } = branchObj || {}
+                        const isActive = isCurrent || branch === currentBranch
 
                         return (
                           <div key={`local-${branch}`}>
@@ -420,6 +420,11 @@ const BranchList = ({
                               <div className={styles.branchMain}>
                                 <GitBranch size={14} className={styles.itemIcon} />
                                 <span className={styles.branchNameText}>{branch}</span>
+                                {isDetached && (
+                                  <span className={styles.detachedBadge} title="Detached HEAD">
+                                    Detached HEAD
+                                  </span>
+                                )}
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />
                                 )}
