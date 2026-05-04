@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep *)",
+      "Bash(node --check /Users/louis_chin/Desktop/repositorys/electron-git-ui/src/renderer/src/modules/git/store/git/gitSlice.js)"
+    ]
+  }
+}

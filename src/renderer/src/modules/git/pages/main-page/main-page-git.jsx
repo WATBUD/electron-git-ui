@@ -281,7 +281,7 @@ export const MainPageGit = () => {
                   }
                 } else {
                   // Stash only unstaged files, preserve staged files
-                  const unstagedFiles = (fileStatus?.data?.files || fileStatus || [])
+                  const unstagedFiles = (fileStatus || [])
                     .filter(f => !f.isStaged)
                     .map(f => f.file)
                   

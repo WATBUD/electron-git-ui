@@ -41,7 +41,7 @@ export const FileStatus = ({
     cleanupInvalidSelections
   } = useFileSelection()
 
-  const _fileStatus = fileStatus?.data?.files || []
+  const _fileStatus = fileStatus || []
 
   // Clean up invalid selections when file list changes
   useEffect(() => {

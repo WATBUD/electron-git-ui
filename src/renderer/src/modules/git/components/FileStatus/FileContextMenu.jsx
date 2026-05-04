@@ -64,7 +64,7 @@ export const FileContextMenu = ({
         await onStashFile({ files: selectedFiles })
         message.success(`${selectedFiles.length} files stashed`)
       } else {
-        await onStashFile(fileName)
+        await onStashFile({ files: [fileName] })
         message.success('File stashed')
       }
       onClose()

@@ -181,7 +181,7 @@ const gitSlice = createSlice({
       })
       .addCase(loadCommitHistory.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data ?? {}
         state.commits = data.commits || []
         state.currentHead = data.currentHead
         state.currentBranch = data.currentBranch
@@ -231,7 +231,7 @@ const gitSlice = createSlice({
       .addCase(loadTags.fulfilled, (state, action) => {
         state.tagsLoading = false
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data
         state.localTags = data?.localTags || []
         // Deduplicate remote tags to prevent duplicate keys
         const remoteTags = data?.remoteTags || []
@@ -274,7 +274,7 @@ const gitSlice = createSlice({
         state.error = action.payload
       })
       .addCase(checkMergeInProgress.fulfilled, (state, action) => {
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data
         state.hasMergeInProgress = data?.hasMergeInProgress || false
       })
       .addCase(checkMergeInProgress.rejected, (state, action) => {
@@ -290,7 +290,7 @@ const gitSlice = createSlice({
       })
       .addCase(loadBranches.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data
         state.currentBranch = data?.currentBranch
         state.branches = data?.branches
         state.remoteBranches = data?.remoteBranches
@@ -387,7 +387,7 @@ const gitSlice = createSlice({
       })
       .addCase(loadFileStatus.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.fileStatus = action.payload
+        state.fileStatus = action.payload?.data?.files ?? []
       })
       .addCase(loadFileStatus.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -422,19 +422,15 @@ const gitSlice = createSlice({
         state.loadingMessage = 'Discarding file changes...'
         state.error = null
       })
-      .addCase(discardFileChanges.fulfilled, (state, action) => {
+      .addCase(discardFileChanges.fulfilled, (state) => {
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
-        // Can store discarded files info if needed for UI feedback
-        // state.lastDiscardedFiles = data.files
-        // state.lastDiscardedCount = data.count
       })
       .addCase(discardFileChanges.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
       })
       .addCase(updateCommandHistory.fulfilled, (state, action) => {
-        state.commandHistory = action.payload?.data || action.payload
+        state.commandHistory = action.payload?.data ?? []
       })
       .addCase(updateCommandHistory.rejected, (state, action) => {
         state.error = action.payload
@@ -452,7 +448,7 @@ const gitSlice = createSlice({
       })
       .addCase(selectRepository.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data
         state.repoPath = data?.repoPath
         if (state.repoPath && !state.projects.includes(state.repoPath)) {
           state.projects.push(state.repoPath)
@@ -469,7 +465,7 @@ const gitSlice = createSlice({
       })
       .addCase(openRepository.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        const data = action.payload?.data || action.payload
+        const data = action.payload?.data
         state.repoPath = data?.repoPath
       })
       .addCase(openRepository.rejected, (state, action) => {
@@ -482,7 +478,7 @@ const gitSlice = createSlice({
       })
       .addCase(getCachedDiff.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.cachedDiff = action.payload?.data || action.payload
+        state.cachedDiff = action.payload?.data ?? ''
       })
       .addCase(getCachedDiff.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -494,7 +490,7 @@ const gitSlice = createSlice({
       })
       .addCase(getFileDiff.fulfilled, (state, action) => {
         state.loadingMessage = ''
-        state.selectedFileDiff = action.payload?.data || action.payload
+        state.selectedFileDiff = action.payload?.data ?? ''
       })
       .addCase(getFileDiff.rejected, (state, action) => {
         state.loadingMessage = ''
@@ -509,7 +505,7 @@ const gitSlice = createSlice({
       .addCase(loadStashes.fulfilled, (state, action) => {
         state.loadingMessage = ''
         state.stashLoading = false
-        state.stashes = action.payload?.data || action.payload || []
+        state.stashes = action.payload?.data ?? []
         state.selectedStashDiff = null // 重載列表時清除預覽
       })
       .addCase(loadStashes.rejected, (state, action) => {
@@ -585,7 +581,7 @@ const gitSlice = createSlice({
         state.error = null
       })
       .addCase(getStashDiff.fulfilled, (state, action) => {
-        state.selectedStashDiff = action.payload?.data || action.payload
+        state.selectedStashDiff = action.payload?.data ?? ''
       })
       .addCase(getStashDiff.rejected, (state, action) => {
         state.error = action.payload

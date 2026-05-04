@@ -31,7 +31,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
 
   // Calculate Git status
   const getGitStatus = () => {
-    if (!fileStatus || !Array.isArray(fileStatus) || fileStatus.length === 0) {
+    if (fileStatus.length === 0) {
       return { type: 'clean', count: 0 }
     }
 
