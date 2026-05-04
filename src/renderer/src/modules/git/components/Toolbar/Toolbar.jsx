@@ -21,6 +21,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   const [pruneBranches, setPruneBranches] = useState(false)
   const [forcePush, setForcePush] = useState(false)
   const [includeStaged, setIncludeStaged] = useState(true)
+  const [commitAndPush, setCommitAndPush] = useState(false)
   const [commitMessage, setCommitMessage] = useState('')
   const [stashMessage, setStashMessage] = useState('')
 
@@ -85,11 +86,15 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     setShowPushDialog(false)
   }
 
-  const handleCommit = () => {
-    if (commitMessage.trim()) {
-      onCommit(commitMessage)
-      setCommitMessage('')
-      setShowCommitDialog(false)
+  const handleCommit = async () => {
+    if (!commitMessage.trim()) return
+    const message = commitMessage
+    const shouldPush = commitAndPush
+    setCommitMessage('')
+    setShowCommitDialog(false)
+    await onCommit(message)
+    if (shouldPush) {
+      await onPush(false)
     }
   }
 
@@ -285,6 +290,25 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                   className={styles.commitMessageInput}
                   autoFocus
                 />
+                <label className={styles.checkboxLabel}>
+                  <span>Push after commit</span>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="checkbox"
+                      style={{
+                        position: 'absolute',
+                        opacity: 0,
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer',
+                        zIndex: 1
+                      }}
+                      checked={commitAndPush}
+                      onChange={(e) => setCommitAndPush(e.target.checked)}
+                    />
+                    <div className={styles.toggleSwitch}></div>
+                  </div>
+                </label>
               </div>
               <div className={styles.dialogButtons}>
                 <button onClick={() => setShowCommitDialog(false)} className={styles.cancelBtn}>
@@ -295,7 +319,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                   disabled={loading || !commitMessage.trim()}
                   className={styles.confirmBtn}
                 >
-                  Commit
+                  {commitAndPush ? 'Commit & Push' : 'Commit'}
                 </button>
               </div>
             </div>
