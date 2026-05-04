@@ -19,6 +19,7 @@ import {
   createBranch,
   mergeBranch,
   checkoutBranch,
+  checkoutCommit,
   deleteRemoteBranch,
   fetchFromRemote,
   pullFromRemote,
@@ -325,6 +326,9 @@ export const MainPageGit = () => {
                     localOnlyTags={localOnlyTags}
                     onCheckout={async (branchName) => {
                       await dispatch(checkoutBranch(branchName))
+                    }}
+                    onCheckoutCommit={async (commitHash) => {
+                      await dispatch(checkoutCommit(commitHash))
                     }}
                     onDelete={async (branchName) => {
                       await dispatch(deleteBranch(branchName))

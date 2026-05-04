@@ -246,9 +246,9 @@ export const checkoutCommit = createAsyncThunk(
     )
 
     await Promise.all([
-      dispatch(loadCommitHistory())
-      //dispatch(loadBranches()),
-      //dispatch(loadFileStatus())
+      dispatch(loadCommitHistory()),
+      dispatch(loadBranches()),
+      dispatch(loadFileStatus())
     ])
     return result
   }

@@ -24,6 +24,7 @@ const BranchList = ({
   currentBranch,
   loading,
   onCheckout,
+  onCheckoutCommit,
   onDelete,
   onDeleteRemote,
   onMerge,
@@ -707,6 +708,7 @@ const BranchList = ({
         currentBranch={currentBranch}
         onMerge={onMerge}
         onCheckout={onCheckout}
+        onCheckoutCommit={onCheckoutCommit}
         onRename={handleRenameBranch}
         onCreateTag={handleCreateTag}
         onDeleteTag={onDeleteTag}

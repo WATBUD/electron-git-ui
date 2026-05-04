@@ -11,6 +11,7 @@ export const BranchContextMenu = ({
   currentBranch,
   onMerge,
   onCheckout,
+  onCheckoutCommit,
   onRename,
   onCreateTag,
   onDeleteTag,
@@ -315,7 +316,7 @@ export const BranchContextMenu = ({
             <button
               className={styles.contextMenuItem}
               onClick={() => {
-                onCheckout(commit?.hash)
+                ;(onCheckoutCommit || onCheckout)(commit?.hash)
                 onClose()
               }}
             >
