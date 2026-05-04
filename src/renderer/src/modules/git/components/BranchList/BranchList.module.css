@@ -627,6 +627,201 @@
   margin-top: 20px;
 }
 
+.commitDiffModal {
+  width: min(900px, 90vw);
+  max-height: 80vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.commitDiffHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.commitDiffTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.commitDiffTitle h3 {
+  margin: 0;
+  font-size: 13px;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  color: #ffd34d;
+  flex-shrink: 0;
+}
+
+.commitDiffSubject {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.commitDiffClose {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.commitDiffClose:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.commitDiffMeta {
+  display: flex;
+  gap: 14px;
+  padding: 8px 18px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.commitDiffBody {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+}
+
+.commitDiffLoading,
+.commitDiffError {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.commitDiffError {
+  color: #ff6b6b;
+}
+
+.commitDiffMessage {
+  background-color: rgba(0, 0, 0, 0.18);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commitDiffFileSection {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commitDiffFileHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 18px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+
+.commitDiffFileHeader:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.commitDiffFiles {
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background-color: rgba(0, 0, 0, 0.18);
+}
+
+.commitDiffFilesHeader {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 6px;
+}
+
+.commitDiffFileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 11px;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+}
+
+.commitDiffFileStatus {
+  display: inline-flex;
+  width: 18px;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.commitDiffFileStatus.status_A { color: #34c759; }
+.commitDiffFileStatus.status_M { color: #0a84ff; }
+.commitDiffFileStatus.status_D { color: #ff3b30; }
+.commitDiffFileStatus.status_R { color: #5e5ce6; }
+.commitDiffFileStatus.status_C { color: #5e5ce6; }
+
+.commitDiffFileName {
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+}
+
+.commitDiffContent {
+  margin: 0;
+  padding: 12px 18px;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.commitDiffContent .diffContext {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.commitDiffContent .diffAdd {
+  background-color: rgba(52, 199, 89, 0.12);
+  color: #58e08a;
+}
+
+.commitDiffContent .diffDel {
+  background-color: rgba(255, 59, 48, 0.12);
+  color: #ff7a72;
+}
+
+.commitDiffContent .diffHunk {
+  color: #5e5ce6;
+  background-color: rgba(94, 92, 230, 0.08);
+}
+
+.commitDiffContent .diffMeta {
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .modalFooter button {
   padding: 5px 15px;
   border-radius: var(--input-radius);

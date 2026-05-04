@@ -35,6 +35,7 @@ contextBridge.exposeInMainWorld('git', {
   createTag: (tagName, branchName, message) => ipcRenderer.invoke('git:createTag', { tagName, branchName, message }),
   pushTag: (tagName) => ipcRenderer.invoke('git:pushTag', tagName),
   getBranchCommits: (branchName, limit) => ipcRenderer.invoke('git:getBranchCommits', branchName, limit),
+  getCommitDiff: (commitHash) => ipcRenderer.invoke('git:getCommitDiff', commitHash),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),

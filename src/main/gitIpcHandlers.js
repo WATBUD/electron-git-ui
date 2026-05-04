@@ -653,6 +653,49 @@ ${fileContent
     }
   })
 
+  ipcMain.handle('git:getCommitDiff', async (_, commitHash) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    if (!commitHash) {
+      return fail('Commit hash required')
+    }
+    try {
+      // Files changed in this commit (M/A/D/R/C status + path)
+      const nameStatusCmd = `git show --name-status --pretty=format: ${commitHash}`
+      commandHistory.push(nameStatusCmd)
+      const { stdout: nameStatusOut } = await execAsync(nameStatusCmd, {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
+      const files = nameStatusOut
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split('\t')
+          const status = parts[0]
+          // Renames/copies: "R100\told\tnew" — show new path
+          const file = parts[parts.length - 1]
+          const oldFile = (status?.startsWith('R') || status?.startsWith('C')) ? parts[1] : null
+          return { status, file, oldFile }
+        })
+
+      // Full diff output for display
+      const diffCmd = `git show --format=fuller ${commitHash}`
+      commandHistory.push(diffCmd)
+      const { stdout: diffOut } = await execAsync(diffCmd, {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
+
+      return success({ files, diff: diffOut })
+    } catch (error) {
+      console.error('Error getting commit diff:', error)
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:refreshTags', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')
