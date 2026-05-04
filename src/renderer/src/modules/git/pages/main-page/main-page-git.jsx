@@ -369,13 +369,12 @@ export const MainPageGit = () => {
                       await dispatch(renameBranch({ oldName, newName }))
                     }}
                     onCreateTag={async (tagName, branchName) => {
-                      try {
-                        await dispatch(createTag({ tagName, branchName, message: '' }))
-                        // Wait for both to complete before UI updates
+                      const result = await dispatch(createTag({ tagName, branchName, message: '' }))
+                      // Only refresh on success; loadTags/loadBranches' pending reducer
+                      // clears state.error and would swallow the failure message.
+                      if (createTag.fulfilled.match(result)) {
                         await dispatch(loadTags())
                         await dispatch(loadBranches())
-                      } catch (error) {
-                        console.error('Error creating tag:', error)
                       }
                     }}
                     selectedPrefixes={selectedPrefixes}
