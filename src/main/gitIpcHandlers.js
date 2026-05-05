@@ -213,33 +213,35 @@ ${fileContent
         execAsync(remoteCommand, { cwd: currentRepoPath })
       ])
 
-      // Get all tags with their commit hashes
-      const tagsCommand = 'git show-ref --tags'
-      commandHistory.push(tagsCommand)
-      let tagsByCommit = {}
+      // Build a map of commitHash → tag names from LOCAL refs only. Remote
+      // tag info (remoteOnly / divergent detection) is fetched separately via
+      // `git:loadRemoteTagInfo` to keep this handler fast (ls-remote does a
+      // network round-trip).
+      const tagsByCommit = {}
+
+      const addTagToMap = (commitHash, tagName) => {
+        if (!commitHash || !tagName) return
+        const shortHash = commitHash.substring(0, 7)
+        for (const key of [commitHash, shortHash]) {
+          if (!tagsByCommit[key]) tagsByCommit[key] = []
+          if (!tagsByCommit[key].includes(tagName)) tagsByCommit[key].push(tagName)
+        }
+      }
+
+      const localTagsCommand = 'git show-ref --tags -d'
+      commandHistory.push(localTagsCommand)
       try {
-        const { stdout: tagsOutput } = await execAsync(tagsCommand, { cwd: currentRepoPath })
-        tagsOutput.split('\n').forEach(line => {
-          if (line.trim()) {
-            const [fullCommitHash, ref] = line.split(' ')
-            const tagName = ref.replace('refs/tags/', '')
-            // Store both full hash and short hash (first 7 chars)
-            const shortHash = fullCommitHash.substring(0, 7)
-            
-            if (!tagsByCommit[fullCommitHash]) {
-              tagsByCommit[fullCommitHash] = []
-            }
-            tagsByCommit[fullCommitHash].push(tagName)
-            
-            // Also store by short hash for matching with branch output
-            if (!tagsByCommit[shortHash]) {
-              tagsByCommit[shortHash] = []
-            }
-            tagsByCommit[shortHash].push(tagName)
-          }
+        const { stdout } = await execAsync(localTagsCommand, { cwd: currentRepoPath })
+        stdout.split('\n').forEach((line) => {
+          if (!line.trim()) return
+          const [fullCommitHash, ref] = line.split(' ')
+          if (!ref) return
+          let tagName = ref.replace('refs/tags/', '')
+          if (tagName.endsWith('^{}')) tagName = tagName.slice(0, -3)
+          addTagToMap(fullCommitHash, tagName)
         })
       } catch (err) {
-        // No tags or error, continue without tags
+        // No local tags or error, continue
       }
 
       const localBranches = localOutput
@@ -330,6 +332,74 @@ ${fileContent
       })
     } catch (error) {
       return fail('Error listing branches:' + error.message)
+    }
+  })
+
+  // Background-only handler used to enrich the UI with remote tag info
+  // (remote-only tags and divergent tags) without blocking the initial
+  // branch list render. Performs one network round-trip (`ls-remote`).
+  ipcMain.handle('git:loadRemoteTagInfo', async () => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      // Compare raw REF values (matches `git fetch`'s clobber check).
+      const localTagRef = {}
+      const remoteTagRef = {}
+      const localTagNames = new Set()
+      const remoteOnlyTagNames = new Set()
+      const divergentTagNames = new Set()
+
+      try {
+        const { stdout } = await execAsync('git show-ref --tags', {
+          cwd: currentRepoPath
+        })
+        stdout.split('\n').forEach((line) => {
+          if (!line.trim()) return
+          const [refValue, ref] = line.split(' ')
+          if (!ref) return
+          const tagName = ref.replace('refs/tags/', '')
+          localTagNames.add(tagName)
+          localTagRef[tagName] = refValue
+        })
+      } catch (err) {
+        // No local tags
+      }
+
+      const remoteCmd = 'git ls-remote --tags origin'
+      commandHistory.push(remoteCmd)
+      try {
+        const { stdout } = await execAsync(remoteCmd, { cwd: currentRepoPath })
+        stdout.split('\n').forEach((line) => {
+          if (!line.trim()) return
+          const parts = line.split(/\s+/)
+          const refValue = parts[0]
+          const ref = parts[1]
+          if (!ref) return
+          const tagName = ref.replace('refs/tags/', '')
+          if (tagName.endsWith('^{}')) return
+          remoteTagRef[tagName] = refValue
+          if (!localTagNames.has(tagName)) remoteOnlyTagNames.add(tagName)
+        })
+      } catch (err) {
+        return fail(err.message)
+      }
+
+      Object.keys(localTagRef).forEach((tagName) => {
+        if (
+          remoteTagRef[tagName] &&
+          localTagRef[tagName] !== remoteTagRef[tagName]
+        ) {
+          divergentTagNames.add(tagName)
+        }
+      })
+
+      return success({
+        remoteOnlyTags: Array.from(remoteOnlyTagNames),
+        divergentTags: Array.from(divergentTagNames)
+      })
+    } catch (error) {
+      return fail(error.message)
     }
   })
 
@@ -508,38 +578,84 @@ ${fileContent
       return fail('No repository selected')
     }
     try {
-      // Get local tags
-      const localTagsCommand = 'git tag -l'
-      commandHistory.push(localTagsCommand)
-      const { stdout: localOutput } = await execAsync(localTagsCommand, { cwd: currentRepoPath })
-      const localTags = localOutput.trim().split('\n').filter(tag => tag.trim())
+      // For divergence detection we compare the actual REF VALUE (what the
+      // tag points to directly) — that's what `git fetch` checks when it
+      // says "would clobber existing tag". The peeled commit is NOT enough:
+      // a lightweight tag (ref = commit) and an annotated tag (ref = tag
+      // object, peeled = commit) can both point to the same commit yet have
+      // different ref values, which fetch still considers a clobber.
+      const localTagRef = {} // tagName → ref value (tag-object hash for annotated, commit for lightweight)
+      const localTagNames = new Set()
+      try {
+        // for-each-ref gives `<ref-value> <refname>` — more reliable than show-ref
+        // for tags stored in packed-refs.
+        const { stdout } = await execAsync(
+          "git for-each-ref --format='%(objectname) %(refname)' refs/tags/",
+          { cwd: currentRepoPath }
+        )
+        stdout.split('\n').forEach((line) => {
+          if (!line.trim()) return
+          const parts = line.split(/\s+/)
+          const refValue = parts[0]
+          const ref = parts[1]
+          if (!refValue || !ref) return
+          const tagName = ref.replace('refs/tags/', '')
+          localTagNames.add(tagName)
+          localTagRef[tagName] = refValue
+        })
+      } catch (err) {
+        // No local tags
+      }
 
-      // Get remote tags
+      const remoteTagRef = {}
+      const remoteTagNames = new Set()
       const remoteTagsCommand = 'git ls-remote --tags origin'
       commandHistory.push(remoteTagsCommand)
-      const { stdout: remoteOutput } = await execAsync(remoteTagsCommand, { cwd: currentRepoPath })
-      const remoteTags = remoteOutput
-        .trim()
-        .split('\n')
-        .filter(line => line.trim())
-        .map(line => {
-          const match = line.match(/refs\/tags\/(.+?)(\^\{\})?$/)
-          return match ? match[1] : null
+      try {
+        const { stdout } = await execAsync(remoteTagsCommand, {
+          cwd: currentRepoPath
         })
-        .filter(tag => tag && !tag.endsWith('^{}'))
-        // Deduplicate tags
-        .filter((tag, index, self) => self.indexOf(tag) === index)
+        stdout.split('\n').forEach((line) => {
+          if (!line.trim()) return
+          const parts = line.split(/\s+/)
+          const refValue = parts[0]
+          const ref = parts[1]
+          if (!refValue || !ref) return
+          const tagName = ref.replace('refs/tags/', '')
+          // Skip peeled "^{}" entries — we only want the primary ref value.
+          if (tagName.endsWith('^{}')) return
+          remoteTagNames.add(tagName)
+          remoteTagRef[tagName] = refValue
+        })
+      } catch (err) {
+        // Offline / no remote — treat all local tags as local-only
+      }
 
-      // Categorize tags
-      const localOnlyTags = localTags.filter(tag => !remoteTags.includes(tag))
-      const remoteOnlyTags = remoteTags.filter(tag => !localTags.includes(tag))
-      const commonTags = localTags.filter(tag => remoteTags.includes(tag))
+      const localOnlyTags = []
+      const remoteOnlyTags = []
+      const divergentTags = []
+      const commonTags = []
+
+      localTagNames.forEach((tagName) => {
+        if (!remoteTagNames.has(tagName)) {
+          localOnlyTags.push(tagName)
+        } else if (localTagRef[tagName] !== remoteTagRef[tagName]) {
+          divergentTags.push(tagName)
+        } else {
+          commonTags.push(tagName)
+        }
+      })
+      remoteTagNames.forEach((tagName) => {
+        if (!localTagNames.has(tagName)) remoteOnlyTags.push(tagName)
+      })
 
       return success({
-        localTags: [...commonTags, ...localOnlyTags], // All local tags
-        remoteTags: remoteOnlyTags, // Only remote-only tags
-        localOnlyTags, // Tags that exist locally but not on remote (for UI indication)
-        commonTags // Tags that exist both locally and remotely
+        localTags: [...commonTags, ...divergentTags, ...localOnlyTags],
+        remoteTags: remoteOnlyTags,
+        localOnlyTags,
+        remoteOnlyTags,
+        divergentTags,
+        commonTags
       })
     } catch (error) {
       console.error('Error loading tags:', error)
@@ -547,33 +663,36 @@ ${fileContent
     }
   })
 
-  ipcMain.handle('git:deleteTag', async (_, tagName, isRemote) => {
+  ipcMain.handle('git:deleteTag', async (_, tagName, mode) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
+    // Backward compat: old callers passed boolean isRemote → translate to mode
+    let resolvedMode = mode
+    if (typeof mode === 'boolean') {
+      resolvedMode = mode ? 'remote' : 'both'
+    }
+    if (!['local', 'remote', 'both'].includes(resolvedMode)) {
+      resolvedMode = 'both'
+    }
+
     try {
       const commands = []
-      
-      // Always delete local tag first
-      const localCommand = `git tag -d ${tagName}`
-      commands.push(localCommand)
-      commandHistory.push(localCommand)
-      await execAsync(localCommand, { cwd: currentRepoPath })
-      
-      // If the tag exists on remote, also delete it from remote
-      // Check if tag exists on remote
-      try {
-        await execAsync(`git ls-remote --tags origin refs/tags/${tagName}`, { cwd: currentRepoPath })
-        // Tag exists on remote, delete it
+
+      if (resolvedMode === 'local' || resolvedMode === 'both') {
+        const localCommand = `git tag -d ${tagName}`
+        commands.push(localCommand)
+        commandHistory.push(localCommand)
+        await execAsync(localCommand, { cwd: currentRepoPath })
+      }
+
+      if (resolvedMode === 'remote' || resolvedMode === 'both') {
         const remoteCommand = `git push origin --delete refs/tags/${tagName}`
         commands.push(remoteCommand)
         commandHistory.push(remoteCommand)
         await execAsync(remoteCommand, { cwd: currentRepoPath })
-      } catch (err) {
-        // Tag doesn't exist on remote or error checking, that's okay
-        console.log('Tag not found on remote or already deleted:', tagName)
       }
-      
+
       return success({ commands })
     } catch (error) {
       console.error('Error deleting tag:', error)

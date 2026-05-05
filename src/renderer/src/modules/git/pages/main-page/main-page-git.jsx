@@ -73,8 +73,10 @@ export const MainPageGit = () => {
   const remoteBranches = useSelector((state) => state.git.remoteBranches)
   const currentBranch = useSelector((state) => state.git.currentBranch)
   const fileStatus = useSelector((state) => state.git.fileStatus)
-  const loading = useSelector((state) => state.git.loading)
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
+  // `state.git.loading` is never flipped — derive from loadingMessage so
+  // inline spinners (e.g. BranchList "Fetching branches...") actually fire.
+  const loading = !!loadingMessage
   const repoPath = useSelector((state) => state.git.repoPath)
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
   const prefixes = useSelector((state) => state.git.prefixes)
@@ -86,6 +88,8 @@ export const MainPageGit = () => {
   const selectedStashDiff = useSelector((state) => state.git.selectedStashDiff)
   const localTags = useSelector((state) => state.git.localTags || [])
   const localOnlyTags = useSelector((state) => state.git.localOnlyTags || [])
+  const remoteOnlyTags = useSelector((state) => state.git.remoteOnlyTags || [])
+  const divergentTags = useSelector((state) => state.git.divergentTags || [])
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -112,12 +116,11 @@ export const MainPageGit = () => {
         if (activeTab === GIT_TABS.FILES) {
           dispatch(loadFileStatus())
         }
-        // if (activeTab === GIT_TABS.GRAPH) {
-        //   dispatch(loadCommitHistory())
-        // }
         if (activeTab === GIT_TABS.BRANCH_VIEW) {
           dispatch(checkMergeInProgress())
           dispatch(loadBranches())
+          // Refresh tag info silently — keeps divergent/remoteOnly badges fresh
+          dispatch(loadTags())
         }
         if (activeTab === GIT_TABS.STASHES) {
           dispatch(loadStashes())
@@ -197,6 +200,7 @@ export const MainPageGit = () => {
     if (tab === GIT_TABS.BRANCH_VIEW) {
       dispatch(checkMergeInProgress())
       dispatch(loadBranches())
+      dispatch(loadTags())
     }
     if (tab === GIT_TABS.GRAPH) {
       dispatch(loadCommitHistory())
@@ -257,9 +261,11 @@ export const MainPageGit = () => {
           <Toolbar
             onPull={async () => {
               await dispatch(pullFromRemote())
+              dispatch(loadTags())
             }}
             onFetch={async (pruneBranches) => {
               await dispatch(fetchFromRemote(pruneBranches))
+              dispatch(loadTags())
             }}
             onPush={async (forcePush) => {
               await dispatch(pushToRemote(forcePush))
@@ -323,7 +329,10 @@ export const MainPageGit = () => {
                     remoteBranches={remoteBranches}
                     currentBranch={currentBranch}
                     loading={loading}
+                    localTags={localTags}
                     localOnlyTags={localOnlyTags}
+                    remoteOnlyTags={remoteOnlyTags}
+                    divergentTags={divergentTags}
                     onCheckout={async (branchName) => {
                       await dispatch(checkoutBranch(branchName))
                     }}

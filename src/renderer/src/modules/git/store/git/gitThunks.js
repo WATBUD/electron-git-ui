@@ -61,14 +61,38 @@ export const loadTags = createAsyncThunk(
   }
 )
 
+// Background-only — does the slow ls-remote tag query and updates
+// remoteOnlyTags / divergentTags. Does NOT touch loadingMessage so the
+// UI stays responsive while it runs.
+export const loadRemoteTagInfo = createAsyncThunk(
+  'git/loadRemoteTagInfo',
+  async (_, { rejectWithValue }) => {
+    if (!window.git || !window.git.loadRemoteTagInfo) {
+      return rejectWithValue('Git API not initialized')
+    }
+    try {
+      const result = await window.git.loadRemoteTagInfo()
+      if (!result?.success) {
+        return rejectWithValue(result?.message || 'Failed to load remote tag info')
+      }
+      return result
+    } catch (err) {
+      return rejectWithValue(err?.message || 'Failed to load remote tag info')
+    }
+  }
+)
+
 export const deleteTag = createAsyncThunk(
   'git/deleteTag',
-  async ({ tagName, isRemote }, { rejectWithValue }) => {
+  async ({ tagName, mode, isRemote }, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
+    // Back-compat: callers passing isRemote (boolean) → translate to mode
+    const resolvedMode = mode || (typeof isRemote === 'boolean' ? (isRemote ? 'remote' : 'both') : 'both')
+
     const result = await callGit(
-      () => window.git.deleteTag(tagName, isRemote),
+      () => window.git.deleteTag(tagName, resolvedMode),
       rejectWithValue,
       'Failed to delete tag',
       'deleteTag'

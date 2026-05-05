@@ -5,6 +5,7 @@ import {
   mergeBranch,
   checkMergeInProgress,
   loadTags,
+  loadRemoteTagInfo,
   deleteTag,
   createTag,
   abortMerge,
@@ -98,6 +99,8 @@ const initialState = {
   localTags: [],
   remoteTags: [],
   localOnlyTags: [],
+  remoteOnlyTags: [],
+  divergentTags: [],
   tagsLoading: false
 }
 
@@ -224,24 +227,31 @@ const gitSlice = createSlice({
     // Existing reducers
     builder
       .addCase(loadTags.pending, (state) => {
+        // Silent — don't set loadingMessage so the BranchList renders branches
+        // immediately without waiting for the slow ls-remote tag query.
         state.tagsLoading = true
-        state.loadingMessage = 'Loading tags...'
-        state.error = null
       })
       .addCase(loadTags.fulfilled, (state, action) => {
         state.tagsLoading = false
-        state.loadingMessage = ''
         const data = action.payload?.data
         state.localTags = data?.localTags || []
-        // Deduplicate remote tags to prevent duplicate keys
         const remoteTags = data?.remoteTags || []
         state.remoteTags = remoteTags.filter((tag, index, self) => self.indexOf(tag) === index)
         state.localOnlyTags = data?.localOnlyTags || []
+        state.remoteOnlyTags = data?.remoteOnlyTags || []
+        state.divergentTags = data?.divergentTags || []
       })
       .addCase(loadTags.rejected, (state, action) => {
+        // Silent — failure shouldn't reset loadingMessage (it wasn't set).
         state.tagsLoading = false
-        state.loadingMessage = ''
         state.error = action.payload
+      })
+      // Background remote tag info — does NOT touch loadingMessage / error.
+      .addCase(loadRemoteTagInfo.fulfilled, (state, action) => {
+        const data = action.payload?.data
+        if (!data) return
+        state.remoteOnlyTags = data.remoteOnlyTags || []
+        state.divergentTags = data.divergentTags || []
       })
       .addCase(deleteTag.pending, (state) => {
         state.loadingMessage = 'Deleting tag...'
@@ -294,6 +304,9 @@ const gitSlice = createSlice({
         state.currentBranch = data?.currentBranch
         state.branches = data?.branches
         state.remoteBranches = data?.remoteBranches
+        // remoteOnlyTags / divergentTags are intentionally NOT cleared here —
+        // they are filled asynchronously by loadRemoteTagInfo so the inline
+        // branch list can render immediately without waiting for ls-remote.
       })
       .addCase(loadBranches.rejected, (state, action) => {
         state.loadingMessage = ''

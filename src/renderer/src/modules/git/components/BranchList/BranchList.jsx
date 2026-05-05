@@ -10,7 +10,8 @@ import {
   ArrowDownLeft,
   CheckCircle2,
   X,
-  FileCode
+  FileCode,
+  AlertTriangle
 } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
@@ -36,7 +37,10 @@ const BranchList = ({
   selectedPrefixes = [],
   onRename,
   onCreateTag,
+  localTags = [],
   localOnlyTags = [],
+  remoteOnlyTags = [],
+  divergentTags = [],
   onDeleteTag,
   onRequestDeleteTag,
   onRequestDeleteBranch,
@@ -242,6 +246,19 @@ const BranchList = ({
   // Memoized sorted branches
   const sortedLocalBranches = useMemo(() => sortBranches(branches), [sortBranches, branches])
   const sortedRemoteBranches = useMemo(() => sortBranches(remoteBranches), [sortBranches, remoteBranches])
+
+  // All known tags (local + remote-only) deduped — used by the search-matched
+  // tag list below so a tag the user is searching for shows up even if its
+  // commit isn't reachable from any expanded branch's recent log.
+  const allKnownTags = useMemo(() => {
+    return Array.from(new Set([...localTags, ...remoteOnlyTags]))
+  }, [localTags, remoteOnlyTags])
+
+  const matchingTags = useMemo(() => {
+    const term = tagSearchTerm.trim().toLowerCase()
+    if (!term) return []
+    return allKnownTags.filter((t) => t.toLowerCase().includes(term))
+  }, [allKnownTags, tagSearchTerm])
 
   // Auto-load commits for all branches when tag search is active
   React.useEffect(() => {
@@ -470,17 +487,113 @@ const BranchList = ({
           <span className={styles.legendText}>Local only</span>
         </span>
         <span className={styles.legendItem}>
+          <span className={`${styles.legendBadge} ${styles.remoteOnly}`}>
+            <Tag size={8} />
+          </span>
+          <span className={styles.legendText}>Remote only</span>
+        </span>
+        <span className={styles.legendItem}>
           <span className={`${styles.legendBadge} ${styles.synced}`}>
             <Tag size={8} />
           </span>
           <span className={styles.legendText}>Synced</span>
         </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendBadge} ${styles.divergent}`}>
+            <Tag size={8} />
+          </span>
+          <span className={styles.legendText}>Divergent</span>
+        </span>
       </div>
+
+      {/* Divergent tag warning — these block `git fetch` with "would clobber existing tag" */}
+      {divergentTags.length > 0 && (
+        <div className={styles.divergentWarning}>
+          <AlertTriangle size={14} className={styles.divergentWarningIcon} />
+          <div className={styles.divergentWarningBody}>
+            <div className={styles.divergentWarningTitle}>
+              {divergentTags.length} divergent tag
+              {divergentTags.length === 1 ? '' : 's'} blocking fetch
+            </div>
+            <div className={styles.divergentWarningTags}>
+              {divergentTags.slice(0, 5).map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`${styles.tagBadge} ${styles.divergent} ${styles.matchingTagItem}`}
+                  title="Click to search this tag — right-click on the matching badge to delete the local copy"
+                  onClick={() => setTagSearchTerm(tag)}
+                  onContextMenu={(e) =>
+                    handleContextMenu(e, 'tag', {
+                      name: tag,
+                      isDivergent: true
+                    })
+                  }
+                >
+                  <Tag size={9} />
+                  {tag}
+                </button>
+              ))}
+              {divergentTags.length > 5 && (
+                <span className={styles.divergentWarningMore}>
+                  +{divergentTags.length - 5} more
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       
       {loadingCommits && tagSearchTerm && (
         <div className={styles.loadingHint}>
           <RefreshCw size={12} className={styles.spinning} />
           <span>Loading commits...</span>
+        </div>
+      )}
+      {tagSearchTerm && matchingTags.length > 0 && (
+        <div className={styles.matchingTagsSection}>
+          <div className={styles.matchingTagsHeader}>
+            Matching tags ({matchingTags.length})
+          </div>
+          <div className={styles.matchingTagsList}>
+            {matchingTags.map((tag) => {
+              const isDivergent = divergentTags.includes(tag)
+              const isLocalOnly = localOnlyTags.includes(tag)
+              const isRemoteOnly = remoteOnlyTags.includes(tag)
+              const variant = isDivergent
+                ? styles.divergent
+                : isRemoteOnly
+                  ? styles.remoteOnly
+                  : isLocalOnly
+                    ? styles.localOnly
+                    : styles.synced
+              const titleText = isDivergent
+                ? 'Divergent — local & remote point to different commits (right-click to delete)'
+                : isRemoteOnly
+                  ? 'Remote only (right-click to delete)'
+                  : isLocalOnly
+                    ? 'Local only (right-click to delete)'
+                    : 'Synced (right-click to delete)'
+              return (
+                <span
+                  key={tag}
+                  className={`${styles.tagBadge} ${variant} ${styles.matchingTagItem}`}
+                  title={titleText}
+                  onContextMenu={(e) =>
+                    handleContextMenu(e, 'tag', {
+                      name: tag,
+                      isLocalOnly,
+                      isRemoteOnly,
+                      isDivergent
+                    })
+                  }
+                >
+                  <Tag size={9} />
+                  {tag}
+                </span>
+              )
+            })}
+          </div>
         </div>
       )}
       <div className={styles.listSection}>
@@ -548,12 +661,28 @@ const BranchList = ({
                                 {tags.length > 0 && (
                                   <div className={styles.tagBadges}>
                                     {tags.slice(0, 2).map((tag) => {
+                                      const isDivergent = divergentTags.includes(tag)
                                       const isLocalOnly = localOnlyTags.includes(tag)
+                                      const isRemoteOnly = remoteOnlyTags.includes(tag)
+                                      const variant = isDivergent
+                                        ? styles.divergent
+                                        : isRemoteOnly
+                                          ? styles.remoteOnly
+                                          : isLocalOnly
+                                            ? styles.localOnly
+                                            : styles.synced
+                                      const titleText = isDivergent
+                                        ? `${tag} (Divergent — local & remote point to different commits)`
+                                        : isRemoteOnly
+                                          ? `${tag} (Remote only)`
+                                          : isLocalOnly
+                                            ? `${tag} (Local only)`
+                                            : `${tag} (Synced)`
                                       return (
-                                        <span 
-                                          key={tag} 
-                                          className={`${styles.tagBadge} ${isLocalOnly ? styles.localOnly : styles.synced}`} 
-                                          title={isLocalOnly ? `${tag} (Local only)` : `${tag} (Synced)`}
+                                        <span
+                                          key={tag}
+                                          className={`${styles.tagBadge} ${variant}`}
+                                          title={titleText}
                                         >
                                           <Tag size={9} />
                                           {tag}
@@ -610,12 +739,28 @@ const BranchList = ({
                                           {commit.tags.length > 0 && (
                                             <div className={styles.commitTags}>
                                               {commit.tags.map((tag) => {
+                                                const isDivergent = divergentTags.includes(tag)
                                                 const isLocalOnly = localOnlyTags.includes(tag)
+                                                const isRemoteOnly = remoteOnlyTags.includes(tag)
+                                                const variant = isDivergent
+                                                  ? styles.divergent
+                                                  : isRemoteOnly
+                                                    ? styles.remoteOnly
+                                                    : isLocalOnly
+                                                      ? styles.localOnly
+                                                      : styles.synced
+                                                const titleText = isDivergent
+                                                  ? `${tag} (Divergent — local & remote point to different commits)`
+                                                  : isRemoteOnly
+                                                    ? `${tag} (Remote only)`
+                                                    : isLocalOnly
+                                                      ? `${tag} (Local only)`
+                                                      : `${tag} (Synced)`
                                                 return (
-                                                  <span 
-                                                    key={tag} 
-                                                    className={`${styles.commitTag} ${isLocalOnly ? styles.localOnly : styles.synced}`}
-                                                    title={isLocalOnly ? `${tag} (Local only)` : `${tag} (Synced)`}
+                                                  <span
+                                                    key={tag}
+                                                    className={`${styles.commitTag} ${variant}`}
+                                                    title={titleText}
                                                   >
                                                     <Tag size={8} />
                                                     {tag}
@@ -915,6 +1060,8 @@ const BranchList = ({
         target={contextMenu.target}
         branchTags={contextMenu.tags}
         localOnlyTags={localOnlyTags}
+        remoteOnlyTags={remoteOnlyTags}
+        divergentTags={divergentTags}
         currentBranch={currentBranch}
         onMerge={onMerge}
         onCheckout={onCheckout}

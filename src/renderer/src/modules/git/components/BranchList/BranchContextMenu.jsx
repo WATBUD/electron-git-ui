@@ -19,6 +19,8 @@ export const BranchContextMenu = ({
   onClose,
   branchTags = [], // tags associated with this branch/commit
   localOnlyTags = [], // list of local-only tag names
+  remoteOnlyTags = [], // list of remote-only tag names
+  divergentTags = [], // list of tags whose local & remote point to different commits
   onRefreshCommits, // callback to refresh commits after tag operations
   onRequestDeleteTag, // callback to request tag deletion confirmation from parent
   onRequestDeleteBranch // callback to request branch deletion confirmation from parent
@@ -150,28 +152,42 @@ export const BranchContextMenu = ({
             <Copy size={14} />
             <span>Copy Tag Name</span>
           </button>
-          <button
-            className={styles.contextMenuItem}
-            onMouseDown={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              
-              const tagToDelete = expandedTagSubmenu
-              
-              // Close menus first
-              setExpandedTagSubmenu(null)
-              onClose()
-              
-              // Then request confirmation dialog from parent
-              if (onRequestDeleteTag) {
-                onRequestDeleteTag(tagToDelete, onRefreshCommits)
-              }
-            }}
-            style={{ color: '#ff3b30' }}
-          >
-            <Trash2 size={14} />
-            <span>Delete Tag</span>
-          </button>
+          {(() => {
+            const tagName = expandedTagSubmenu
+            const isLocalOnly = localOnlyTags.includes(tagName)
+            const isRemoteOnly = remoteOnlyTags.includes(tagName)
+            const isDivergent = divergentTags.includes(tagName)
+            const allOptions = [
+              { mode: 'local', label: 'Delete Local Tag' },
+              { mode: 'remote', label: 'Delete Remote Tag' },
+              { mode: 'both', label: 'Delete Local + Remote' }
+            ]
+            const visible = isLocalOnly || isDivergent
+              ? allOptions.filter((o) => o.mode === 'local')
+              : isRemoteOnly
+                ? allOptions.filter((o) => o.mode === 'remote')
+                : allOptions
+            return visible.map(({ mode, label }) => (
+              <button
+                key={mode}
+                className={styles.contextMenuItem}
+                onMouseDown={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  const tagToDelete = tagName
+                  setExpandedTagSubmenu(null)
+                  onClose()
+                  if (onRequestDeleteTag) {
+                    onRequestDeleteTag(tagToDelete, onRefreshCommits, mode)
+                  }
+                }}
+                style={{ color: '#ff3b30' }}
+              >
+                <Trash2 size={14} />
+                <span>{label}</span>
+              </button>
+            ))
+          })()}
         </div>
       </div>
     )
@@ -430,26 +446,43 @@ export const BranchContextMenu = ({
             <Copy size={14} />
             <span>Copy Tag Name</span>
           </button>
-          <button
-            className={styles.contextMenuItem}
-            onClick={(e) => {
-              e.stopPropagation()
-              
-              const tagToDelete = tag?.name
-              
-              // Close menu first
-              onClose()
-              
-              // Then request confirmation dialog from parent
-              if (onRequestDeleteTag) {
-                onRequestDeleteTag(tagToDelete, onRefreshCommits)
-              }
-            }}
-            style={{ color: '#ff3b30' }}
-          >
-            <Tag size={14} />
-            <span>Delete Tag</span>
-          </button>
+          {(() => {
+            // Prefer flags coming from the target object; fall back to props arrays.
+            const isLocalOnly =
+              tag?.isLocalOnly ?? localOnlyTags.includes(tag?.name)
+            const isRemoteOnly =
+              tag?.isRemoteOnly ?? remoteOnlyTags.includes(tag?.name)
+            const isDivergent =
+              tag?.isDivergent ?? divergentTags.includes(tag?.name)
+            const allOptions = [
+              { mode: 'local', label: 'Delete Local Tag' },
+              { mode: 'remote', label: 'Delete Remote Tag' },
+              { mode: 'both', label: 'Delete Local + Remote' }
+            ]
+            const visible = isLocalOnly || isDivergent
+              ? allOptions.filter((o) => o.mode === 'local')
+              : isRemoteOnly
+                ? allOptions.filter((o) => o.mode === 'remote')
+                : allOptions
+            return visible.map(({ mode, label }) => (
+              <button
+                key={mode}
+                className={styles.contextMenuItem}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const tagToDelete = tag?.name
+                  onClose()
+                  if (onRequestDeleteTag) {
+                    onRequestDeleteTag(tagToDelete, onRefreshCommits, mode)
+                  }
+                }}
+                style={{ color: '#ff3b30' }}
+              >
+                <Trash2 size={14} />
+                <span>{label}</span>
+              </button>
+            ))
+          })()}
         </div>
       </div>
       </>

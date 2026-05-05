@@ -119,6 +119,71 @@
   color: #34c759;
 }
 
+.legendBadge.remoteOnly {
+  background-color: rgba(10, 132, 255, 0.15);
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  color: #0a84ff;
+}
+
+.legendBadge.divergent {
+  background-color: rgba(255, 59, 48, 0.15);
+  border: 1px solid rgba(255, 59, 48, 0.5);
+  color: #ff6b6b;
+}
+
+.divergentWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background-color: rgba(255, 59, 48, 0.08);
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  border-radius: var(--input-radius);
+}
+
+.divergentWarningIcon {
+  color: #ff6b6b;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.divergentWarningBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.divergentWarningTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ff8a80;
+  margin-bottom: 6px;
+}
+
+.divergentWarningTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.divergentWarningTags button {
+  background: rgba(255, 59, 48, 0.18);
+  border: 1px solid rgba(255, 59, 48, 0.55);
+  color: #ff8a80;
+  cursor: pointer;
+  font: inherit;
+}
+
+.divergentWarningTags button:hover {
+  background: rgba(255, 59, 48, 0.28);
+}
+
+.divergentWarningMore {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .legendText {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.6);
@@ -415,6 +480,18 @@
   color: #34c759;
 }
 
+.commitTag.remoteOnly {
+  background-color: rgba(10, 132, 255, 0.2);
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  color: #0a84ff;
+}
+
+.commitTag.divergent {
+  background-color: rgba(255, 59, 48, 0.2);
+  border: 1px solid rgba(255, 59, 48, 0.5);
+  color: #ff6b6b;
+}
+
 .branchMain {
   display: flex;
   align-items: center;
@@ -481,6 +558,46 @@
   background-color: rgba(52, 199, 89, 0.15);
   border: 1px solid rgba(52, 199, 89, 0.4);
   color: #34c759;
+}
+
+.tagBadge.remoteOnly {
+  background-color: rgba(10, 132, 255, 0.15);
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  color: #0a84ff;
+}
+
+.tagBadge.divergent {
+  background-color: rgba(255, 59, 48, 0.15);
+  border: 1px solid rgba(255, 59, 48, 0.5);
+  color: #ff6b6b;
+}
+
+.matchingTagsSection {
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--input-radius);
+}
+
+.matchingTagsHeader {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 6px;
+}
+
+.matchingTagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.matchingTagItem {
+  cursor: context-menu;
+  max-width: 240px;
 }
 
 .localOnlyBadge {

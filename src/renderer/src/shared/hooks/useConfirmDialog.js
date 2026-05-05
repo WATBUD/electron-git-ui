@@ -1,20 +1,24 @@
 import { useState } from 'react'
 
+const initialConfirmState = {
+  show: false,
+  type: '',
+  name: '',
+  isRemote: false,
+  mode: '',
+  message: '',
+  onConfirm: null,
+  refreshCallback: null
+}
+
 export const useConfirmDialog = () => {
-  const [confirmDialog, setConfirmDialog] = useState({
-    show: false,
-    type: '', // 'tag', 'branch', or custom type
-    name: '',
-    isRemote: false,
-    message: '',
-    onConfirm: null,
-    refreshCallback: null
-  })
+  const [confirmDialog, setConfirmDialog] = useState(initialConfirmState)
 
   const requestConfirm = ({
     type,
     name,
     isRemote = false,
+    mode = '',
     message,
     onConfirm,
     refreshCallback
@@ -24,51 +28,42 @@ export const useConfirmDialog = () => {
       type,
       name,
       isRemote,
-      message: message || getDefaultMessage(type, name, isRemote),
+      mode,
+      message: message || getDefaultMessage(type, name, isRemote, mode),
       onConfirm,
       refreshCallback
     })
   }
 
   const handleConfirm = async () => {
-    if (confirmDialog.onConfirm) {
-      try {
-        await confirmDialog.onConfirm()
-        if (confirmDialog.refreshCallback) {
-          confirmDialog.refreshCallback()
-        }
-      } catch (error) {
-        console.error('Error in confirm action:', error)
-        throw error
-      }
+    // Snapshot callbacks then close immediately so the user can't double-click.
+    const onConfirm = confirmDialog.onConfirm
+    const refreshCallback = confirmDialog.refreshCallback
+    setConfirmDialog(initialConfirmState)
+    if (!onConfirm) return
+    try {
+      await onConfirm()
+      if (refreshCallback) refreshCallback()
+    } catch (error) {
+      console.error('Error in confirm action:', error)
     }
-    setConfirmDialog({
-      show: false,
-      type: '',
-      name: '',
-      isRemote: false,
-      message: '',
-      onConfirm: null,
-      refreshCallback: null
-    })
   }
 
   const handleCancel = () => {
-    setConfirmDialog({
-      show: false,
-      type: '',
-      name: '',
-      isRemote: false,
-      message: '',
-      onConfirm: null,
-      refreshCallback: null
-    })
+    setConfirmDialog(initialConfirmState)
   }
 
-  const getDefaultMessage = (type, name, isRemote) => {
+  const getDefaultMessage = (type, name, isRemote, mode) => {
     switch (type) {
-      case 'tag':
-        return `Are you sure you want to delete the tag "${name}"? This will remove the tag from both local and remote repositories.`
+      case 'tag': {
+        if (mode === 'local') {
+          return `Delete the local copy of tag "${name}"? Remote tag will be kept.`
+        }
+        if (mode === 'remote') {
+          return `Delete the remote tag "${name}" on origin? Local tag will be kept.`
+        }
+        return `Delete the tag "${name}" from both local and remote repositories?`
+      }
       case 'branch':
         if (isRemote) {
           return `Are you sure you want to delete the remote branch "${name}"? This action cannot be undone.`
