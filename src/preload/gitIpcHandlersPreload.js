@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld('git', {
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),
   createBranch: (branchName) => ipcRenderer.invoke('git:createBranch', branchName),
   checkoutBranch: (branchName) => ipcRenderer.invoke('git:checkoutBranch', branchName),
-  deleteBranch: (branchName) => ipcRenderer.invoke('git:deleteBranch', branchName),
+  deleteBranch: (branchName, force) => ipcRenderer.invoke('git:deleteBranch', branchName, force),
   renameBranch: (oldName, newName) => ipcRenderer.invoke('git:renameBranch', oldName, newName),
   deleteRemoteBranch: (branchName) => ipcRenderer.invoke('git:deleteRemoteBranch', branchName),
   getCommandHistory: () => ipcRenderer.invoke('git:getCommandHistory'),

@@ -8,7 +8,9 @@ const initialConfirmState = {
   mode: '',
   message: '',
   onConfirm: null,
-  refreshCallback: null
+  refreshCallback: null,
+  toggle: null,
+  toggleValue: false
 }
 
 export const useConfirmDialog = () => {
@@ -21,7 +23,8 @@ export const useConfirmDialog = () => {
     mode = '',
     message,
     onConfirm,
-    refreshCallback
+    refreshCallback,
+    toggle = null
   }) => {
     setConfirmDialog({
       show: true,
@@ -31,18 +34,25 @@ export const useConfirmDialog = () => {
       mode,
       message: message || getDefaultMessage(type, name, isRemote, mode),
       onConfirm,
-      refreshCallback
+      refreshCallback,
+      toggle,
+      toggleValue: toggle?.defaultValue ?? false
     })
+  }
+
+  const setToggleValue = (value) => {
+    setConfirmDialog((prev) => ({ ...prev, toggleValue: value }))
   }
 
   const handleConfirm = async () => {
     // Snapshot callbacks then close immediately so the user can't double-click.
     const onConfirm = confirmDialog.onConfirm
     const refreshCallback = confirmDialog.refreshCallback
+    const toggleValue = confirmDialog.toggleValue
     setConfirmDialog(initialConfirmState)
     if (!onConfirm) return
     try {
-      await onConfirm()
+      await onConfirm({ toggleValue })
       if (refreshCallback) refreshCallback()
     } catch (error) {
       console.error('Error in confirm action:', error)
@@ -90,6 +100,7 @@ export const useConfirmDialog = () => {
     requestConfirm,
     handleConfirm,
     handleCancel,
+    setToggleValue,
     getTitle
   }
 }

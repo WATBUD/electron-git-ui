@@ -151,21 +151,29 @@ export const checkMergeInProgress = createAsyncThunk(
 
 export const deleteBranch = createAsyncThunk(
   'git/deleteBranch',
-  async (branchName, { rejectWithValue, dispatch, getState }) => {
+  async (payload, { rejectWithValue, dispatch, getState }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    // Mark the start of this operation
+    // Back-compat: callers can still pass the branch name as a plain string.
+    const branchName = typeof payload === 'string' ? payload : payload?.branchName
+    const force = typeof payload === 'string' ? false : !!payload?.force
+
     markOperationStart(dispatch, getState)
 
     const result = await callGit(
-      () => window.git.deleteBranch(branchName),
+      () => window.git.deleteBranch(branchName, force),
       rejectWithValue,
       'Failed to delete branch',
       'deleteBranch'
     )
     await dispatch(updateCommandHistory())
-    await dispatch(loadBranches())
+    // Only reload on success — loadBranches.pending would otherwise wipe
+    // state.error and the failure (e.g. "branch is not fully merged") would
+    // never reach the ErrorModal.
+    if (result?.success) {
+      await dispatch(loadBranches())
+    }
     return result
   }
 )

@@ -446,12 +446,13 @@ ${fileContent
     }
   })
 
-  ipcMain.handle('git:deleteBranch', async (_, branchName) => {
+  ipcMain.handle('git:deleteBranch', async (_, branchName, force = false) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
     try {
-      const command = `git branch -d ${branchName}`
+      const flag = force ? '-D' : '-d'
+      const command = `git branch ${flag} ${branchName}`
       commandHistory.push(command)
       await execAsync(command, { cwd: currentRepoPath })
       return success()

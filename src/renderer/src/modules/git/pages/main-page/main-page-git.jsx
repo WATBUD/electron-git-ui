@@ -64,7 +64,7 @@ import {
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
   const [activeTab, setActiveTab] = useState(GIT_TABS.PROJECTS)
-  const { confirmDialog, requestConfirm, handleConfirm, handleCancel, getTitle } = useConfirmDialog()
+  const { confirmDialog, requestConfirm, handleConfirm, handleCancel, setToggleValue, getTitle } = useConfirmDialog()
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -236,17 +236,22 @@ export const MainPageGit = () => {
       type: 'branch',
       name: branchName,
       isRemote,
-      onConfirm: async () => {
-        try {
-          if (isRemote) {
-            await dispatch(deleteRemoteBranch(branchName))
-          } else {
-            await dispatch(deleteBranch(branchName))
-          }
+      // Force-delete only applies to local branches (`-D` vs `-d`); remote
+      // delete (`git push origin --delete`) ignores merge state already.
+      toggle: isRemote
+        ? null
+        : {
+            label: 'Force delete (allow unmerged commits)',
+            hint: 'Use git branch -D — irreversibly drops commits not merged elsewhere.',
+            defaultValue: false
+          },
+      onConfirm: async ({ toggleValue }) => {
+        const result = isRemote
+          ? await dispatch(deleteRemoteBranch(branchName))
+          : await dispatch(deleteBranch({ branchName, force: !!toggleValue }))
+        const action = isRemote ? deleteRemoteBranch : deleteBranch
+        if (action.fulfilled.match(result)) {
           await dispatch(loadBranches())
-        } catch (error) {
-          console.error('Error deleting branch:', error)
-          throw error
         }
       }
     })
@@ -487,11 +492,14 @@ export const MainPageGit = () => {
         show={confirmDialog.show}
         title={getTitle(confirmDialog.type)}
         message={confirmDialog.message}
-        confirmText="Delete"
+        confirmText={confirmDialog.toggleValue ? 'Force Delete' : 'Delete'}
         cancelText="Cancel"
         variant="danger"
         onConfirm={handleConfirm}
         onCancel={handleCancel}
+        toggle={confirmDialog.toggle}
+        toggleValue={confirmDialog.toggleValue}
+        onToggleChange={setToggleValue}
       />
     </div>
   )
