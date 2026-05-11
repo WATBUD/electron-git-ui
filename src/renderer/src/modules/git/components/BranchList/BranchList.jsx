@@ -11,15 +11,14 @@ import {
   ArrowDownLeft,
   CheckCircle2,
   Clock,
-  X,
-  FileCode,
   AlertTriangle
 } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenu } from './BranchContextMenu'
+import { CommitDiffModal } from './CommitDiffModal'
 import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
-import { getBranchCommits, getCommitDiff } from '../../store/git/gitThunks'
+import { getBranchCommits } from '../../store/git/gitThunks'
 import styles from './BranchList.module.css'
 
 // Constants
@@ -75,99 +74,15 @@ const BranchList = ({
   const [expandedBranches, setExpandedBranches] = useState(new Set())
   const [branchCommits, setBranchCommits] = useState({})
   const [loadingCommits, setLoadingCommits] = useState(false)
-  const [commitDiffModal, setCommitDiffModal] = useState({
-    show: false,
-    commit: null,
-    files: [],
-    diff: '',
-    loading: false,
-    error: null
-  })
-  const [collapsedDiffFiles, setCollapsedDiffFiles] = useState(new Set())
+  const [viewingCommit, setViewingCommit] = useState(null)
   const dispatch = useDispatch()
 
-  // Split `git show` output into per-file sections so each can be collapsed.
-  const parsedDiffFiles = useMemo(() => {
-    const text = commitDiffModal.diff || ''
-    if (!text) return { header: '', files: [] }
-
-    const lines = text.split('\n')
-    const fileStartIdxs = []
-    lines.forEach((line, idx) => {
-      if (line.startsWith('diff --git ')) fileStartIdxs.push(idx)
-    })
-
-    const header = fileStartIdxs.length > 0
-      ? lines.slice(0, fileStartIdxs[0]).join('\n')
-      : text
-
-    const files = fileStartIdxs.map((startIdx, i) => {
-      const endIdx = i + 1 < fileStartIdxs.length ? fileStartIdxs[i + 1] : lines.length
-      const sectionLines = lines.slice(startIdx, endIdx)
-      // Path: prefer "+++ b/<path>" (handles renames; "/dev/null" means deletion)
-      let path = null
-      for (const l of sectionLines) {
-        if (l.startsWith('+++ b/')) {
-          path = l.slice(6)
-          break
-        }
-      }
-      if (!path) {
-        // Fallback: parse from "diff --git a/<x> b/<y>"
-        const m = sectionLines[0].match(/^diff --git a\/(.+?) b\/(.+)$/)
-        if (m) path = m[2]
-      }
-      return { path: path || `file-${i}`, lines: sectionLines }
-    })
-
-    return { header, files }
-  }, [commitDiffModal.diff])
-
-  const toggleDiffFile = useCallback((path) => {
-    setCollapsedDiffFiles((prev) => {
-      const next = new Set(prev)
-      if (next.has(path)) next.delete(path)
-      else next.add(path)
-      return next
-    })
+  const handleViewCommit = useCallback((commit) => {
+    setViewingCommit(commit)
   }, [])
 
-  const handleViewCommit = useCallback(async (commit) => {
-    setCollapsedDiffFiles(new Set())
-    setCommitDiffModal({
-      show: true,
-      commit,
-      files: [],
-      diff: '',
-      loading: true,
-      error: null
-    })
-    try {
-      const result = await dispatch(getCommitDiff(commit.hash)).unwrap()
-      setCommitDiffModal((prev) => ({
-        ...prev,
-        files: result.data?.files || [],
-        diff: result.data?.diff || '',
-        loading: false
-      }))
-    } catch (err) {
-      setCommitDiffModal((prev) => ({
-        ...prev,
-        loading: false,
-        error: (typeof err === 'string' ? err : err?.message) || 'Failed to load commit diff'
-      }))
-    }
-  }, [dispatch])
-
   const closeCommitDiffModal = useCallback(() => {
-    setCommitDiffModal({
-      show: false,
-      commit: null,
-      files: [],
-      diff: '',
-      loading: false,
-      error: null
-    })
+    setViewingCommit(null)
   }, [])
 
   // Memoized branch prefix
@@ -949,104 +864,7 @@ const BranchList = ({
         </div>
       )}
 
-      {commitDiffModal.show && (
-        <div className={styles.modalOverlay} onClick={closeCommitDiffModal}>
-          <div
-            className={`${styles.macModal} ${styles.commitDiffModal}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.commitDiffHeader}>
-              <div className={styles.commitDiffTitle}>
-                <FileCode size={16} />
-                <h3>{commitDiffModal.commit?.shortHash}</h3>
-                <span className={styles.commitDiffSubject}>
-                  {commitDiffModal.commit?.message}
-                </span>
-              </div>
-              <button
-                className={styles.commitDiffClose}
-                onClick={closeCommitDiffModal}
-                title="Close"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <div className={styles.commitDiffMeta}>
-              <span>{commitDiffModal.commit?.author}</span>
-              <span>{commitDiffModal.commit?.date}</span>
-            </div>
-            <div className={styles.commitDiffBody}>
-              {commitDiffModal.loading ? (
-                <div className={styles.commitDiffLoading}>Loading...</div>
-              ) : commitDiffModal.error ? (
-                <div className={styles.commitDiffError}>{commitDiffModal.error}</div>
-              ) : (
-                <>
-                  {parsedDiffFiles.header && (
-                    <pre className={`${styles.commitDiffContent} ${styles.commitDiffMessage}`}>
-                      {parsedDiffFiles.header.split('\n').map((line, idx) => (
-                        <div key={idx} className={styles.diffMeta}>
-                          {line || ' '}
-                        </div>
-                      ))}
-                    </pre>
-                  )}
-                  {parsedDiffFiles.files.map((f) => {
-                    const meta = commitDiffModal.files.find(
-                      (it) => it.file === f.path || it.oldFile === f.path
-                    )
-                    const status = meta?.status
-                    const isCollapsed = collapsedDiffFiles.has(f.path)
-                    return (
-                      <div key={f.path} className={styles.commitDiffFileSection}>
-                        <button
-                          type="button"
-                          className={styles.commitDiffFileHeader}
-                          onClick={() => toggleDiffFile(f.path)}
-                        >
-                          <ChevronDown
-                            size={12}
-                            className={`${styles.chevronIcon} ${isCollapsed ? styles.collapsed : ''}`}
-                          />
-                          {status && (
-                            <span
-                              className={`${styles.commitDiffFileStatus} ${
-                                styles[`status_${status.charAt(0)}`] || ''
-                              }`}
-                            >
-                              {status}
-                            </span>
-                          )}
-                          <span className={styles.commitDiffFileName}>
-                            {meta?.oldFile ? `${meta.oldFile} → ${meta.file}` : f.path}
-                          </span>
-                        </button>
-                        {!isCollapsed && (
-                          <pre className={styles.commitDiffContent}>
-                            {f.lines.map((line, idx) => {
-                              let cls = styles.diffContext
-                              if (line.startsWith('+++') || line.startsWith('---')) cls = styles.diffMeta
-                              else if (line.startsWith('@@')) cls = styles.diffHunk
-                              else if (line.startsWith('+')) cls = styles.diffAdd
-                              else if (line.startsWith('-')) cls = styles.diffDel
-                              else if (line.startsWith('diff ') || line.startsWith('index ') || line.startsWith('new file') || line.startsWith('deleted file') || line.startsWith('similarity ') || line.startsWith('rename ')) cls = styles.diffMeta
-                              return (
-                                <div key={idx} className={cls}>
-                                  {line || ' '}
-                                </div>
-                              )
-                            })}
-                          </pre>
-                        )}
-                      </div>
-                    )
-                  })}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <CommitDiffModal commit={viewingCommit} onClose={closeCommitDiffModal} />
 
       <BranchContextMenu
         show={contextMenu.show}
