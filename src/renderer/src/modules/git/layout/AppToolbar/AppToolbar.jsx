@@ -8,12 +8,14 @@ import {
   clearCachedDiff,
   addPrefix,
   removePrefix,
-  toggleSelectedPrefix
+  toggleSelectedPrefix,
+  fetchUserConfig,
+  setUserConfig
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import styles from './AppToolbar.module.css'
-import { Trash2, Plus, Check, Eye, GitMerge, Type, Clock } from 'lucide-react'
+import { Trash2, Plus, Check, Eye, GitMerge, Type, Clock, User } from 'lucide-react'
 import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
 
 const PrefixItem = React.memo(({ prefix, onRemove }) => {
@@ -69,12 +71,33 @@ export const AppToolbar = () => {
   const mergeMenuRef = useRef(null)
   const viewMenuRef = useRef(null)
   const prefixMenuRef = useRef(null)
+  const authorMenuRef = useRef(null)
   const [newPrefix, setNewPrefix] = useState('')
   const dispatch = useDispatch()
   const showFooter = useSelector((state) => state.git.showFooter)
   const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const cachedDiff = useSelector((state) => state.git.cachedDiff)
+  const userConfig = useSelector((state) => state.git.userConfig)
+  const repoPath = useSelector((state) => state.git.repoPath)
   const [showDiffModal, setShowDiffModal] = useState(false)
+  const [authorDraft, setAuthorDraft] = useState({ name: '', email: '' })
+  const [authorSaving, setAuthorSaving] = useState(false)
+
+  // Refresh author when the repo changes.
+  useEffect(() => {
+    if (repoPath) dispatch(fetchUserConfig())
+  }, [repoPath, dispatch])
+
+  // Sync draft with the latest fetched config (unless the author menu is open
+  // and the user is mid-edit).
+  useEffect(() => {
+    if (activeMenu !== 'author') {
+      setAuthorDraft({
+        name: userConfig?.name || '',
+        email: userConfig?.email || ''
+      })
+    }
+  }, [userConfig, activeMenu])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -85,7 +108,9 @@ export const AppToolbar = () => {
         viewMenuRef.current &&
         !viewMenuRef.current.contains(event.target) &&
         prefixMenuRef.current &&
-        !prefixMenuRef.current.contains(event.target)
+        !prefixMenuRef.current.contains(event.target) &&
+        authorMenuRef.current &&
+        !authorMenuRef.current.contains(event.target)
       ) {
         setActiveMenu(null)
       }
@@ -97,7 +122,7 @@ export const AppToolbar = () => {
       // Unbind the event listener on clean up
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [mergeMenuRef, viewMenuRef, prefixMenuRef])
+  }, [mergeMenuRef, viewMenuRef, prefixMenuRef, authorMenuRef])
 
   const toggleMenu = (menuName) => {
     setActiveMenu(activeMenu === menuName ? null : menuName)
@@ -134,6 +159,24 @@ export const AppToolbar = () => {
     },
     [dispatch]
   )
+
+  const handleSaveAuthor = async () => {
+    const name = (authorDraft.name || '').trim()
+    const email = (authorDraft.email || '').trim()
+    if (name === (userConfig?.name || '') && email === (userConfig?.email || '')) {
+      setActiveMenu(null)
+      return
+    }
+    setAuthorSaving(true)
+    try {
+      await dispatch(setUserConfig({ name, email })).unwrap()
+      setActiveMenu(null)
+    } catch (err) {
+      console.error('Failed to update user config:', err)
+    } finally {
+      setAuthorSaving(false)
+    }
+  }
 
   return (
     <div className={styles.appToolbar}>
@@ -199,6 +242,55 @@ export const AppToolbar = () => {
               Abort Merge
             </button>
           </CustomTooltip>
+        </div>
+      </div>
+
+      <div
+        className={`${styles.toolbarMenu} ${activeMenu === 'author' ? styles.active : ''}`}
+        ref={authorMenuRef}
+      >
+        <span className={styles.menuLabel} onClick={() => toggleMenu('author')}>
+          <User size={14} style={{ marginRight: '6px' }} />
+          Author
+        </span>
+        <div className={styles.menuContent}>
+          <div className={styles.authorField}>
+            <label className={styles.authorLabel}>Name</label>
+            <input
+              type="text"
+              className={styles.authorInput}
+              value={authorDraft.name}
+              placeholder="user.name"
+              onChange={(e) => setAuthorDraft((prev) => ({ ...prev, name: e.target.value }))}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <div className={styles.authorField}>
+            <label className={styles.authorLabel}>Email</label>
+            <input
+              type="email"
+              className={styles.authorInput}
+              value={authorDraft.email}
+              placeholder="user.email"
+              onChange={(e) => setAuthorDraft((prev) => ({ ...prev, email: e.target.value }))}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveAuthor()
+              }}
+            />
+          </div>
+          <div className={styles.authorActions}>
+            <button
+              className={`${styles.menuItem} ${styles.authorSaveBtn}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSaveAuthor()
+              }}
+              disabled={authorSaving}
+            >
+              {authorSaving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
         </div>
       </div>
 

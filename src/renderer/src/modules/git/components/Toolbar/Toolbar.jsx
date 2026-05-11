@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
+import React, { useState, useEffect, useRef } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
+import { CopyButton } from '../../../../shared/components/CopyButton'
+import { fetchUserConfig, setUserConfig } from '../../store/git'
 import styles from './Toolbar.module.css'
 import {
   Download,
@@ -10,10 +12,12 @@ import {
   AlertTriangle,
   Circle,
   Folder,
-  Archive
+  Archive,
+  User
 } from 'lucide-react'
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading }) => {
+  const dispatch = useDispatch()
   const [showFetchDialog, setShowFetchDialog] = useState(false)
   const [showPushDialog, setShowPushDialog] = useState(false)
   const [showCommitDialog, setShowCommitDialog] = useState(false)
@@ -24,11 +28,58 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   const [commitAndPush, setCommitAndPush] = useState(false)
   const [commitMessage, setCommitMessage] = useState('')
   const [stashMessage, setStashMessage] = useState('')
+  const [showAuthorEditor, setShowAuthorEditor] = useState(false)
+  const [authorDraft, setAuthorDraft] = useState({ name: '', email: '' })
+  const [authorSaving, setAuthorSaving] = useState(false)
+  const authorRef = useRef(null)
 
   // Get Redux state
   const fileStatus = useSelector((state) => state.git.fileStatus || [])
   const repoPath = useSelector((state) => state.git.repoPath)
   const currentBranch = useSelector((state) => state.git.currentBranch)
+  const userConfig = useSelector((state) => state.git.userConfig)
+
+  useEffect(() => {
+    if (repoPath) dispatch(fetchUserConfig())
+  }, [repoPath, dispatch])
+
+  useEffect(() => {
+    if (!showAuthorEditor) {
+      setAuthorDraft({
+        name: userConfig?.name || '',
+        email: userConfig?.email || ''
+      })
+    }
+  }, [userConfig, showAuthorEditor])
+
+  useEffect(() => {
+    if (!showAuthorEditor) return
+    const handleClickOutside = (e) => {
+      if (authorRef.current && !authorRef.current.contains(e.target)) {
+        setShowAuthorEditor(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showAuthorEditor])
+
+  const handleSaveAuthor = async () => {
+    const name = (authorDraft.name || '').trim()
+    const email = (authorDraft.email || '').trim()
+    if (name === (userConfig?.name || '') && email === (userConfig?.email || '')) {
+      setShowAuthorEditor(false)
+      return
+    }
+    setAuthorSaving(true)
+    try {
+      await dispatch(setUserConfig({ name, email })).unwrap()
+      setShowAuthorEditor(false)
+    } catch (err) {
+      console.error('Failed to update user config:', err)
+    } finally {
+      setAuthorSaving(false)
+    }
+  }
 
   // Calculate Git status
   const getGitStatus = () => {
@@ -185,6 +236,98 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
               }}
             >
               <span className={styles.statusCount}>{gitStatus.count}</span>
+            </div>
+          )}
+        </div>
+        <div className={styles.authorGroup} ref={authorRef}>
+          <button
+            type="button"
+            className={styles.authorBtn}
+            onClick={() => setShowAuthorEditor((prev) => !prev)}
+            disabled={!repoPath}
+            title={
+              userConfig?.name || userConfig?.email
+                ? `${userConfig?.name || ''} <${userConfig?.email || ''}>`
+                : 'Set commit author'
+            }
+          >
+            <User size={12} className={styles.authorIcon} />
+            <span className={styles.authorName}>
+              {userConfig?.name || 'Set author'}
+            </span>
+            {userConfig?.email && (
+              <span className={styles.authorEmail}>{userConfig.email}</span>
+            )}
+          </button>
+
+          {showAuthorEditor && (
+            <div className={styles.authorPopover}>
+              <div className={styles.authorField}>
+                <label className={styles.authorLabel}>Name</label>
+                <div className={styles.authorInputWrapper}>
+                  <input
+                    type="text"
+                    className={styles.authorInput}
+                    value={authorDraft.name}
+                    placeholder="user.name"
+                    autoFocus
+                    onChange={(e) =>
+                      setAuthorDraft((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveAuthor()
+                      if (e.key === 'Escape') setShowAuthorEditor(false)
+                    }}
+                  />
+                  <CopyButton
+                    textToCopy={authorDraft.name || ''}
+                    title="Copy name"
+                    size={12}
+                    className={styles.authorCopyBtn}
+                  />
+                </div>
+              </div>
+              <div className={styles.authorField}>
+                <label className={styles.authorLabel}>Email</label>
+                <div className={styles.authorInputWrapper}>
+                  <input
+                    type="email"
+                    className={styles.authorInput}
+                    value={authorDraft.email}
+                    placeholder="user.email"
+                    onChange={(e) =>
+                      setAuthorDraft((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveAuthor()
+                      if (e.key === 'Escape') setShowAuthorEditor(false)
+                    }}
+                  />
+                  <CopyButton
+                    textToCopy={authorDraft.email || ''}
+                    title="Copy email"
+                    size={12}
+                    className={styles.authorCopyBtn}
+                  />
+                </div>
+              </div>
+              <div className={styles.authorActions}>
+                <button
+                  type="button"
+                  className={styles.authorCancelBtn}
+                  onClick={() => setShowAuthorEditor(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={styles.authorSaveBtn}
+                  onClick={handleSaveAuthor}
+                  disabled={authorSaving}
+                >
+                  {authorSaving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
             </div>
           )}
         </div>

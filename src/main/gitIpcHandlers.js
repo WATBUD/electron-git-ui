@@ -1206,6 +1206,62 @@ ${fileContent
     }
   })
 
+  // Get the local repo's `user.name` / `user.email`. Falls back to global
+  // values if no repo-level override exists.
+  ipcMain.handle('git:getUserConfig', async () => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const readKey = async (key) => {
+        commandHistory.push(`git config --get ${key}`)
+        try {
+          const { stdout } = await execAsync(`git config --get ${key}`, {
+            cwd: currentRepoPath
+          })
+          return stdout.trim()
+        } catch {
+          return ''
+        }
+      }
+      const [name, email] = await Promise.all([
+        readKey('user.name'),
+        readKey('user.email')
+      ])
+      return success({ name, email })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  // Set local repo `user.name` / `user.email`. Empty string unsets the key.
+  ipcMain.handle('git:setUserConfig', async (_, { name, email }) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const writeKey = async (key, value) => {
+        if (value === undefined || value === null) return
+        const trimmed = String(value).trim()
+        if (trimmed === '') {
+          const cmd = `git config --unset ${key}`
+          commandHistory.push(cmd)
+          try {
+            await execAsync(cmd, { cwd: currentRepoPath })
+          } catch {
+            // key may not exist — ignore
+          }
+        } else {
+          const safe = trimmed.replace(/"/g, '\\"')
+          const cmd = `git config ${key} "${safe}"`
+          commandHistory.push(cmd)
+          await execAsync(cmd, { cwd: currentRepoPath })
+        }
+      }
+      await writeKey('user.name', name)
+      await writeKey('user.email', email)
+      return success({ name: (name || '').trim(), email: (email || '').trim() })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:checkMergeInProgress', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')

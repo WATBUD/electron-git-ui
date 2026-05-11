@@ -237,6 +237,42 @@ export const createBranch = createAsyncThunk(
   }
 )
 
+// Reads the repo's `user.name` / `user.email` (falling back to global config).
+export const fetchUserConfig = createAsyncThunk(
+  'git/fetchUserConfig',
+  async (_, { rejectWithValue }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    return callGit(
+      () => window.git.getUserConfig(),
+      rejectWithValue,
+      'Failed to load user config',
+      'getUserConfig'
+    )
+  }
+)
+
+// Writes `user.name` / `user.email` to the repo's local config.
+export const setUserConfig = createAsyncThunk(
+  'git/setUserConfig',
+  async ({ name, email }, { rejectWithValue, dispatch, getState }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    markOperationStart(dispatch, getState)
+
+    const result = await callGit(
+      () => window.git.setUserConfig({ name, email }),
+      rejectWithValue,
+      'Failed to update user config',
+      'setUserConfig'
+    )
+
+    await dispatch(fetchCommandHistory())
+    return result
+  }
+)
+
 export const mergeBranch = createAsyncThunk(
   'git/mergeBranch',
   async (sourceBranch, { rejectWithValue, dispatch, getState }) => {

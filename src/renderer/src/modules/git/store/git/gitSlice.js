@@ -35,7 +35,9 @@ import {
   popStash,
   dropStash,
   renameStash,
-  getStashDiff
+  getStashDiff,
+  fetchUserConfig,
+  setUserConfig
 } from './gitThunks'
 
 const STORAGE_KEYS = {
@@ -101,7 +103,8 @@ const initialState = {
   localOnlyTags: [],
   remoteOnlyTags: [],
   divergentTags: [],
-  tagsLoading: false
+  tagsLoading: false,
+  userConfig: { name: '', email: '' }
 }
 
 const gitSlice = createSlice({
@@ -288,6 +291,23 @@ const gitSlice = createSlice({
         state.hasMergeInProgress = data?.hasMergeInProgress || false
       })
       .addCase(checkMergeInProgress.rejected, (state, action) => {
+        state.error = action.payload
+      })
+      .addCase(fetchUserConfig.fulfilled, (state, action) => {
+        const data = action.payload?.data
+        state.userConfig = {
+          name: data?.name || '',
+          email: data?.email || ''
+        }
+      })
+      .addCase(setUserConfig.fulfilled, (state, action) => {
+        const data = action.payload?.data
+        state.userConfig = {
+          name: data?.name || '',
+          email: data?.email || ''
+        }
+      })
+      .addCase(setUserConfig.rejected, (state, action) => {
         state.error = action.payload
       })
       .addCase(deleteBranch.rejected, (state, action) => {

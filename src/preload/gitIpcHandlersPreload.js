@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('git', {
   openRepository: (path) => ipcRenderer.invoke('git:openRepository', path),
   openInExplorer: (path) => ipcRenderer.invoke('git:openInExplorer', path),
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),
+  getUserConfig: () => ipcRenderer.invoke('git:getUserConfig'),
+  setUserConfig: (config) => ipcRenderer.invoke('git:setUserConfig', config),
   createBranch: (branchName) => ipcRenderer.invoke('git:createBranch', branchName),
   checkoutBranch: (branchName) => ipcRenderer.invoke('git:checkoutBranch', branchName),
   deleteBranch: (branchName, force) => ipcRenderer.invoke('git:deleteBranch', branchName, force),
