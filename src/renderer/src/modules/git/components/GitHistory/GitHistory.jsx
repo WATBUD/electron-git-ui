@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Copy } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
-import { clearCommandHistory, updateCommandHistory } from '../../store/git/gitThunks'
+import { clearCommandHistory, fetchCommandHistory } from '../../store/git/gitThunks'
 import styles from './GitHistory.module.css'
 
 export const GitHistory = () => {
@@ -14,7 +14,7 @@ export const GitHistory = () => {
 
   // Load history when component mounts
   useEffect(() => {
-    dispatch(updateCommandHistory())
+    dispatch(fetchCommandHistory())
   }, [dispatch])
 
   const copyToClipboard = (command, index) => {

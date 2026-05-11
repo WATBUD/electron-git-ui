@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
+import { useDispatch } from 'react-redux'
 import {
   ChevronDown,
   Plus,
@@ -18,6 +19,7 @@ import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenu } from './BranchContextMenu'
 import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
+import { getBranchCommits, getCommitDiff } from '../../store/git/gitThunks'
 import styles from './BranchList.module.css'
 
 // Constants
@@ -82,6 +84,7 @@ const BranchList = ({
     error: null
   })
   const [collapsedDiffFiles, setCollapsedDiffFiles] = useState(new Set())
+  const dispatch = useDispatch()
 
   // Split `git show` output into per-file sections so each can be collapsed.
   const parsedDiffFiles = useMemo(() => {
@@ -140,29 +143,21 @@ const BranchList = ({
       error: null
     })
     try {
-      const result = await window.git.getCommitDiff(commit.hash)
-      if (result?.success) {
-        setCommitDiffModal((prev) => ({
-          ...prev,
-          files: result.data?.files || [],
-          diff: result.data?.diff || '',
-          loading: false
-        }))
-      } else {
-        setCommitDiffModal((prev) => ({
-          ...prev,
-          loading: false,
-          error: result?.message || 'Failed to load commit diff'
-        }))
-      }
+      const result = await dispatch(getCommitDiff(commit.hash)).unwrap()
+      setCommitDiffModal((prev) => ({
+        ...prev,
+        files: result.data?.files || [],
+        diff: result.data?.diff || '',
+        loading: false
+      }))
     } catch (err) {
       setCommitDiffModal((prev) => ({
         ...prev,
         loading: false,
-        error: err?.message || 'Failed to load commit diff'
+        error: (typeof err === 'string' ? err : err?.message) || 'Failed to load commit diff'
       }))
     }
-  }, [])
+  }, [dispatch])
 
   const closeCommitDiffModal = useCallback(() => {
     setCommitDiffModal({
@@ -271,14 +266,16 @@ const BranchList = ({
 
     const loadAllCommits = async () => {
       setLoadingCommits(true)
-      
+
       const loadPromises = branches.map(async (branchObj) => {
         const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
         if (branchCommits[branchName]) return null
-        
+
         try {
-          const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
-          return result.success ? { branchName, commits: result.data } : null
+          const result = await dispatch(
+            getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
+          ).unwrap()
+          return { branchName, commits: result.data }
         } catch (err) {
           console.error('Error loading branch commits:', err)
           return null
@@ -294,12 +291,12 @@ const BranchList = ({
       if (Object.keys(newCommits).length > 0) {
         setBranchCommits(prev => ({ ...prev, ...newCommits }))
       }
-      
+
       setLoadingCommits(false)
     }
 
     loadAllCommits()
-  }, [tagSearchTerm, branches.length, branchCommits])
+  }, [tagSearchTerm, branches.length, branchCommits, dispatch])
 
   // Handle create branch
   const handleCreateBranch = useCallback(() => {
@@ -331,20 +328,19 @@ const BranchList = ({
     }
 
     await onCreateTag(createTagState.tagName, createTagState.branchName)
-    
+
     // Refresh commits for all expanded branches
-    expandedBranches.forEach(branchName => {
-      window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
-        .then(result => {
-          if (result.success) {
-            setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
-          }
+    Array.from(expandedBranches).forEach((branchName) => {
+      dispatch(getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT }))
+        .unwrap()
+        .then((result) => {
+          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
         })
         .catch(err => console.error('Error refreshing branch commits:', err))
     })
-    
+
     setCreateTagState({ show: false, branchName: '', tagName: '' })
-  }, [createTagState, onCreateTag, expandedBranches])
+  }, [createTagState, onCreateTag, expandedBranches, dispatch])
 
   // Submit rename
   const submitRename = useCallback(() => {
@@ -368,54 +364,43 @@ const BranchList = ({
     
     if (!branchCommits[branchName]) {
       try {
-        const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
-        if (result.success) {
-          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
-        }
+        const result = await dispatch(
+          getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
+        ).unwrap()
+        setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
       } catch (err) {
         console.error('Error loading branch commits:', err)
       }
     }
-  }, [branchCommits])
+  }, [branchCommits, dispatch])
 
   // Handle refresh commits
   const handleRefreshCommits = useCallback(() => {
     // Refresh all expanded branches commits
-    expandedBranches.forEach(branchName => {
-      window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
-        .then(result => {
-          if (result.success) {
-            setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
-          }
+    Array.from(expandedBranches).forEach((branchName) => {
+      dispatch(getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT }))
+        .unwrap()
+        .then((result) => {
+          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
         })
         .catch(err => console.error('Error refreshing branch commits:', err))
     })
-    
+
     // Refresh tag search commits
     if (tagSearchTerm && branches.length > 0) {
-      const loadPromises = branches.map(async (branchObj) => {
+      branches.forEach(async (branchObj) => {
         const branchName = typeof branchObj === 'string' ? branchObj : branchObj.name
         try {
-          const result = await window.git.getBranchCommits(branchName, BRANCH_COMMITS_LIMIT)
-          return result.success ? { branchName, commits: result.data } : null
+          const result = await dispatch(
+            getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
+          ).unwrap()
+          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
         } catch (err) {
           console.error('Error loading branch commits:', err)
-          return null
-        }
-      })
-
-      Promise.all(loadPromises).then(results => {
-        const newCommits = results.reduce((acc, result) => {
-          if (result) acc[result.branchName] = result.commits
-          return acc
-        }, {})
-
-        if (Object.keys(newCommits).length > 0) {
-          setBranchCommits(prev => ({ ...prev, ...newCommits }))
         }
       })
     }
-  }, [expandedBranches, tagSearchTerm, branches])
+  }, [expandedBranches, tagSearchTerm, branches, dispatch])
 
   return (
     <div className={styles.branchManagement}>

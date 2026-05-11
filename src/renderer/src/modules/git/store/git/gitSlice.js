@@ -22,7 +22,7 @@ import {
   stageFile,
   unstageFile,
   loadFileStatus,
-  updateCommandHistory,
+  fetchCommandHistory,
   clearCommandHistory,
   selectRepository,
   getCachedDiff,
@@ -442,10 +442,10 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
         state.error = action.payload
       })
-      .addCase(updateCommandHistory.fulfilled, (state, action) => {
+      .addCase(fetchCommandHistory.fulfilled, (state, action) => {
         state.commandHistory = action.payload?.data ?? []
       })
-      .addCase(updateCommandHistory.rejected, (state, action) => {
+      .addCase(fetchCommandHistory.rejected, (state, action) => {
         state.error = action.payload
       })
       // clearCommandHistory

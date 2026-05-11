@@ -167,7 +167,7 @@ export const deleteBranch = createAsyncThunk(
       'Failed to delete branch',
       'deleteBranch'
     )
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     // Only reload on success — loadBranches.pending would otherwise wipe
     // state.error and the failure (e.g. "branch is not fully merged") would
     // never reach the ErrorModal.
@@ -210,7 +210,7 @@ export const loadBranches = createAsyncThunk(
       'Failed to load branches',
       'loadBranches'
     )
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -231,7 +231,7 @@ export const createBranch = createAsyncThunk(
       'createBranch'
     )
 
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
 
     return result
   }
@@ -262,6 +262,50 @@ export const mergeBranch = createAsyncThunk(
       dispatch(loadCommitHistory()),
       dispatch(checkMergeInProgress())
     ])
+    return result
+  }
+)
+
+// Fetches commit log for a single branch. Used by BranchList when expanding
+// a branch or refreshing its commit list. Marks operation start + refreshes
+// command history so GitHistory highlights the new entries.
+export const getBranchCommits = createAsyncThunk(
+  'git/getBranchCommits',
+  async ({ branchName, limit }, { rejectWithValue, dispatch, getState }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    markOperationStart(dispatch, getState)
+
+    const result = await callGit(
+      () => window.git.getBranchCommits(branchName, limit),
+      rejectWithValue,
+      'Failed to load branch commits',
+      'getBranchCommits'
+    )
+
+    await dispatch(fetchCommandHistory())
+    return result
+  }
+)
+
+// Loads commit diff for the "view commit" modal in BranchList.
+export const getCommitDiff = createAsyncThunk(
+  'git/getCommitDiff',
+  async (commitHash, { rejectWithValue, dispatch, getState }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    markOperationStart(dispatch, getState)
+
+    const result = await callGit(
+      () => window.git.getCommitDiff(commitHash),
+      rejectWithValue,
+      'Failed to load commit diff',
+      'getCommitDiff'
+    )
+
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -397,7 +441,7 @@ export const commitChanges = createAsyncThunk(
     )
     await Promise.all([
       dispatch(loadFileStatus()),
-      dispatch(updateCommandHistory()),
+      dispatch(fetchCommandHistory()),
       dispatch(loadCommitHistory())
     ])
     return result
@@ -422,7 +466,7 @@ export const discardFileChanges = createAsyncThunk(
     )
 
     // Update the status after successful discard
-    await Promise.all([dispatch(loadFileStatus()), dispatch(updateCommandHistory())])
+    await Promise.all([dispatch(loadFileStatus()), dispatch(fetchCommandHistory())])
     return result
   }
 )
@@ -481,13 +525,13 @@ export const loadFileStatus = createAsyncThunk(
       'getStatus'
     )
 
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
 
-export const updateCommandHistory = createAsyncThunk(
-  'git/updateCommandHistory',
+export const fetchCommandHistory = createAsyncThunk(
+  'git/fetchCommandHistory',
   async (_, { rejectWithValue, getState, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
@@ -541,7 +585,7 @@ export const selectRepository = createAsyncThunk(
       'selectRepository'
     )
     await dispatch(loadCommitHistory())
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -560,7 +604,7 @@ export const openRepository = createAsyncThunk(
       'openRepository'
     )
     await dispatch(loadCommitHistory())
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -600,7 +644,7 @@ export const getFileDiff = createAsyncThunk(
       'getFileDiff'
     )
 
-    await dispatch(updateCommandHistory())
+    await dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -616,7 +660,7 @@ export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejec
     'Failed to load stashes',
     'stashList'
   )
-  await dispatch(updateCommandHistory())
+  await dispatch(fetchCommandHistory())
   return result
 })
 
@@ -717,7 +761,7 @@ export const renameStash = createAsyncThunk(
       'renameStash'
     )
     // Only proceed with updates if successful
-    await Promise.all([dispatch(loadStashes()), dispatch(updateCommandHistory())])
+    await Promise.all([dispatch(loadStashes()), dispatch(fetchCommandHistory())])
     return result
   }
 )
