@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { useDispatch } from 'react-redux'
 import {
   ChevronDown,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
-import { BranchContextMenu } from './BranchContextMenu'
+import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from './CommitDiffModal'
 import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
 import { getBranchCommits } from '../../store/git/gitThunks'
@@ -49,14 +49,7 @@ const BranchList = ({
   onRequestDeleteBranch,
   onPushTag
 }) => {
-  const [contextMenu, setContextMenu] = useState({
-    show: false,
-    x: 0,
-    y: 0,
-    type: null,
-    target: null,
-    tags: []
-  })
+  const contextMenuRef = useRef(null)
   const [renameBranchState, setRenameBranchState] = useState({
     show: false,
     oldName: '',
@@ -88,10 +81,12 @@ const BranchList = ({
   // Memoized branch prefix
   const branchPrefix = useMemo(() => selectedPrefixes.join(','), [selectedPrefixes])
 
-  // Handle context menu
+  // Handle context menu — opens via ref so BranchList itself does NOT re-render
+  // when a menu opens. Re-rendering this tree is expensive when there are many
+  // branches + expanded commit lists.
   const handleContextMenu = useCallback((e, type, target) => {
     e.preventDefault()
-    
+
     let tags = []
     if (type === 'branch') {
       const branchObj = branches.find(b => (typeof b === 'string' ? b : b.name) === target)
@@ -99,9 +94,8 @@ const BranchList = ({
     } else if (type === 'commit') {
       tags = target?.tags || []
     }
-    
-    setContextMenu({
-      show: true,
+
+    contextMenuRef.current?.open({
       x: e.clientX,
       y: e.clientY,
       type,
@@ -112,7 +106,7 @@ const BranchList = ({
 
   // Close context menu
   const closeContextMenu = useCallback(() => {
-    setContextMenu({ show: false, x: 0, y: 0, type: null, target: null, tags: [] })
+    contextMenuRef.current?.close()
   }, [])
 
   // Sort and filter branches
@@ -866,13 +860,8 @@ const BranchList = ({
 
       <CommitDiffModal commit={viewingCommit} onClose={closeCommitDiffModal} />
 
-      <BranchContextMenu
-        show={contextMenu.show}
-        x={contextMenu.x}
-        y={contextMenu.y}
-        type={contextMenu.type}
-        target={contextMenu.target}
-        branchTags={contextMenu.tags}
+      <BranchContextMenuController
+        ref={contextMenuRef}
         localOnlyTags={localOnlyTags}
         remoteOnlyTags={remoteOnlyTags}
         divergentTags={divergentTags}
@@ -887,7 +876,6 @@ const BranchList = ({
         onRequestDeleteBranch={onRequestDeleteBranch}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
-        onClose={closeContextMenu}
       />
     </div>
   )
