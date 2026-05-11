@@ -651,6 +651,14 @@
   font-weight: 700;
 }
 
+.commitDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
 .ahead, .behind {
   display: flex;
   align-items: center;

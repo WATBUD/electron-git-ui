@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   CheckCircle2,
+  Clock,
   X,
   FileCode,
   AlertTriangle
@@ -16,6 +17,7 @@ import {
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenu } from './BranchContextMenu'
+import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
 import styles from './BranchList.module.css'
 
 // Constants
@@ -714,7 +716,7 @@ const BranchList = ({
                                 </div>
                               </div>
                             </div>
-                            
+
                             {/* Show commits when expanded or when tag search is active */}
                             {(expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])) && branchCommits[branch] && (
                               <div className={styles.commitHistory}>
@@ -736,6 +738,15 @@ const BranchList = ({
                                             {commit.shortHash}
                                           </span>
                                           <span className={styles.commitAuthor}>{commit.author}</span>
+                                          {commit.date && (
+                                            <span
+                                              className={styles.commitDate}
+                                              title={formatAbsoluteTime(commit.date)}
+                                            >
+                                              <Clock size={9} />
+                                              {formatRelativeTime(commit.date)}
+                                            </span>
+                                          )}
                                           {commit.tags.length > 0 && (
                                             <div className={styles.commitTags}>
                                               {commit.tags.map((tag) => {
