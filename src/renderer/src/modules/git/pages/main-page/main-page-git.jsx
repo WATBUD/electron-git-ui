@@ -90,7 +90,17 @@ export const MainPageGit = () => {
   const localOnlyTags = useSelector((state) => state.git.localOnlyTags || [])
   const remoteOnlyTags = useSelector((state) => state.git.remoteOnlyTags || [])
   const divergentTags = useSelector((state) => state.git.divergentTags || [])
+  const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const dispatch = useDispatch()
+
+  // When a merge starts having conflicts, jump to the files tab so the user
+  // can resolve them. Triggers on the false → true transition.
+  useEffect(() => {
+    if (hasMergeInProgress) {
+      setActiveTab(GIT_TABS.FILES)
+      dispatch(loadFileStatus())
+    }
+  }, [hasMergeInProgress, dispatch])
 
   useEffect(() => {
     // Debug: Check if window.git is available

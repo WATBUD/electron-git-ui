@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
-import { FileCode, FolderOpen, ExternalLink } from 'lucide-react'
+import { FileCode, FolderOpen, ExternalLink, FileX } from 'lucide-react'
 import { FileList } from './FileList'
 import { FileContextMenu } from './FileContextMenu'
 import { useFileSelection } from './useFileSelection'
+import { isBinaryFile } from './binaryFiles'
 import styles from './FileStatus.module.css'
 
 export const FileStatus = ({
@@ -347,7 +348,15 @@ export const FileStatus = ({
                 </span>
               </div>
               <div className={styles.diffBody}>
-                {diffLines.length > 0 ? (
+                {isBinaryFile(activeFile.file, selectedFileDiff) ? (
+                  <div className={styles.emptyDiff}>
+                    <FileX size={32} style={{ marginBottom: 8, opacity: 0.6 }} />
+                    <p>No preview available</p>
+                    <p style={{ fontSize: '0.85em', opacity: 0.7 }}>
+                      Binary file — diff cannot be displayed.
+                    </p>
+                  </div>
+                ) : diffLines.length > 0 ? (
                   <div className={styles.diffLines}>
                     {diffLines.map((line, idx) => (
                       <div key={idx} className={`${styles.diffLine} ${styles[line.type]}`}>

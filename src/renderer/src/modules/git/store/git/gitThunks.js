@@ -253,11 +253,14 @@ export const mergeBranch = createAsyncThunk(
       'mergeBranch'
     )
 
-    // Reload branches, status and commit history after merge
+    // Reload branches, status and commit history after merge.
+    // Also refresh hasMergeInProgress so the UI can react to a conflict
+    // (e.g. auto-switch to the files tab to resolve conflicts).
     await Promise.all([
       dispatch(loadBranches()),
       dispatch(loadFileStatus()),
-      dispatch(loadCommitHistory())
+      dispatch(loadCommitHistory()),
+      dispatch(checkMergeInProgress())
     ])
     return result
   }

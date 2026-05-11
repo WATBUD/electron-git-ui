@@ -1166,7 +1166,28 @@ ${fileContent
       return success({ output: stdout || stderr })
     } catch (error) {
       console.error('Error merging branch:', error)
-      return fail(error.message)
+
+      // git writes conflict/failure details to stdout (e.g. "CONFLICT (content): ...")
+      // and a short error to stderr. error.message alone is just "Command failed: ...".
+      const reason = [error.stdout, error.stderr]
+        .map((s) => (s || '').trim())
+        .filter(Boolean)
+        .join('\n') || error.message
+
+      // Detect whether the failure is a conflict (MERGE_HEAD exists) so the UI
+      // can jump to the file-status view and let the user resolve conflicts.
+      let hasConflict = false
+      try {
+        const { stdout: mergeHead } = await execAsync(
+          'git rev-parse -q --verify MERGE_HEAD',
+          { cwd: currentRepoPath }
+        ).catch(() => ({ stdout: '' }))
+        hasConflict = mergeHead.trim().length > 0
+      } catch (e) {
+        hasConflict = false
+      }
+
+      return { success: false, data: { hasConflict }, message: reason }
     }
   })
 
