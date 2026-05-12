@@ -296,36 +296,40 @@ export const FileStatus = ({
           className={styles.fileListPanel}
           style={{ width: `${listWidth}px`, flex: 'none', maxWidth: 'none' }}
         >
-          <FileList
-            title="Staging Area"
-            files={stagedFiles}
-            isStaged={true}
-            activeFile={activeFile}
-            selectedFiles={selectedFiles}
-            onFileClick={handleFileClick}
-            onContextMenu={handleContextMenu}
-            onStageFile={onStageFile}
-            onUnstageFile={onUnstageFile}
-            getStatusIcon={getStatusIcon}
-            onStageAll={handleUnstageAll}
-            onUnstageAll={handleUnstageAll}
-            loading={loading}
-          />
-          <FileList
-            title="Working Directory"
-            files={unstagedFiles}
-            isStaged={false}
-            activeFile={activeFile}
-            selectedFiles={selectedFiles}
-            onFileClick={handleFileClick}
-            onContextMenu={handleContextMenu}
-            onStageFile={onStageFile}
-            onUnstageFile={onUnstageFile}
-            getStatusIcon={getStatusIcon}
-            onStageAll={handleStageAll}
-            onUnstageAll={handleUnstageAll}
-            loading={loading}
-          />
+          <div className={styles.fileSection}>
+            <FileList
+              title="Staging Area"
+              files={stagedFiles}
+              isStaged={true}
+              activeFile={activeFile}
+              selectedFiles={selectedFiles}
+              onFileClick={handleFileClick}
+              onContextMenu={handleContextMenu}
+              onStageFile={onStageFile}
+              onUnstageFile={onUnstageFile}
+              getStatusIcon={getStatusIcon}
+              onStageAll={handleUnstageAll}
+              onUnstageAll={handleUnstageAll}
+              loading={loading}
+            />
+          </div>
+          <div className={styles.fileSection}>
+            <FileList
+              title="Working Directory"
+              files={unstagedFiles}
+              isStaged={false}
+              activeFile={activeFile}
+              selectedFiles={selectedFiles}
+              onFileClick={handleFileClick}
+              onContextMenu={handleContextMenu}
+              onStageFile={onStageFile}
+              onUnstageFile={onUnstageFile}
+              getStatusIcon={getStatusIcon}
+              onStageAll={handleStageAll}
+              onUnstageAll={handleUnstageAll}
+              loading={loading}
+            />
+          </div>
         </div>
 
         <div
