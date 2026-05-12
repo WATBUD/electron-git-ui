@@ -1,64 +1,43 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useCallback } from 'react'
 import styles from './GitStashes.module.css'
-import { CustomTooltip } from '../../../../shared/components/CustomTooltip'
+import { StashContextMenu } from './StashContextMenu'
 import {
   Archive,
-  Trash2,
-  Play,
-  ArrowUpToLine,
-  Plus,
   Clock,
   Code2,
-  AlertCircle,
   FileCode,
   Layout,
-  ChevronDown,
-  Edit3
+  ChevronDown
 } from 'lucide-react'
 
 export const GitStashes = ({
   stashes = [],
   loading = false,
   selectedStashDiff = null,
-  onRefresh,
-  onPush,
   onApply,
   onPop,
   onDrop,
   onRename,
   onSelectStash
 }) => {
-  const [stashMessage, setStashMessage] = useState('')
-  const [confirmDrop, setConfirmDrop] = useState(null)
   const [selectedStashIndex, setSelectedStashIndex] = useState(null)
   const [collapsedFiles, setCollapsedFiles] = useState(new Set())
   const [renamingStash, setRenamingStash] = useState(null)
   const [newStashMessage, setNewStashMessage] = useState('')
-  const [contextMenu, setContextMenu] = useState(null)
   const [showRenameModal, setShowRenameModal] = useState(false)
-
-  const handlePush = async () => {
-    if (!stashMessage.trim()) return
-    await onPush(stashMessage.trim())
-    setStashMessage('')
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handlePush()
-    }
-  }
+  const [dropConfirm, setDropConfirm] = useState(null)
+  const contextMenuRef = useRef(null)
 
   const handleSelectStash = (index) => {
     setSelectedStashIndex(index)
     onSelectStash(index)
-    setConfirmDrop(null)
   }
 
-  const handleDropConfirm = async (stashIndex) => {
+  const handleDropConfirm = async () => {
+    if (!dropConfirm) return
+    const { stashIndex } = dropConfirm
     await onDrop(stashIndex)
-    setConfirmDrop(null)
+    setDropConfirm(null)
     if (selectedStashIndex === stashIndex) {
       setSelectedStashIndex(null)
     }
@@ -88,29 +67,46 @@ export const GitStashes = ({
     }
   }
 
-  const handleContextMenu = (e, stashIndex, stashMessage) => {
+  // Opens the context menu via ref so GitStashes itself doesn't re-render
+  // when the menu opens (matters when the stash list is long).
+  const handleContextMenu = useCallback((e, stashIndex, stashMessage) => {
     e.preventDefault()
     e.stopPropagation()
-    setContextMenu({
+    contextMenuRef.current?.open({
       x: e.clientX,
       y: e.clientY,
       stashIndex,
       stashMessage
     })
-  }
+  }, [])
 
-  const handleContextMenuRename = () => {
-    if (contextMenu) {
-      setRenamingStash(contextMenu.stashIndex)
-      setNewStashMessage(contextMenu.stashMessage)
-      setContextMenu(null)
-      setShowRenameModal(true)
-    }
-  }
+  const handleContextMenuRename = useCallback((stashIndex, stashMessage) => {
+    setRenamingStash(stashIndex)
+    setNewStashMessage(stashMessage)
+    setShowRenameModal(true)
+  }, [])
 
-  const handleCloseContextMenu = () => {
-    setContextMenu(null)
-  }
+  const handleContextMenuApply = useCallback(
+    (stashIndex) => {
+      onApply?.(stashIndex)
+    },
+    [onApply]
+  )
+
+  const handleContextMenuPop = useCallback(
+    (stashIndex) => {
+      onPop?.(stashIndex)
+    },
+    [onPop]
+  )
+
+  const handleContextMenuDrop = useCallback((stashIndex, stashMessage) => {
+    setDropConfirm({ stashIndex, stashMessage })
+  }, [])
+
+  const handleCloseContextMenu = useCallback(() => {
+    contextMenuRef.current?.close()
+  }, [])
 
   const toggleFileCollapse = (fileName) => {
     setCollapsedFiles(prev => {
@@ -258,56 +254,9 @@ export const GitStashes = ({
                     <span>{selectedStash.date}</span>
                     <span style={{ margin: '0 4px', opacity: 0.3 }}>•</span>
                     <span>{selectedStash.hash.substring(0, 7)}</span>
+                    <span style={{ margin: '0 4px', opacity: 0.3 }}>•</span>
+                    <span style={{ opacity: 0.5 }}>Right-click for actions</span>
                   </div>
-                </div>
-
-                <div className={styles.actionToolbar}>
-                  <CustomTooltip title="Apply - Keep this stash while applying">
-                    <button
-                      className={`${styles.actionBtn} ${styles.applyBtn}`}
-                      onClick={() => onApply(selectedStash.index)}
-                      disabled={loading}
-                    >
-                      <Play size={12} fill="currentColor" />
-                      <span>Apply</span>
-                    </button>
-                  </CustomTooltip>
-                  <CustomTooltip title="Pop - Apply and delete this stash">
-                    <button
-                      className={`${styles.actionBtn} ${styles.popBtn}`}
-                      onClick={() => onPop(selectedStash.index)}
-                      disabled={loading}
-                    >
-                      <ArrowUpToLine size={12} />
-                      <span>Pop</span>
-                    </button>
-                  </CustomTooltip>
-
-                  {confirmDrop === selectedStash.index ? (
-                    <div className={styles.confirmRow}>
-                      <span className={styles.confirmLabel}>Delete?</span>
-                      <button
-                        className={styles.confirmActionBtn}
-                        onClick={() => handleDropConfirm(selectedStash.index)}
-                        disabled={loading}
-                      >
-                        OK
-                      </button>
-                      <button className={styles.cancelBtn} onClick={() => setConfirmDrop(null)}>
-                        No
-                      </button>
-                    </div>
-                  ) : (
-                    <CustomTooltip title="Drop - Permanently remove">
-                      <button
-                        className={`${styles.actionBtn} ${styles.dropBtn}`}
-                        onClick={() => setConfirmDrop(selectedStash.index)}
-                        disabled={loading}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </CustomTooltip>
-                  )}
                 </div>
               </div>
 
@@ -365,18 +314,49 @@ export const GitStashes = ({
         </div>
       </div>
 
-      {contextMenu && (
-        <div
-          className={styles.contextMenu}
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div
-            className={styles.contextMenuItem}
-            onClick={handleContextMenuRename}
-          >
-            <Edit3 size={14} style={{ marginRight: 8 }} />
-            <span>Rename</span>
+      <StashContextMenu
+        ref={contextMenuRef}
+        onApply={handleContextMenuApply}
+        onPop={handleContextMenuPop}
+        onRename={handleContextMenuRename}
+        onDrop={handleContextMenuDrop}
+      />
+
+      {dropConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setDropConfirm(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3>Drop Stash</h3>
+            <div className={styles.modalContent}>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>
+                Permanently delete this stash?
+              </p>
+              <p
+                style={{
+                  marginTop: 8,
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.6)',
+                  wordBreak: 'break-word'
+                }}
+              >
+                {dropConfirm.stashMessage}
+              </p>
+            </div>
+            <div className={styles.modalButtons}>
+              <button onClick={() => setDropConfirm(null)} className={styles.cancelBtn}>
+                Cancel
+              </button>
+              <button
+                onClick={handleDropConfirm}
+                disabled={loading}
+                className={styles.confirmBtn}
+                style={{ background: '#ff3b30', borderColor: '#ff3b30' }}
+              >
+                Drop
+              </button>
+            </div>
           </div>
         </div>
       )}
