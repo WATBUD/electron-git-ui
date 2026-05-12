@@ -309,31 +309,7 @@ input[type="checkbox"]:checked + .toggleSwitch::after {
   margin-left: 4px;
 }
 
-.statusIndicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--toolbar-padding);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--toolbar-border-radius);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-  min-width: 32px;
-  height: var(--toolbar-item-height);
-}
 
-.statusIndicator:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.statusCount {
-  font-size: var(--toolbar-font-size);
-  font-weight: 600;
-  min-width: 16px;
-  text-align: center;
-}
 
 /* Author display + inline editor */
 .authorGroup {

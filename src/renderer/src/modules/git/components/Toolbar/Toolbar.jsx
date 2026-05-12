@@ -10,7 +10,6 @@ import {
   Upload,
   GitCommit,
   AlertTriangle,
-  Circle,
   Folder,
   Archive,
   User
@@ -81,48 +80,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     }
   }
 
-  // Calculate Git status
-  const getGitStatus = () => {
-    if (fileStatus.length === 0) {
-      return { type: 'clean', count: 0 }
-    }
-
-    let stagedCount = 0
-    let modifiedCount = 0
-    let untrackedCount = 0
-
-    fileStatus.forEach((file) => {
-      if (file && file.statusType) {
-        if (file.statusType.staged === 'M') stagedCount++
-        if (file.statusType.working === 'M') modifiedCount++
-        if (file.statusType.working === '??') untrackedCount++
-      }
-    })
-
-    const totalChanges = stagedCount + modifiedCount + untrackedCount
-
-    if (totalChanges === 0) {
-      return { type: 'clean', count: 0 }
-    } else if (untrackedCount > 0 || modifiedCount > 0) {
-      return { type: 'dirty', count: totalChanges }
-    } else {
-      return { type: 'staged', count: totalChanges }
-    }
-  }
-
-  const getStatusColor = (status) => {
-    switch (status.type) {
-      case 'clean':
-        return '#22c55e'
-      case 'staged':
-        return '#3b82f6'
-      case 'dirty':
-        return '#f59e0b'
-      default:
-        return '#6b7280'
-    }
-  }
-
   const getProjectName = (path) => {
     return path ? path.split(/[/\\]/).pop() : 'No Repository'
   }
@@ -155,7 +112,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     setShowStashDialog(false)
   }
 
-  const gitStatus = getGitStatus()
   const projectName = getProjectName(repoPath)
 
   return (
@@ -226,18 +182,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             <span className={styles.projectName}>{projectName}</span>
             {currentBranch && <span className={styles.branchName}>{currentBranch}</span>}
           </div>
-          {gitStatus.count > 0 && (
-            <div
-              className={styles.statusIndicator}
-              style={{
-                backgroundColor: `${getStatusColor(gitStatus)}20`,
-                borderColor: `${getStatusColor(gitStatus)}40`,
-                color: getStatusColor(gitStatus)
-              }}
-            >
-              <span className={styles.statusCount}>{gitStatus.count}</span>
-            </div>
-          )}
         </div>
         <div className={styles.authorGroup} ref={authorRef}>
           <button
@@ -252,12 +196,8 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
             }
           >
             <User size={12} className={styles.authorIcon} />
-            <span className={styles.authorName}>
-              {userConfig?.name || 'Set author'}
-            </span>
-            {userConfig?.email && (
-              <span className={styles.authorEmail}>{userConfig.email}</span>
-            )}
+            <span className={styles.authorName}>{userConfig?.name || 'Set author'}</span>
+            {userConfig?.email && <span className={styles.authorEmail}>{userConfig.email}</span>}
           </button>
 
           {showAuthorEditor && (
@@ -271,9 +211,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                     value={authorDraft.name}
                     placeholder="user.name"
                     autoFocus
-                    onChange={(e) =>
-                      setAuthorDraft((prev) => ({ ...prev, name: e.target.value }))
-                    }
+                    onChange={(e) => setAuthorDraft((prev) => ({ ...prev, name: e.target.value }))}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleSaveAuthor()
                       if (e.key === 'Escape') setShowAuthorEditor(false)
@@ -295,9 +233,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                     className={styles.authorInput}
                     value={authorDraft.email}
                     placeholder="user.email"
-                    onChange={(e) =>
-                      setAuthorDraft((prev) => ({ ...prev, email: e.target.value }))
-                    }
+                    onChange={(e) => setAuthorDraft((prev) => ({ ...prev, email: e.target.value }))}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleSaveAuthor()
                       if (e.key === 'Escape') setShowAuthorEditor(false)

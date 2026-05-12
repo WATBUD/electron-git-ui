@@ -122,7 +122,7 @@ export const FileList = ({
   const effectiveCollapsed = !hasFiles || isCollapsed
 
   return (
-    <div className={styles.fileStatusSection}>
+    <div className={`${styles.fileStatusSection} ${effectiveCollapsed ? styles.collapsed : ''}`}>
       <div className={styles.sectionHeader}>
         <div 
           className={styles.sectionTitle}

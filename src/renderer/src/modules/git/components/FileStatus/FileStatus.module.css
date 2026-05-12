@@ -82,14 +82,26 @@
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
-  overflow-y: auto;
-  scroll-behavior: smooth;
+  overflow: hidden;
+  height: 100%;
 }
 
 .fileSection {
-  flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  overflow: hidden;
+}
+
+/* Staging Area - Max 50% height */
+.fileSection:first-child {
+  flex: 0 1 auto;
+  max-height: 50%;
+}
+
+/* Working Directory - Fill remaining space */
+.fileSection:last-child {
+  flex: 1;
 }
 
 .fileListPanel::-webkit-scrollbar {
@@ -112,6 +124,12 @@
 .fileStatusSection {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.fileStatusSection.collapsed {
+  flex: 0 0 auto;
 }
 
 .sectionHeader {
@@ -223,6 +241,8 @@
 
 .fileList {
   padding: 4px 8px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .fileList::-webkit-scrollbar {
