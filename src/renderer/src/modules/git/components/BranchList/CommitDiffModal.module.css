@@ -8,10 +8,10 @@
   background-color: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   justify-content: center;
   z-index: 2000;
-  padding-top: 60px;
+  padding: 20px;
 }
 
 .macModal {
@@ -23,8 +23,9 @@
 }
 
 .commitDiffModal {
-  width: min(900px, 90vw);
-  max-height: 80vh;
+  width: min(1100px, 100%);
+  height: 100%;
+  max-height: 100%;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -55,9 +56,38 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
+.commitDiffHashLabel {
+  flex-shrink: 0;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.commitDiffTitleSpacer {
+  flex: 1;
+}
+
+.commitDiffCopy {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.12s, color 0.12s;
+}
+
+.commitDiffCopy:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
 .commitDiffHash {
   margin: 0;
-  flex: 1;
   min-width: 0;
   font-size: 12px;
   font-family: SF Mono, Menlo, Consolas, monospace;
@@ -102,22 +132,67 @@
 .commitDiffMeta {
   display: flex;
   gap: 14px;
-  padding: 8px 18px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.55);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
+}
+
+.commitDiffHeaderText {
+  margin: 0;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  letter-spacing: 0.2px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.commitDiffHeaderRow {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.commitDiffHeaderLabel {
+  flex-shrink: 0;
+  width: 78px;
+  color: rgba(255, 255, 255, 0.42);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+}
+
+.commitDiffHeaderValue {
+  color: rgba(255, 255, 255, 0.78);
+  min-width: 0;
+  flex: 1;
+}
+
+.commitDiffHeaderMessage {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+  min-width: 0;
+  flex: 1;
 }
 
 /* --- Body --- */
 .commitDiffBody {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  display: flex;
   padding: 0;
 }
 
 .commitDiffLoading,
-.commitDiffError {
+.commitDiffError,
+.commitDiffEmpty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 20px;
   text-align: center;
   font-size: 12px;
@@ -128,39 +203,74 @@
   color: #ff6b6b;
 }
 
-.commitDiffMessage {
-  background-color: rgba(0, 0, 0, 0.18);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+/* --- Split layout: file list (left) + diff detail (right) --- */
+.commitDiffSplit {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
 }
 
-/* --- File sections --- */
-.commitDiffFileSection {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.commitDiffFileList {
+  flex-shrink: 0;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.15);
+  padding: 6px 0;
 }
 
-.commitDiffFileHeader {
+.commitDiffResizer {
+  flex-shrink: 0;
+  width: 5px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  background-color: transparent;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 1;
+  transition: background-color 0.15s;
+}
+
+.commitDiffResizer:hover,
+.commitDiffResizer:active {
+  background-color: rgba(10, 132, 255, 0.35);
+}
+
+.commitDiffDetail {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* --- File list items --- */
+.commitDiffFileItem {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 18px;
-  background-color: rgba(255, 255, 255, 0.03);
+  padding: 6px 14px;
+  background-color: transparent;
   border: none;
   color: inherit;
   cursor: pointer;
   font-family: SF Mono, Menlo, Consolas, monospace;
   font-size: 12px;
   text-align: left;
-  transition: background-color 0.15s;
+  transition: background-color 0.12s;
 }
 
-.commitDiffFileHeader:hover {
-  background-color: rgba(255, 255, 255, 0.07);
+.commitDiffFileItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.commitDiffFileItemActive,
+.commitDiffFileItemActive:hover {
+  background-color: rgba(10, 132, 255, 0.22);
 }
 
 .commitDiffFileStatus {
   display: inline-flex;
   width: 18px;
+  flex-shrink: 0;
   justify-content: center;
   font-weight: 700;
   font-size: 10px;
@@ -175,17 +285,13 @@
 
 .commitDiffFileName {
   color: rgba(255, 255, 255, 0.85);
-  word-break: break-all;
-}
-
-/* --- Chevron toggle --- */
-.chevronIcon {
-  transition: transform 0.2s;
-  opacity: 0.5;
-}
-
-.chevronIcon.collapsed {
-  transform: rotate(-90deg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  min-width: 0;
+  flex: 1;
 }
 
 /* --- Diff content --- */

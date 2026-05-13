@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useDispatch } from 'react-redux'
-import { ChevronDown, X, FileCode } from 'lucide-react'
+import { X, Copy, Check } from 'lucide-react'
 import { getCommitDiff } from '../../store/git/gitThunks'
 import styles from './CommitDiffModal.module.css'
 
-// Split `git show` output into per-file sections so each can be collapsed.
+// Split `git show` output into per-file sections so each can be viewed individually.
 const parseDiff = (diffText) => {
   const text = diffText || ''
   if (!text) return { header: '', files: [] }
@@ -15,14 +15,47 @@ const parseDiff = (diffText) => {
     if (line.startsWith('diff --git ')) fileStartIdxs.push(idx)
   })
 
-  const header = fileStartIdxs.length > 0
-    ? lines.slice(0, fileStartIdxs[0]).join('\n')
-    : text
+  const headerLines = fileStartIdxs.length > 0
+    ? lines.slice(0, fileStartIdxs[0])
+    : lines
+  const filteredHeaderLines = headerLines.filter(
+    (l) =>
+      !/^AuthorDate:/i.test(l) &&
+      !/^Commit:/i.test(l) &&
+      !/^commit\s+[0-9a-f]{7,}/i.test(l)
+  )
+  const metaLines = []
+  const bodyLines = []
+  let inBody = false
+  for (const l of filteredHeaderLines) {
+    if (!inBody) {
+      if (/^[A-Z][A-Za-z]*:/.test(l)) {
+        metaLines.push(l.replace(/^([A-Za-z]+:)\s+/, '$1 '))
+      } else if (l.trim() === '') {
+        inBody = true
+      } else {
+        inBody = true
+        bodyLines.push(l)
+      }
+    } else {
+      bodyLines.push(l)
+    }
+  }
+  const messageBody = bodyLines
+    .map((l) => l.replace(/^ {4}/, ''))
+    .join('\n')
+    .trim()
+  const header = [
+    metaLines.join('\n'),
+    messageBody ? `Message: ${messageBody}` : ''
+  ]
+    .filter(Boolean)
+    .join('\n')
+    .trim()
 
   const files = fileStartIdxs.map((startIdx, i) => {
     const endIdx = i + 1 < fileStartIdxs.length ? fileStartIdxs[i + 1] : lines.length
     const sectionLines = lines.slice(startIdx, endIdx)
-    // Path: prefer "+++ b/<path>" (handles renames; "/dev/null" means deletion)
     let path = null
     for (const l of sectionLines) {
       if (l.startsWith('+++ b/')) {
@@ -31,7 +64,6 @@ const parseDiff = (diffText) => {
       }
     }
     if (!path) {
-      // Fallback: parse from "diff --git a/<x> b/<y>"
       const m = sectionLines[0].match(/^diff --git a\/(.+?) b\/(.+)$/)
       if (m) path = m[2]
     }
@@ -59,23 +91,73 @@ const diffLineClass = (line) => {
   return styles.diffContext
 }
 
+const MIN_LIST_WIDTH = 160
+const MAX_LIST_WIDTH = 600
+const DEFAULT_LIST_WIDTH = 280
+
 export const CommitDiffModal = ({ commit, onClose }) => {
   const dispatch = useDispatch()
   const [files, setFiles] = useState([])
   const [diff, setDiff] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [collapsedFiles, setCollapsedFiles] = useState(new Set())
+  const [selectedKey, setSelectedKey] = useState(null)
+  const [listWidth, setListWidth] = useState(DEFAULT_LIST_WIDTH)
+  const [copied, setCopied] = useState(false)
+  const splitRef = useRef(null)
+  const draggingRef = useRef(false)
 
-  // Load diff whenever the target commit changes.
+  const handleCopyHash = useCallback(async () => {
+    const hash = commit?.hash || commit?.shortHash
+    if (!hash) return
+    try {
+      await navigator.clipboard.writeText(hash)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch {
+      // ignore clipboard errors
+    }
+  }, [commit])
+
+  const handleResizeStart = useCallback((e) => {
+    e.preventDefault()
+    draggingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!draggingRef.current || !splitRef.current) return
+      const rect = splitRef.current.getBoundingClientRect()
+      const next = Math.min(
+        MAX_LIST_WIDTH,
+        Math.max(MIN_LIST_WIDTH, e.clientX - rect.left)
+      )
+      setListWidth(next)
+    }
+    const handleUp = () => {
+      if (!draggingRef.current) return
+      draggingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleUp)
+    }
+  }, [])
+
   useEffect(() => {
     if (!commit) return
     let cancelled = false
 
-    setCollapsedFiles(new Set())
     setFiles([])
     setDiff('')
     setError(null)
+    setSelectedKey(null)
     setLoading(true)
 
     dispatch(getCommitDiff(commit.hash))
@@ -99,14 +181,17 @@ export const CommitDiffModal = ({ commit, onClose }) => {
 
   const parsedDiffFiles = useMemo(() => parseDiff(diff), [diff])
 
-  const toggleFile = useCallback((path) => {
-    setCollapsedFiles((prev) => {
-      const next = new Set(prev)
-      if (next.has(path)) next.delete(path)
-      else next.add(path)
-      return next
-    })
-  }, [])
+  useEffect(() => {
+    if (selectedKey !== null) return
+    if (parsedDiffFiles.files.length > 0) {
+      setSelectedKey(parsedDiffFiles.files[0].path)
+    }
+  }, [parsedDiffFiles, selectedKey])
+
+  const selectedFile = useMemo(() => {
+    if (selectedKey === null) return null
+    return parsedDiffFiles.files.find((f) => f.path === selectedKey) || null
+  }, [parsedDiffFiles, selectedKey])
 
   if (!commit) return null
 
@@ -118,10 +203,19 @@ export const CommitDiffModal = ({ commit, onClose }) => {
       >
         <div className={styles.commitDiffHeader}>
           <div className={styles.commitDiffTitleRow}>
-            <FileCode size={16} />
+            <span className={styles.commitDiffHashLabel}>Commit</span>
             <h3 className={styles.commitDiffHash} title={commit.hash}>
               {commit.hash || commit.shortHash}
             </h3>
+            <button
+              className={styles.commitDiffCopy}
+              onClick={handleCopyHash}
+              title={copied ? 'Copied!' : 'Copy hash'}
+              type="button"
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+            <span className={styles.commitDiffTitleSpacer} />
             <button
               className={styles.commitDiffClose}
               onClick={onClose}
@@ -130,11 +224,57 @@ export const CommitDiffModal = ({ commit, onClose }) => {
               <X size={16} />
             </button>
           </div>
-          <span className={styles.commitDiffSubject}>{commit.message}</span>
-        </div>
-        <div className={styles.commitDiffMeta}>
-          <span>{commit.author}</span>
-          <span>{commit.date}</span>
+          {parsedDiffFiles.header ? (
+            <pre className={styles.commitDiffHeaderText}>
+              {(() => {
+                const allLines = parsedDiffFiles.header.split('\n')
+                const messageIdx = allLines.findIndex((l) => l.startsWith('Message:'))
+                return allLines.map((line, idx) => {
+                  const isMessage = messageIdx >= 0 && idx >= messageIdx
+                  const labelMatch = !isMessage && line.match(/^([A-Za-z]+:)\s*(.*)$/)
+                  if (isMessage) {
+                    const text =
+                      idx === messageIdx ? line.replace(/^Message:\s*/, '') : line
+                    return (
+                      <div key={idx} className={styles.commitDiffHeaderRow}>
+                        {idx === messageIdx && (
+                          <span className={styles.commitDiffHeaderLabel}>Message</span>
+                        )}
+                        <span className={styles.commitDiffHeaderMessage}>
+                          {text || ' '}
+                        </span>
+                      </div>
+                    )
+                  }
+                  if (labelMatch) {
+                    return (
+                      <div key={idx} className={styles.commitDiffHeaderRow}>
+                        <span className={styles.commitDiffHeaderLabel}>
+                          {labelMatch[1].replace(':', '')}
+                        </span>
+                        <span className={styles.commitDiffHeaderValue}>
+                          {labelMatch[2] || ' '}
+                        </span>
+                      </div>
+                    )
+                  }
+                  return (
+                    <div key={idx} className={styles.commitDiffHeaderRow}>
+                      <span className={styles.commitDiffHeaderValue}>{line || ' '}</span>
+                    </div>
+                  )
+                })
+              })()}
+            </pre>
+          ) : (
+            <>
+              <span className={styles.commitDiffSubject}>{commit.message}</span>
+              <div className={styles.commitDiffMeta}>
+                <span>{commit.author}</span>
+                <span>{commit.date}</span>
+              </div>
+            </>
+          )}
         </div>
         <div className={styles.commitDiffBody}>
           {loading ? (
@@ -142,33 +282,30 @@ export const CommitDiffModal = ({ commit, onClose }) => {
           ) : error ? (
             <div className={styles.commitDiffError}>{error}</div>
           ) : (
-            <>
-              {parsedDiffFiles.header && (
-                <pre className={`${styles.commitDiffContent} ${styles.commitDiffMessage}`}>
-                  {parsedDiffFiles.header.split('\n').map((line, idx) => (
-                    <div key={idx} className={styles.diffMeta}>
-                      {line || ' '}
-                    </div>
-                  ))}
-                </pre>
-              )}
-              {parsedDiffFiles.files.map((f) => {
-                const meta = files.find(
-                  (it) => it.file === f.path || it.oldFile === f.path
-                )
-                const status = meta?.status
-                const isCollapsed = collapsedFiles.has(f.path)
-                return (
-                  <div key={f.path} className={styles.commitDiffFileSection}>
+            <div className={styles.commitDiffSplit} ref={splitRef}>
+              <div
+                className={styles.commitDiffFileList}
+                style={{ width: `${listWidth}px` }}
+              >
+                {parsedDiffFiles.files.map((f) => {
+                  const meta = files.find(
+                    (it) => it.file === f.path || it.oldFile === f.path
+                  )
+                  const status = meta?.status
+                  const isActive = selectedKey === f.path
+                  const displayName = meta?.oldFile
+                    ? `${meta.oldFile} → ${meta.file}`
+                    : f.path
+                  return (
                     <button
+                      key={f.path}
                       type="button"
-                      className={styles.commitDiffFileHeader}
-                      onClick={() => toggleFile(f.path)}
+                      className={`${styles.commitDiffFileItem} ${
+                        isActive ? styles.commitDiffFileItemActive : ''
+                      }`}
+                      onClick={() => setSelectedKey(f.path)}
+                      title={displayName}
                     >
-                      <ChevronDown
-                        size={12}
-                        className={`${styles.chevronIcon} ${isCollapsed ? styles.collapsed : ''}`}
-                      />
                       {status && (
                         <span
                           className={`${styles.commitDiffFileStatus} ${
@@ -178,23 +315,31 @@ export const CommitDiffModal = ({ commit, onClose }) => {
                           {status}
                         </span>
                       )}
-                      <span className={styles.commitDiffFileName}>
-                        {meta?.oldFile ? `${meta.oldFile} → ${meta.file}` : f.path}
-                      </span>
+                      <span className={styles.commitDiffFileName}>{displayName}</span>
                     </button>
-                    {!isCollapsed && (
-                      <pre className={styles.commitDiffContent}>
-                        {f.lines.map((line, idx) => (
-                          <div key={idx} className={diffLineClass(line)}>
-                            {line || ' '}
-                          </div>
-                        ))}
-                      </pre>
-                    )}
-                  </div>
-                )
-              })}
-            </>
+                  )
+                })}
+              </div>
+              <div
+                className={styles.commitDiffResizer}
+                onMouseDown={handleResizeStart}
+                role="separator"
+                aria-orientation="vertical"
+              />
+              <div className={styles.commitDiffDetail}>
+                {selectedFile ? (
+                  <pre className={styles.commitDiffContent}>
+                    {selectedFile.lines.map((line, idx) => (
+                      <div key={idx} className={diffLineClass(line)}>
+                        {line || ' '}
+                      </div>
+                    ))}
+                  </pre>
+                ) : (
+                  <div className={styles.commitDiffEmpty}>Select a file to view its diff</div>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
