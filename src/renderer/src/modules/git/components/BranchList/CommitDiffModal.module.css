@@ -23,8 +23,9 @@
 }
 
 .commitDiffModal {
-  width: min(1100px, 100%);
+  width: 80%;
   height: 100%;
+  margin-left: 5%;
   max-height: 100%;
   padding: 0;
   display: flex;
@@ -301,7 +302,9 @@
   font-family: SF Mono, Menlo, Consolas, monospace;
   font-size: 11px;
   line-height: 1.5;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
   color: rgba(255, 255, 255, 0.85);
 }
 
