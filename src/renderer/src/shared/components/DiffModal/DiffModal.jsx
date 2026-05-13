@@ -22,8 +22,15 @@ export const DiffModal = ({ diff, onClose, show }) => {
 
   const isValidMessage = (message) => {
     if (!message) return false
-    const errorKeywords = ['API', 'Failed', 'quota', 'unavailable', 'forbidden', 'not found']
-    return !errorKeywords.some(keyword => message.includes(keyword))
+    const errorPatterns = [
+      'API key not configured',
+      'API quota exceeded',
+      'Gemini API quota',
+      'Failed to generate commit message',
+      'All AI models are currently unavailable',
+      'All models failed'
+    ]
+    return !errorPatterns.some(pattern => message.includes(pattern))
   }
 
   const handleCopy = () => {
@@ -191,7 +198,7 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
 
   
   const copyGeneratedMessage = () => {
-    if (generatedMessage && !generatedMessage.includes('API') && !generatedMessage.includes('Failed') && !generatedMessage.includes('quota') && !generatedMessage.includes('unavailable') && !generatedMessage.includes('forbidden') && !generatedMessage.includes('not found')) {
+    if (isValidMessage(generatedMessage)) {
       navigator.clipboard.writeText(generatedMessage).then(() => {
         // Could add a toast notification here
       })
