@@ -1313,9 +1313,85 @@ ${fileContent
     }
   })
 
+  const runGit = (args) =>
+    new Promise((resolve) => {
+      const { spawn } = require('child_process')
+      const git = spawn('git', args, { cwd: currentRepoPath })
+      let stdout = ''
+      let stderr = ''
+      git.stdout.on('data', (data) => (stdout += data))
+      git.stderr.on('data', (data) => (stderr += data))
+      git.on('close', (code) => {
+        resolve({ code, stdout, stderr })
+      })
+    })
+
+  // Stash only the target files without including other files' staged changes.
+  // Workaround for git stash being inherently index-aware:
+  //   1. `git stash push --staged` parks every staged change into a temp stash
+  //   2. `git stash push -- <files>` stashes the target files (their WT diff)
+  //   3. `git stash pop --index stash@{1}` restores the parked staged content
+  // Result: the user stash contains only the target file(s), other staged
+  // files are returned to the index intact.
+  // Requires git 2.35+ for `--staged`.
+  const stashUnstagedOnly = async (message, fileList) => {
+    const tempLabel = '__git_ui_keep_staged_park__'
+
+    const parkArgs = ['stash', 'push', '--staged', '-m', tempLabel]
+    commandHistory.push(`git ${parkArgs.join(' ')}`)
+    const park = await runGit(parkArgs)
+    const stagedParked = park.code === 0
+
+    const stashArgs = ['stash', 'push']
+    if (message) stashArgs.push('-m', message)
+    stashArgs.push('--', ...fileList)
+    commandHistory.push(`git ${stashArgs.join(' ')}`)
+    const stashStep = await runGit(stashArgs)
+
+    if (stashStep.code !== 0) {
+      if (stagedParked) {
+        const rollback = await runGit(['stash', 'pop', '--index'])
+        if (rollback.code !== 0) {
+          return fail(
+            `No unstaged changes for selected files. Could not auto-restore staged content; it is preserved at stash@{0}.`
+          )
+        }
+      }
+      return fail(
+        stashStep.stderr || stashStep.stdout || 'No unstaged changes to stash for the selected files'
+      )
+    }
+
+    if (stagedParked) {
+      const restoreArgs = ['stash', 'pop', '--index', 'stash@{1}']
+      commandHistory.push(`git ${restoreArgs.join(' ')}`)
+      const restore = await runGit(restoreArgs)
+      if (restore.code !== 0) {
+        return fail(
+          `Your stash is at stash@{0}; the parked staged content remains at stash@{1} because auto-restore failed: ${
+            restore.stderr || restore.stdout
+          }`
+        )
+      }
+    }
+
+    return success({ output: stashStep.stdout || stashStep.stderr })
+  }
+
   ipcMain.handle('git:stashPush', async (_, message, files, keepIndex) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {
+      const fileList =
+        files && files.length > 0
+          ? Array.isArray(files)
+            ? files
+            : [files]
+          : null
+
+      if (keepIndex && fileList) {
+        return await stashUnstagedOnly(message, fileList)
+      }
+
       const args = ['stash', 'push']
       if (message) {
         args.push('-m', message)
@@ -1323,33 +1399,18 @@ ${fileContent
       if (keepIndex) {
         args.push('--keep-index')
       }
-      if (files && files.length > 0) {
-        args.push('--')
-        const fileList = Array.isArray(files) ? files : [files]
-        args.push(...fileList)
+      if (fileList) {
+        args.push('--', ...fileList)
       }
 
-      // Build the command string for history
       const command = `git ${args.map((a) => (a.includes(' ') || a === '' ? `"${a}"` : a)).join(' ')}`
       commandHistory.push(command)
 
-      return new Promise((resolve) => {
-        const { spawn } = require('child_process')
-        const git = spawn('git', args, { cwd: currentRepoPath })
-        let stdout = ''
-        let stderr = ''
-
-        git.stdout.on('data', (data) => (stdout += data))
-        git.stderr.on('data', (data) => (stderr += data))
-
-        git.on('close', (code) => {
-          if (code === 0) {
-            resolve(success({ output: stdout || stderr }))
-          } else {
-            resolve(fail(stderr || stdout || `Git exit code ${code}`))
-          }
-        })
-      })
+      const result = await runGit(args)
+      if (result.code === 0) {
+        return success({ output: result.stdout || result.stderr })
+      }
+      return fail(result.stderr || result.stdout || `Git exit code ${result.code}`)
     } catch (error) {
       return fail(error.message)
     }

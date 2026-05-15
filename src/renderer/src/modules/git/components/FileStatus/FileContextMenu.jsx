@@ -58,15 +58,18 @@ export const FileContextMenu = ({
     onClose()
   }
 
-  const handleStash = async () => {
+  const handleStash = async (includeAllStaged) => {
     try {
-      if (isMultipleSelection) {
-        await onStashFile({ files: selectedFiles })
-        message.success(`${selectedFiles.length} files stashed`)
-      } else {
-        await onStashFile({ files: [fileName] })
-        message.success('File stashed')
-      }
+      const files = isMultipleSelection ? selectedFiles : [fileName]
+      // includeAllStaged=true → `git stash push` (no pathspec, no --keep-index): stash everything
+      // includeAllStaged=false → `git stash push --keep-index -- <files>`: stash only the unstaged
+      //   delta of these files. --keep-index leaves index changes (other staged files) untouched
+      //   so they don't end up in the stash.
+      const payload = includeAllStaged ? {} : { files, keepIndex: true }
+      await onStashFile(payload)
+      message.success(
+        isMultipleSelection ? `${files.length} files stashed` : 'File stashed'
+      )
       onClose()
     } catch (error) {
       message.error('Failed to stash file(s)')
@@ -127,9 +130,13 @@ export const FileContextMenu = ({
           <ExternalLink size={14} />
           <span>{isMultipleSelection ? 'Copy full paths' : 'Copy full path'}</span>
         </button>
-        <button className={styles.contextMenuItem} onClick={handleStash}>
+        <button className={styles.contextMenuItem} onClick={() => handleStash(false)}>
           <Archive size={14} />
-          <span>Stash changes</span>
+          <span>Stash only this file</span>
+        </button>
+        <button className={styles.contextMenuItem} onClick={() => handleStash(true)}>
+          <Archive size={14} />
+          <span>Stash this file + all staged</span>
         </button>
         <div className={styles.contextMenuDivider} />
         <button className={`${styles.contextMenuItem} ${styles.danger}`} onClick={handleDiscardOrRemove}>
