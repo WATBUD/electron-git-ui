@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react'
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import styles from './GitStashes.module.css'
 import { StashContextMenu } from './StashContextMenu'
 import {
@@ -121,7 +121,7 @@ export const GitStashes = ({
   }
 
   // Parse diff into file groups
-  const fileGroups = useMemo(() => {
+  const parsedFileGroups = useMemo(() => {
     if (!selectedStashDiff) return []
 
     const lines = selectedStashDiff.split('\n')
@@ -183,6 +183,26 @@ export const GitStashes = ({
 
     return files
   }, [selectedStashDiff])
+
+  // Cache last successful parse per stash, so apply/pop/rename reloads that
+  // briefly empty selectedStashDiff don't flash "No diff content available".
+  const cachedFileGroupsRef = useRef({ index: null, groups: [] })
+
+  useEffect(() => {
+    if (parsedFileGroups.length > 0 && selectedStashIndex !== null) {
+      cachedFileGroupsRef.current = {
+        index: selectedStashIndex,
+        groups: parsedFileGroups
+      }
+    }
+  }, [parsedFileGroups, selectedStashIndex])
+
+  const fileGroups =
+    parsedFileGroups.length > 0
+      ? parsedFileGroups
+      : cachedFileGroupsRef.current.index === selectedStashIndex
+        ? cachedFileGroupsRef.current.groups
+        : []
 
   const selectedStash = useMemo(
     () => stashes.find((s) => s.index === selectedStashIndex),
@@ -261,7 +281,7 @@ export const GitStashes = ({
               </div>
 
               <div className={styles.diffScroller}>
-                {loading && !selectedStashDiff ? (
+                {loading && !selectedStashDiff && fileGroups.length === 0 ? (
                   <div className={styles.diffLoading}>
                     <div className={styles.loadingSpinner} />
                     <span>Loading context...</span>
