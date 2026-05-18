@@ -13,6 +13,7 @@ export const FileContextMenu = ({
   x,
   y,
   fileName,
+  isStaged,
   isMultipleSelection,
   selectedCount,
   selectedFiles,
@@ -130,14 +131,18 @@ export const FileContextMenu = ({
           <ExternalLink size={14} />
           <span>{isMultipleSelection ? 'Copy full paths' : 'Copy full path'}</span>
         </button>
-        <button className={styles.contextMenuItem} onClick={() => handleStash(false)}>
-          <Archive size={14} />
-          <span>Stash only this file</span>
-        </button>
-        <button className={styles.contextMenuItem} onClick={() => handleStash(true)}>
-          <Archive size={14} />
-          <span>Stash this file + all staged</span>
-        </button>
+        {!isStaged && (
+          <>
+            <button className={styles.contextMenuItem} onClick={() => handleStash(false)}>
+              <Archive size={14} />
+              <span>Stash only this file</span>
+            </button>
+            <button className={styles.contextMenuItem} onClick={() => handleStash(true)}>
+              <Archive size={14} />
+              <span>Stash this file + all staged</span>
+            </button>
+          </>
+        )}
         <div className={styles.contextMenuDivider} />
         <button className={`${styles.contextMenuItem} ${styles.danger}`} onClick={handleDiscardOrRemove}>
           <Trash2 size={14} />

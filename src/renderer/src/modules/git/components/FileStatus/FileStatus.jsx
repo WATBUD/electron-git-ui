@@ -391,6 +391,7 @@ export const FileStatus = ({
         x={contextMenu.x}
         y={contextMenu.y}
         fileName={contextMenu.fileName}
+        isStaged={contextMenu.isStaged}
         isMultipleSelection={contextMenu.isMultipleSelection}
         selectedCount={selectedFiles.size}
         selectedFiles={getSelectedFiles()}
