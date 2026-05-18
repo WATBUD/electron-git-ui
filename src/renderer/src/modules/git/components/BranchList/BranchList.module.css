@@ -1,60 +1,724 @@
+/* === BranchList — mainstream Git GUI style (Fork / Sourcetree-like) === */
+
 .branchManagement {
   display: flex;
   flex-direction: column;
   height: 100%;
-  color: var(--text-color);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  min-height: 0;
+  background-color: rgba(20, 20, 28, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  font-size: 12px;
   overflow: hidden;
-  background-color: transparent;
-  padding: var(--container-padding);
 }
 
-/* --- Header Section --- */
+/* --- Top bar: prefix chips --- */
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  height: 48px;
   flex-shrink: 0;
-  z-index: 10;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .headerTitle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  flex: 1;
-  min-width: 0;
 }
 
 .headerPrefixSection {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.05);
-  padding: 4px 12px; /* Standardize internal padding */
-  border-radius: var(--input-radius);
-  border: 1px solid rgba(255, 255, 255, 0.08); /* Sophisticated border */
+  gap: 6px;
+  width: 100%;
 }
 
-.prefixIcon {
-  color: rgba(255, 255, 255, 0.4);
-  flex-shrink: 0;
-}
+.prefixIcon { color: rgba(255, 255, 255, 0.4); }
 
 .prefixHeaderLabel {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.prefixChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.prefixChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  height: 16px;
+  border-radius: 8px;
+  font-size: 10px;
+  background-color: rgba(10, 132, 255, 0.15);
+  color: #66b3ff;
+  border: 1px solid rgba(10, 132, 255, 0.3);
+}
+
+.placeholder {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+/* --- Create branch input --- */
+.topTools {
+  flex-shrink: 0;
+  padding: 8px 12px 6px;
+}
+
+.createSection { display: flex; gap: 6px; }
+
+.branchInput {
+  flex: 1;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 12px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.9);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.branchInput:focus {
+  border-color: rgba(10, 132, 255, 0.5);
+  background-color: rgba(0, 0, 0, 0.35);
+}
+
+.branchInput::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.createBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid rgba(52, 199, 89, 0.35);
+  background-color: rgba(52, 199, 89, 0.12);
+  color: #58e08a;
   font-size: 11px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.createBtn:hover:not(:disabled) { background-color: rgba(52, 199, 89, 0.22); }
+.createBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- Search --- */
+.searchContainer {
   flex-shrink: 0;
-  margin-right: 2px;
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 8px;
+}
+
+/* --- Tag legend --- */
+.tagLegend {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 12px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.legendItem { display: inline-flex; align-items: center; gap: 4px; }
+
+.legendBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+
+.legendBadge.localOnly { color: #58e08a; }
+.legendBadge.remoteOnly { color: #66b3ff; }
+.legendBadge.synced { color: rgba(255, 255, 255, 0.55); }
+.legendBadge.divergent { color: #ffb14d; }
+
+.legendText { font-size: 10px; color: rgba(255, 255, 255, 0.5); }
+
+/* --- Divergent warning --- */
+.divergentWarning {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: rgba(255, 149, 0, 0.08);
+  border-bottom: 1px solid rgba(255, 149, 0, 0.2);
+}
+
+.divergentWarningIcon {
+  color: #ffb14d;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.divergentWarningBody { flex: 1; min-width: 0; }
+
+.divergentWarningTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffb14d;
+  margin-bottom: 4px;
+}
+
+.divergentWarningTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.divergentWarningMore {
+  font-size: 10px;
+  color: rgba(255, 177, 77, 0.6);
+  padding: 1px 6px;
+}
+
+/* --- Loading hint --- */
+.loadingHint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* --- Matching tags section --- */
+.matchingTagsSection {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.matchingTagsHeader {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 6px;
+}
+
+.matchingTagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.matchingTagItem { cursor: pointer; }
+
+/* --- List scroll area --- */
+.listSection {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.branchListContainer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- Section group (LOCAL / REMOTE): each has its own independent scroll --- */
+.branchGroup {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.branchGroup.collapsed {
+  flex: 0 0 auto;
+}
+
+.branchGroup:last-child { border-bottom: none; }
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.groupHeader:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* When acting as a splitter (both panes expanded): drag-resize cursor + subtle grab hint */
+.groupHeaderSplitter {
+  cursor: ns-resize;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.groupHeaderSplitter::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 2px;
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.groupHeaderSplitter:hover::before {
+  opacity: 1;
+}
+
+.chevronIcon {
+  transition: transform 0.15s;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.chevronIcon.collapsed { transform: rotate(-90deg); }
+
+.groupCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.groupContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2px 0 6px;
+}
+
+.groupContent::-webkit-scrollbar { width: 8px; }
+.groupContent::-webkit-scrollbar-track { background: transparent; }
+.groupContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.groupContent::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+/* --- Branch / folder row --- */
+.branchItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 26px;
+  padding-right: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s;
+}
+
+.branchItem:hover { background-color: rgba(255, 255, 255, 0.04); }
+
+.branchItem.active { background-color: rgba(10, 132, 255, 0.12); }
+
+.branchItem.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #0a84ff;
+}
+
+.branchItem.expanded { background-color: rgba(255, 255, 255, 0.03); }
+
+.branchMain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.folderChevron {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.15s;
+}
+
+.folderChevron.collapsed { transform: rotate(-90deg); }
+
+.folderChevronPlaceholder {
+  flex-shrink: 0;
+  width: 14px;
+}
+
+.itemIcon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.branchItem.active .itemIcon { color: #66b3ff; }
+
+.folderIcon {
+  flex-shrink: 0;
+  color: rgba(255, 211, 77, 0.7);
+}
+
+.branchNameText {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.branchItem.active .branchNameText {
+  color: #fff;
+  font-weight: 500;
+}
+
+.folderName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.folderCount {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 0 4px;
+}
+
+.detachedBadge {
+  flex-shrink: 0;
+  padding: 0 6px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  background-color: rgba(255, 59, 48, 0.15);
+  color: #ff7a72;
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.activeCheck {
+  flex-shrink: 0;
+  color: #58e08a;
+}
+
+/* --- Sync status: ahead/behind --- */
+.syncStatus {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ahead,
+.behind {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  height: 15px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ahead { background-color: rgba(52, 199, 89, 0.15); color: #58e08a; }
+.behind { background-color: rgba(255, 149, 0, 0.15); color: #ffb14d; }
+
+/* --- Tag badges --- */
+.tagBadges {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tagBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 5px;
+  height: 15px;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.tagBadge.localOnly { color: #58e08a; }
+.tagBadge.remoteOnly { color: #66b3ff; }
+.tagBadge.synced { color: rgba(255, 255, 255, 0.55); }
+.tagBadge.divergent { color: #ffb14d; }
+
+/* --- Hover-reveal actions --- */
+.itemActions {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.branchItem:hover .itemActions { opacity: 1; }
+
+.itemDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.itemDeleteBtn:hover {
+  background-color: rgba(255, 59, 48, 0.18);
+  color: #ff7a72;
+}
+
+/* --- Commit history (expanded under branch) --- */
+.commitHistory {
+  position: relative;
+  padding: 2px 0 6px 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.commitItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 12px 0 32px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.commitItem::before {
+  content: '';
+  position: absolute;
+  left: 23px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.commitItem:hover { background-color: rgba(255, 255, 255, 0.04); }
+
+.commitDot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(20, 20, 28, 1);
+  z-index: 1;
+  margin-left: -8px;
+}
+
+.commitItem:hover .commitDot { background-color: #66b3ff; }
+
+.commitDetails {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commitMessage {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commitMeta {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.commitHash {
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  color: #ffd34d;
+  font-size: 9px;
+}
+
+.commitAuthor {
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.commitDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.commitTags {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.commitTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  height: 13px;
+  border-radius: 6px;
+  font-size: 8px;
+  font-weight: 500;
+  border: 1px solid currentColor;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.commitTag.localOnly { color: #58e08a; }
+.commitTag.remoteOnly { color: #66b3ff; }
+.commitTag.synced { color: rgba(255, 255, 255, 0.45); }
+.commitTag.divergent { color: #ffb14d; }
+
+/* --- Branches that also contain this commit (other than the expanded one) --- */
+.commitBranches {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.commitBranchBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 5px;
+  height: 14px;
+  border-radius: 7px;
+  font-size: 9px;
+  font-weight: 500;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid currentColor;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.commitBranchLocal {
+  color: rgba(255, 211, 77, 0.85);
+}
+
+.commitBranchRemote {
+  color: rgba(102, 179, 255, 0.85);
+}
+
+.commitBranchCurrent {
+  background-color: rgba(255, 211, 77, 0.18);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px currentColor inset;
+}
+
+.noCommits {
+  padding: 12px 28px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* --- Loading --- */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
 }
 
 .spinning {
@@ -66,835 +730,101 @@
   to { transform: rotate(360deg); }
 }
 
-/* --- Top Tools --- */
-.topTools {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.searchContainer {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-  margin-bottom: 8px;
-}
-
-.tagLegend {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 6px 12px;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--input-radius);
-  margin-bottom: 10px;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.legendBadge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 600;
-}
-
-.legendBadge.localOnly {
-  background-color: rgba(255, 149, 0, 0.15);
-  border: 1px solid rgba(255, 149, 0, 0.4);
-  color: #ff9500;
-}
-
-.legendBadge.synced {
-  background-color: rgba(52, 199, 89, 0.15);
-  border: 1px solid rgba(52, 199, 89, 0.4);
-  color: #34c759;
-}
-
-.legendBadge.remoteOnly {
-  background-color: rgba(10, 132, 255, 0.15);
-  border: 1px solid rgba(10, 132, 255, 0.4);
-  color: #0a84ff;
-}
-
-.legendBadge.divergent {
-  background-color: rgba(255, 59, 48, 0.15);
-  border: 1px solid rgba(255, 59, 48, 0.5);
-  color: #ff6b6b;
-}
-
-.divergentWarning {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  background-color: rgba(255, 59, 48, 0.08);
-  border: 1px solid rgba(255, 59, 48, 0.35);
-  border-radius: var(--input-radius);
-}
-
-.divergentWarningIcon {
-  color: #ff6b6b;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.divergentWarningBody {
-  flex: 1;
-  min-width: 0;
-}
-
-.divergentWarningTitle {
-  font-size: 12px;
-  font-weight: 600;
-  color: #ff8a80;
-  margin-bottom: 6px;
-}
-
-.divergentWarningTags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.divergentWarningTags button {
-  background: rgba(255, 59, 48, 0.18);
-  border: 1px solid rgba(255, 59, 48, 0.55);
-  color: #ff8a80;
-  cursor: pointer;
-  font: inherit;
-}
-
-.divergentWarningTags button:hover {
-  background: rgba(255, 59, 48, 0.28);
-}
-
-.divergentWarningMore {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.legendText {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-}
-
-.loadingHint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background-color: rgba(0, 122, 255, 0.1);
-  border: 1px solid rgba(0, 122, 255, 0.2);
-  border-radius: var(--input-radius);
-  font-size: 11px;
-  color: #007aff;
-  margin-bottom: 10px;
-}
-
-.loadingHint svg {
-  flex-shrink: 0;
-}
-
-
-
-.prefixChips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-
-.prefixChip {
-  font-size: 11px;
-  font-weight: 500;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  padding: 2px 10px;
-  border-radius: var(--input-radius);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  white-space: nowrap;
-  letter-spacing: 0.2px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.prefixChip:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-0.5px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-}
-
-.placeholder {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
-  font-style: italic;
-  font-weight: 400;
-}
-
-.createSection {
-  display: flex;
-  gap: 6px;
-}
-
-.branchInput {
-  flex: 1;
-  background-color: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: white;
-  padding: var(--input-padding);
-  height: var(--input-default-height);
-  font-size: var(--input-font-size); /* Unified from variable */
-  outline: none;
-  transition: all 0.2s;
-  border-radius: var(--input-radius);
-}
-
-.branchInput:focus {
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
-}
-
-.createBtn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background-color: #007aff;
-  color: white;
-  border: none;
-  border-radius: var(--input-radius);
-  padding: 0 12px;
-  height: var(--input-default-height);
-  font-size: var(--input-font-size); /* Unified from variable */
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.createBtn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.createBtn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-/* --- List & Search --- */
-.listSection {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.branchListContainer {
-  flex: 1;
-  overflow: hidden;
-}
-
-.scrollArea {
-  margin-top: 5px;
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.branchGroup {
-  margin-bottom: 4px;
-}
-
-.groupHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  cursor: pointer;
-  text-transform: uppercase;
-  transition: color 0.15s;
-  position: sticky;
-  top: 0;
-  background-color: #1e1e2d; /* Match container background */
-  z-index: 5;
-}
-
-.groupHeader:hover {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.chevronIcon {
-  transition: transform 0.2s;
-  opacity: 0.5;
-}
-
-.chevronIcon.collapsed {
-  transform: rotate(-90deg);
-}
-
-.groupContent {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.branchItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 12px;
-  margin: 0;
-  border-radius: var(--input-radius);
-  cursor: pointer;
-  transition: background 0.1s;
-  position: relative;
-  gap: 12px;
-}
-
-.branchItem:hover:not(.active) {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.branchItem.active {
-  background-color: rgba(0, 122, 255, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(0, 122, 255, 0.2);
-}
-
-.branchItem.expanded {
-  background-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Commit History */
-.commitHistory {
-  padding: 8px 12px 8px 32px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-left: 2px solid rgba(0, 122, 255, 0.3);
-  margin-left: 12px;
-}
-
-.commitItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: context-menu;
-  transition: background-color 0.2s;
-  border-radius: 4px;
-  padding: 6px 8px;
-  margin: 2px 0;
-}
-
-.commitItem:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.commitItem:last-child {
-  border-bottom: none;
-}
-
-.commitDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #007aff;
-  margin-top: 4px;
-  flex-shrink: 0;
-}
-
-.commitDetails {
-  flex: 1;
-  min-width: 0;
-}
-
-.commitMessage {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.commitMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.commitHash {
-  font-family: 'Monaco', 'Menlo', monospace;
-  background-color: rgba(255, 255, 255, 0.08);
-  padding: 2px 4px;
-  border-radius: 3px;
-}
-
-.commitAuthor {
-  max-width: 100px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.commitTags {
-  display: flex;
-  gap: 4px;
-}
-
-.commitTag {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.commitTag.localOnly {
-  background-color: rgba(255, 149, 0, 0.2);
-  border: 1px solid rgba(255, 149, 0, 0.4);
-  color: #ff9500;
-}
-
-.commitTag.synced {
-  background-color: rgba(52, 199, 89, 0.2);
-  border: 1px solid rgba(52, 199, 89, 0.4);
-  color: #34c759;
-}
-
-.commitTag.remoteOnly {
-  background-color: rgba(10, 132, 255, 0.2);
-  border: 1px solid rgba(10, 132, 255, 0.4);
-  color: #0a84ff;
-}
-
-.commitTag.divergent {
-  background-color: rgba(255, 59, 48, 0.2);
-  border: 1px solid rgba(255, 59, 48, 0.5);
-  color: #ff6b6b;
-}
-
-.branchMain {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.itemIcon {
-  opacity: 0.35;
-  color: white;
-  flex-shrink: 0;
-}
-
-.active .itemIcon {
-  opacity: 1;
-  color: #007aff;
-}
-
-.branchNameText {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.active .branchNameText {
-  font-weight: 600;
-  color: white;
-}
-
-.tagBadges {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.tagBadge {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 5px;
-  border-radius: 3px;
-  font-size: 9px;
-  font-weight: 600;
-  white-space: nowrap;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: all 0.2s;
-}
-
-.tagBadge.localOnly {
-  background-color: rgba(255, 149, 0, 0.15);
-  border: 1px solid rgba(255, 149, 0, 0.4);
-  color: #ff9500;
-}
-
-.tagBadge.synced {
-  background-color: rgba(52, 199, 89, 0.15);
-  border: 1px solid rgba(52, 199, 89, 0.4);
-  color: #34c759;
-}
-
-.tagBadge.remoteOnly {
-  background-color: rgba(10, 132, 255, 0.15);
-  border: 1px solid rgba(10, 132, 255, 0.4);
-  color: #0a84ff;
-}
-
-.tagBadge.divergent {
-  background-color: rgba(255, 59, 48, 0.15);
-  border: 1px solid rgba(255, 59, 48, 0.5);
-  color: #ff6b6b;
-}
-
-.matchingTagsSection {
-  padding: 8px 12px;
-  margin-bottom: 6px;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--input-radius);
-}
-
-.matchingTagsHeader {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 6px;
-}
-
-.matchingTagsList {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.matchingTagItem {
-  cursor: context-menu;
-  max-width: 240px;
-}
-
-.localOnlyBadge {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px 6px;
-  background-color: rgba(255, 149, 0, 0.15);
-  border: 1px solid rgba(255, 149, 0, 0.3);
-  border-radius: 3px;
-  color: #ff9500;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.activeCheck {
-  color: #34c759;
-  flex-shrink: 0;
-}
-
-.detachedBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  background-color: rgba(255, 59, 48, 0.15);
-  border: 1px solid rgba(255, 59, 48, 0.4);
-  border-radius: 3px;
-  color: #ff3b30;
-  font-size: 9px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.branchMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.syncStatus {
-  display: flex;
-  gap: 4px;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.commitDate {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: rgba(255, 255, 255, 0.45);
-  white-space: nowrap;
-}
-
-.ahead, .behind {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  padding: 0 4px;
-  border-radius: var(--input-radius);
-}
-
-.ahead { color: #34c759; background: rgba(52, 199, 89, 0.1); }
-.behind { color: #ff9500; background: rgba(255, 149, 0, 0.1); }
-
-.itemActions {
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.branchItem:hover .itemActions {
-  opacity: 1;
-}
-
-.itemDeleteBtn {
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--input-radius);
-  color: rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.itemDeleteBtn:hover {
-  background-color: rgba(255, 59, 48, 0.15);
-  color: #ff3b30;
-}
-
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100px;
-  gap: 8px;
-  color: rgba(255, 255, 255, 0.25);
-}
-
-/* --- Scrollbar --- */
-.scrollArea::-webkit-scrollbar {
-  width: 4px;
-}
-.scrollArea::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: var(--input-radius);
-}
-
-/* --- Modal & Context Menu --- */
+/* --- Modal --- */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   z-index: 2000;
-  padding-top: 60px;
 }
 
 .macModal {
-  background-color: rgba(40, 40, 45, 0.85);
-  backdrop-filter: blur(30px);
+  width: 420px;
+  background-color: rgba(40, 40, 50, 0.95);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--input-radius);
-  width: 380px;
-  padding: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  padding: 18px 20px;
 }
 
-.modalFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 20px;
-}
-
-.modalFooter button {
-  padding: 5px 15px;
-  border-radius: var(--input-radius);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.contextMenu {
-  position: fixed;
-  background-color: rgb(38, 38, 44);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--input-radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  min-width: 200px;
-  z-index: 3000;
-  padding: 5px;
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-.contextMenuHeader {
-  padding: 6px 10px;
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.3);
-  text-transform: uppercase;
-}
-
-.contextMenuItem {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  background: transparent;
-  border: none;
-  color: white;
-  text-align: left;
-  cursor: pointer;
-  font-size: 12px;
-  border-radius: var(--input-radius);
-}
-
-.contextMenuItem:hover:not(:disabled) {
-  background-color: #007aff;
-}
-
-.contextMenuItem:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.contextMenuItem.hasSubmenu {
-  justify-content: space-between;
-  padding-right: 6px;
-}
-
-.submenuArrow {
-  margin-left: auto;
-  opacity: 0.5;
-}
-
-.contextMenuDivider {
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 4px 0;
-}
-
-/* --- Modal Styles --- */
 .macModal h3 {
-  margin: 0 0 16px 0;
-  font-size: 16px;
+  margin: 0 0 14px 0;
+  font-size: 14px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #fff;
 }
 
 .modalBody {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .modalOldName {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
 }
 
 .modalOldName code {
-  background-color: rgba(255, 255, 255, 0.08);
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 4px;
-  font-family: 'Monaco', 'Menlo', monospace;
+  background-color: rgba(0, 0, 0, 0.3);
+  font-family: SF Mono, Menlo, Consolas, monospace;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .modalInput {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: white;
-  padding: 8px 12px;
+  height: 30px;
+  padding: 0 10px;
   font-size: 13px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.95);
   outline: none;
-  transition: all 0.2s;
-  border-radius: var(--input-radius);
 }
 
-.modalInput:focus {
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
-  background-color: rgba(255, 255, 255, 0.08);
+.modalInput:focus { border-color: rgba(10, 132, 255, 0.55); }
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .modalCancel {
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.2s;
+  padding: 6px 14px;
+  border-radius: 5px;
+  border: none;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  cursor: pointer;
 }
 
-.modalCancel:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-}
+.modalCancel:hover { color: #fff; }
 
 .modalConfirm {
-  background-color: #007aff;
-  border: 1px solid #007aff;
-  color: white;
-  font-weight: 600;
-  transition: all 0.2s;
+  padding: 6px 14px;
+  border-radius: 5px;
+  border: 1px solid rgba(10, 132, 255, 0.55);
+  background-color: rgba(10, 132, 255, 0.2);
+  color: #66b3ff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.modalConfirm:hover:not(:disabled) {
-  background-color: #0051d5;
-  border-color: #0051d5;
-}
-
-.modalConfirm:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.modalConfirm:hover:not(:disabled) { background-color: rgba(10, 132, 255, 0.3); }
+.modalConfirm:disabled { opacity: 0.4; cursor: not-allowed; }

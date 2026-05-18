@@ -1,0 +1,231 @@
+.tree {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background-color: rgba(20, 20, 28, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  height: 44px;
+  flex-shrink: 0;
+  background-color: rgba(45, 45, 60, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.toolbarTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.toolbarCount {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.toolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.viewport {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.scroller {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.rowsLayer {
+  position: relative;
+}
+
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  height: 26px;
+  padding-right: 12px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.rowActive {
+  background-color: rgba(10, 132, 255, 0.15);
+}
+
+.rowActive:hover {
+  background-color: rgba(10, 132, 255, 0.2);
+}
+
+.rowGraphArea {
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.rowSubject {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSubjectText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.rowMeta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  padding-left: 12px;
+}
+
+.rowAuthor {
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowHash {
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  color: #ffd34d;
+  font-size: 10px;
+}
+
+.rowDate {
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badgeHead {
+  background-color: rgba(255, 211, 77, 0.18);
+  color: #ffd34d;
+  border-color: rgba(255, 211, 77, 0.4);
+}
+
+.badgeLocal {
+  background-color: rgba(52, 199, 89, 0.18);
+  color: #58e08a;
+  border-color: rgba(52, 199, 89, 0.4);
+}
+
+.badgeRemote {
+  background-color: rgba(10, 132, 255, 0.18);
+  color: #66b3ff;
+  border-color: rgba(10, 132, 255, 0.4);
+}
+
+.badgeTag {
+  background-color: rgba(255, 149, 0, 0.18);
+  color: #ffb14d;
+  border-color: rgba(255, 149, 0, 0.4);
+}
+
+.badgeStash {
+  background-color: rgba(175, 82, 222, 0.18);
+  color: #c690ff;
+  border-color: rgba(175, 82, 222, 0.4);
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.error {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #ff6b6b;
+}

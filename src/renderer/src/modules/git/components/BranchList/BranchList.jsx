@@ -7,8 +7,9 @@ import {
   Trash2,
   GitBranch,
   Tag,
-  ArrowUpRight,
-  ArrowDownLeft,
+  Folder,
+  ArrowUp,
+  ArrowDown,
   CheckCircle2,
   Clock,
   AlertTriangle
@@ -22,7 +23,64 @@ import { getBranchCommits } from '../../store/git/gitThunks'
 import styles from './BranchList.module.css'
 
 // Constants
-const BRANCH_COMMITS_LIMIT = 50
+const BRANCH_COMMITS_LIMIT = 1000
+const INDENT_PX = 14
+const ROW_H = 26
+const OVERSCAN_ROWS = 8
+
+// Build a tree from a flat branch list using `/` as path separator.
+// Leaf nodes carry the original branchObj; folder nodes hold children.
+const buildBranchTree = (branchList) => {
+  const root = { type: 'folder', name: '', children: new Map(), path: '' }
+  for (const branchObj of branchList) {
+    const name = typeof branchObj === 'string' ? branchObj : branchObj.name
+    const parts = name.split('/')
+    let node = root
+    for (let i = 0; i < parts.length - 1; i++) {
+      const seg = parts[i]
+      const path = parts.slice(0, i + 1).join('/')
+      let next = node.children.get(seg)
+      if (!next) {
+        next = { type: 'folder', name: seg, children: new Map(), path }
+        node.children.set(seg, next)
+      }
+      node = next
+    }
+    const leafSeg = parts[parts.length - 1]
+    node.children.set(leafSeg, { type: 'leaf', name: leafSeg, fullName: name, branchObj })
+  }
+  return root
+}
+
+// Count leaves under a folder (for the count badge).
+const countLeaves = (node) => {
+  if (node.type === 'leaf') return 1
+  let n = 0
+  for (const child of node.children.values()) n += countLeaves(child)
+  return n
+}
+
+// Flatten the tree into a sorted array of render entries.
+// Folders sort before their siblings and are sorted alphabetically; leaves last.
+const flattenTree = (node, depth, collapsedFolders, currentBranch, out) => {
+  const entries = Array.from(node.children.values()).sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
+    // current branch always first within its folder
+    if (a.type === 'leaf' && a.fullName === currentBranch) return -1
+    if (b.type === 'leaf' && b.fullName === currentBranch) return 1
+    return a.name.localeCompare(b.name)
+  })
+  for (const child of entries) {
+    if (child.type === 'folder') {
+      const collapsed = collapsedFolders.has(child.path)
+      out.push({ kind: 'folder', node: child, depth, collapsed })
+      if (!collapsed) flattenTree(child, depth + 1, collapsedFolders, currentBranch, out)
+    } else {
+      out.push({ kind: 'leaf', node: child, depth })
+    }
+  }
+  return out
+}
 
 const BranchList = ({
   branches = [],
@@ -64,7 +122,87 @@ const BranchList = ({
   const [tagSearchTerm, setTagSearchTerm] = useState('')
   const [isRemoteBranchesCollapsed, setIsRemoteBranchesCollapsed] = useState(false)
   const [isLocalBranchesCollapsed, setIsLocalBranchesCollapsed] = useState(false)
+  const [collapsedFolders, setCollapsedFolders] = useState(new Set())
   const [expandedBranches, setExpandedBranches] = useState(new Set())
+  const [localPaneRatio, setLocalPaneRatio] = useState(0.5)
+  const scrollAreaRef = useRef(null)
+  const dragStateRef = useRef({ active: false, moved: false, startY: 0 })
+  // Refs holding "current" filtered counts so the drag handler (defined early) can
+  // read them without forcing them into its useCallback dep list (would TDZ).
+  const localCountRef = useRef(0)
+  const remoteCountRef = useRef(0)
+  const remoteScrollerRef = useRef(null)
+  const [remoteScrollTop, setRemoteScrollTop] = useState(0)
+  const [remoteViewportH, setRemoteViewportH] = useState(0)
+
+  React.useEffect(() => {
+    const el = remoteScrollerRef.current
+    if (!el) return
+    const onScroll = () => setRemoteScrollTop(el.scrollTop)
+    const ro = new ResizeObserver(() => setRemoteViewportH(el.clientHeight))
+    el.addEventListener('scroll', onScroll, { passive: true })
+    ro.observe(el)
+    setRemoteViewportH(el.clientHeight)
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      ro.disconnect()
+    }
+  }, [isRemoteBranchesCollapsed, isLocalBranchesCollapsed])
+
+  const toggleFolder = useCallback((path) => {
+    setCollapsedFolders((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }, [])
+
+  // REMOTE header: always toggles on click. Acts as splitter only when both panes expanded.
+  const handleRemoteHeaderMouseDown = useCallback(
+    (e) => {
+      if (e.button !== 0) return
+      const canDrag =
+        !isLocalBranchesCollapsed &&
+        !isRemoteBranchesCollapsed &&
+        localCountRef.current > 0 &&
+        remoteCountRef.current > 0
+      dragStateRef.current = { active: true, moved: false, startY: e.clientY, canDrag }
+      e.preventDefault()
+
+      const onMove = (ev) => {
+        const st = dragStateRef.current
+        if (!st.active || !st.canDrag) return
+        if (!st.moved && Math.abs(ev.clientY - st.startY) > 3) {
+          st.moved = true
+          document.body.style.cursor = 'ns-resize'
+          document.body.style.userSelect = 'none'
+        }
+        if (st.moved) {
+          const el = scrollAreaRef.current
+          if (!el) return
+          const rect = el.getBoundingClientRect()
+          const ratio = (ev.clientY - rect.top) / rect.height
+          setLocalPaneRatio(Math.max(0.1, Math.min(0.9, ratio)))
+        }
+      }
+      const onUp = () => {
+        const st = dragStateRef.current
+        const wasDrag = st.moved
+        dragStateRef.current = { active: false, moved: false, startY: 0, canDrag: false }
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        window.removeEventListener('mousemove', onMove)
+        window.removeEventListener('mouseup', onUp)
+        if (!wasDrag) {
+          setIsRemoteBranchesCollapsed((v) => !v)
+        }
+      }
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+    },
+    [isLocalBranchesCollapsed, isRemoteBranchesCollapsed]
+  )
   const [branchCommits, setBranchCommits] = useState({})
   const [loadingCommits, setLoadingCommits] = useState(false)
   const [viewingCommit, setViewingCommit] = useState(null)
@@ -152,6 +290,25 @@ const BranchList = ({
   // Memoized sorted branches
   const sortedLocalBranches = useMemo(() => sortBranches(branches), [sortBranches, branches])
   const sortedRemoteBranches = useMemo(() => sortBranches(remoteBranches), [sortBranches, remoteBranches])
+
+  // Tree-flatten with folders collapsed/expanded for the mainstream sidebar look
+  const localTreeEntries = useMemo(() => {
+    const tree = buildBranchTree(sortedLocalBranches)
+    return flattenTree(tree, 0, collapsedFolders, currentBranch, [])
+  }, [sortedLocalBranches, collapsedFolders, currentBranch])
+
+  const remoteTreeEntries = useMemo(() => {
+    const tree = buildBranchTree(sortedRemoteBranches)
+    return flattenTree(tree, 0, collapsedFolders, currentBranch, [])
+  }, [sortedRemoteBranches, collapsedFolders, currentBranch])
+
+  // Auto-collapse when a filter wipes out a section (preserves user's manual toggle for non-empty case)
+  const effectiveLocalCollapsed = isLocalBranchesCollapsed || sortedLocalBranches.length === 0
+  const effectiveRemoteCollapsed = isRemoteBranchesCollapsed || sortedRemoteBranches.length === 0
+
+  // Mirror filtered counts into refs for the early-declared drag handler.
+  localCountRef.current = sortedLocalBranches.length
+  remoteCountRef.current = sortedRemoteBranches.length
 
   // All known tags (local + remote-only) deduped — used by the search-matched
   // tag list below so a tag the user is searching for shows up even if its
@@ -500,41 +657,78 @@ const BranchList = ({
               <p>Fetching branches...</p>
             </div>
           ) : (
-            <div className={styles.scrollArea}>
+            <div className={styles.scrollArea} ref={scrollAreaRef}>
               {/* Local Branches */}
-              <div className={styles.branchGroup}>
+              <div
+                className={`${styles.branchGroup} ${effectiveLocalCollapsed ? styles.collapsed : ''}`}
+                style={
+                  !effectiveLocalCollapsed && !effectiveRemoteCollapsed
+                    ? { flexGrow: localPaneRatio }
+                    : undefined
+                }
+              >
                 <div
                   className={styles.groupHeader}
                   onClick={() => setIsLocalBranchesCollapsed(!isLocalBranchesCollapsed)}
                 >
                   <ChevronDown
-                    className={`${styles.chevronIcon} ${isLocalBranchesCollapsed ? styles.collapsed : ''}`}
+                    className={`${styles.chevronIcon} ${effectiveLocalCollapsed ? styles.collapsed : ''}`}
                     size={14}
                   />
                   <span>LOCAL</span>
+                  <span className={styles.groupCount}>{sortedLocalBranches.length}</span>
                 </div>
-                {!isLocalBranchesCollapsed && (
+                {!effectiveLocalCollapsed && (
                   <div className={styles.groupContent}>
-                    {sortedLocalBranches.length > 0 ? (
-                      sortedLocalBranches.map((branchObj) => {
-                        const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
-                        const { ahead = 0, behind = 0, tags = [], isDetached = false, isCurrent = false } = branchObj || {}
+                    {localTreeEntries.length > 0 ? (
+                      localTreeEntries.map((entry) => {
+                        if (entry.kind === 'folder') {
+                          const leafCount = countLeaves(entry.node)
+                          return (
+                            <div
+                              key={`folder-${entry.node.path}`}
+                              className={styles.branchItem}
+                              onClick={() => toggleFolder(entry.node.path)}
+                            >
+                              <div
+                                className={styles.branchMain}
+                                style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                              >
+                                <ChevronDown
+                                  size={12}
+                                  className={`${styles.folderChevron} ${entry.collapsed ? styles.collapsed : ''}`}
+                                />
+                                <Folder size={13} className={styles.folderIcon} />
+                                <span className={styles.folderName}>{entry.node.name}</span>
+                                <span className={styles.folderCount}>{leafCount}</span>
+                              </div>
+                            </div>
+                          )
+                        }
+                        const branchObj = entry.node.branchObj
+                        const branch = entry.node.fullName
+                        const { ahead = 0, behind = 0, tags = [], isDetached = false, isCurrent = false } = (typeof branchObj === 'object' ? branchObj : {}) || {}
                         const isActive = isCurrent || branch === currentBranch
+                        const isExpanded = expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])
 
                         return (
                           <div key={`local-${branch}`}>
                             <div
                               onDoubleClick={() => !isActive && onCheckout(branch)}
                               onClick={() => handleBranchClick(branch)}
-                              className={`${styles.branchItem} ${isActive ? styles.active : ''} ${expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch]) ? styles.expanded : ''}`}
+                              className={`${styles.branchItem} ${isActive ? styles.active : ''} ${isExpanded ? styles.expanded : ''}`}
                               onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                             >
-                              <div className={styles.branchMain}>
-                                <GitBranch size={14} className={styles.itemIcon} />
-                                <span className={styles.branchNameText}>{branch}</span>
+                              <div
+                                className={styles.branchMain}
+                                style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                              >
+                                <span className={styles.folderChevronPlaceholder} />
+                                <GitBranch size={13} className={styles.itemIcon} />
+                                <span className={styles.branchNameText}>{entry.node.name}</span>
                                 {isDetached && (
                                   <span className={styles.detachedBadge} title="Detached HEAD">
-                                    Detached HEAD
+                                    Detached
                                   </span>
                                 )}
                                 {isActive && (
@@ -542,14 +736,14 @@ const BranchList = ({
                                 )}
                                 <div className={styles.syncStatus}>
                                   {ahead > 0 && (
-                                    <span className={styles.ahead}>
-                                      <ArrowUpRight size={10} />
+                                    <span className={styles.ahead} title={`${ahead} ahead`}>
+                                      <ArrowUp size={9} />
                                       {ahead}
                                     </span>
                                   )}
                                   {behind > 0 && (
-                                    <span className={styles.behind}>
-                                      <ArrowDownLeft size={10} />
+                                    <span className={styles.behind} title={`${behind} behind`}>
+                                      <ArrowDown size={9} />
                                       {behind}
                                     </span>
                                   )}
@@ -580,7 +774,7 @@ const BranchList = ({
                                           className={`${styles.tagBadge} ${variant}`}
                                           title={titleText}
                                         >
-                                          <Tag size={9} />
+                                          <Tag size={8} />
                                           {tag}
                                         </span>
                                       )
@@ -674,6 +868,37 @@ const BranchList = ({
                                               })}
                                             </div>
                                           )}
+                                          {(() => {
+                                            const info = commit.branches
+                                            if (!info) return null
+                                            const all = [
+                                              ...(info.local || []).map((b) => ({
+                                                name: b,
+                                                isRemote: false,
+                                                isCurrent: b === branch
+                                              })),
+                                              ...(info.remote || []).map((b) => ({
+                                                name: b,
+                                                isRemote: true,
+                                                isCurrent: false
+                                              }))
+                                            ]
+                                            if (all.length === 0) return null
+                                            return (
+                                              <div className={styles.commitBranches}>
+                                                {all.map((b) => (
+                                                  <span
+                                                    key={(b.isRemote ? 'r:' : 'l:') + b.name}
+                                                    className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
+                                                    title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
+                                                  >
+                                                    <GitBranch size={8} />
+                                                    {b.name}
+                                                  </span>
+                                                ))}
+                                              </div>
+                                            )
+                                          })()}
                                         </div>
                                       </div>
                                     </div>
@@ -701,58 +926,117 @@ const BranchList = ({
 
               {/* Remote Branches */}
               {remoteBranches.length > 0 && (
-                <div className={styles.branchGroup}>
+                <div
+                  className={`${styles.branchGroup} ${effectiveRemoteCollapsed ? styles.collapsed : ''}`}
+                  style={
+                    !effectiveLocalCollapsed && !effectiveRemoteCollapsed
+                      ? { flexGrow: 1 - localPaneRatio }
+                      : undefined
+                  }
+                >
                   <div
-                    className={styles.groupHeader}
-                    onClick={() => setIsRemoteBranchesCollapsed(!isRemoteBranchesCollapsed)}
+                    className={`${styles.groupHeader} ${!effectiveLocalCollapsed && !effectiveRemoteCollapsed ? styles.groupHeaderSplitter : ''}`}
+                    onMouseDown={handleRemoteHeaderMouseDown}
                   >
                     <ChevronDown
-                      className={`${styles.chevronIcon} ${isRemoteBranchesCollapsed ? styles.collapsed : ''}`}
+                      className={`${styles.chevronIcon} ${effectiveRemoteCollapsed ? styles.collapsed : ''}`}
                       size={14}
                     />
                     <span>REMOTE</span>
+                    <span className={styles.groupCount}>{sortedRemoteBranches.length}</span>
                   </div>
-                  {!isRemoteBranchesCollapsed && (
-                    <div className={styles.groupContent}>
-                      {sortedRemoteBranches.length > 0 ? (
-                        sortedRemoteBranches.map((branchObj) => {
-                          const branch = typeof branchObj === 'string' ? branchObj : branchObj.name
-                          const isActive = branch === currentBranch
+                  {!effectiveRemoteCollapsed && (
+                    <div ref={remoteScrollerRef} className={styles.groupContent}>
+                      {remoteTreeEntries.length > 0 ? (
+                        (() => {
+                          const total = remoteTreeEntries.length
+                          const first = Math.max(
+                            0,
+                            Math.floor(remoteScrollTop / ROW_H) - OVERSCAN_ROWS
+                          )
+                          const last = Math.min(
+                            total - 1,
+                            Math.ceil((remoteScrollTop + remoteViewportH) / ROW_H) + OVERSCAN_ROWS
+                          )
+                          const slice = []
+                          for (let i = first; i <= last; i++) slice.push({ entry: remoteTreeEntries[i], idx: i })
                           return (
                             <div
-                              key={`remote-${branch}`}
-                              onDoubleClick={() => !isActive && onCheckout(branch)}
-                              className={`${styles.branchItem} ${isActive ? styles.active : ''}`}
-                              onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
+                              className={styles.virtualSpacer}
+                              style={{ height: total * ROW_H, position: 'relative' }}
                             >
-                              <div className={styles.branchMain}>
-                                <GitBranch size={14} className={styles.itemIcon} />
-                                <span className={styles.branchNameText}>{branch}</span>
-                                {isActive && (
-                                  <CheckCircle2 size={12} className={styles.activeCheck} />
-                                )}
-                                <div className={styles.itemActions}>
-                                  <CopyButton
-                                    textToCopy={branch}
-                                    size={12}
-                                    showCopiedText={false}
-                                  />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      if (onRequestDeleteBranch) {
-                                        onRequestDeleteBranch(branch, true)
-                                      }
-                                    }}
-                                    className={styles.itemDeleteBtn}
+                              {slice.map(({ entry, idx }) => {
+                                const top = idx * ROW_H
+                                if (entry.kind === 'folder') {
+                                  const leafCount = countLeaves(entry.node)
+                                  const folderCollapsed = collapsedFolders.has(`remote:${entry.node.path}`)
+                                  return (
+                                    <div
+                                      key={`remote-folder-${entry.node.path}`}
+                                      className={styles.branchItem}
+                                      style={{ position: 'absolute', top, left: 0, right: 0, height: ROW_H }}
+                                      onClick={() => toggleFolder(`remote:${entry.node.path}`)}
+                                    >
+                                      <div
+                                        className={styles.branchMain}
+                                        style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                                      >
+                                        <ChevronDown
+                                          size={12}
+                                          className={`${styles.folderChevron} ${folderCollapsed ? styles.collapsed : ''}`}
+                                        />
+                                        <Folder size={13} className={styles.folderIcon} />
+                                        <span className={styles.folderName}>{entry.node.name}</span>
+                                        <span className={styles.folderCount}>{leafCount}</span>
+                                      </div>
+                                    </div>
+                                  )
+                                }
+                                const branch = entry.node.fullName
+                                const isActive = branch === currentBranch
+                                return (
+                                  <div
+                                    key={`remote-${branch}`}
+                                    onDoubleClick={() => !isActive && onCheckout(branch)}
+                                    className={`${styles.branchItem} ${isActive ? styles.active : ''}`}
+                                    style={{ position: 'absolute', top, left: 0, right: 0, height: ROW_H }}
+                                    onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                                   >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              </div>
+                                    <div
+                                      className={styles.branchMain}
+                                      style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                                    >
+                                      <span className={styles.folderChevronPlaceholder} />
+                                      <GitBranch size={13} className={styles.itemIcon} />
+                                      <span className={styles.branchNameText}>{entry.node.name}</span>
+                                      {isActive && (
+                                        <CheckCircle2 size={12} className={styles.activeCheck} />
+                                      )}
+                                      <div className={styles.itemActions}>
+                                        <CopyButton
+                                          textToCopy={branch}
+                                          size={12}
+                                          showCopiedText={false}
+                                        />
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            if (onRequestDeleteBranch) {
+                                              onRequestDeleteBranch(branch, true)
+                                            }
+                                          }}
+                                          className={styles.itemDeleteBtn}
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              })}
                             </div>
                           )
-                        })
+                        })()
                       ) : (
                         <div className={styles.loading} style={{ height: 'auto', padding: '20px' }}>
                           <p style={{ fontSize: '12px' }}>No matching remote branches</p>

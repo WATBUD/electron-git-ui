@@ -12,6 +12,7 @@ import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
 import ProjectList from '../../components/ProjectList'
 import { GitGraphContainer } from './GitGraphContainer'
+import { GitGraphTree } from '../../components/GitGraph'
 import {
   checkMergeInProgress,
   deleteBranch,
@@ -422,7 +423,7 @@ export const MainPageGit = () => {
                   />
                 )}
 
-                {activeTab === GIT_TABS.GRAPH && <GitGraphContainer />}
+                {activeTab === GIT_TABS.GRAPH && <GitGraphTree />}
 
                 {activeTab === GIT_TABS.FILES && (
                   <FileStatus

@@ -744,17 +744,45 @@ ${fileContent
       return fail('No repository selected')
     }
     try {
-      const command = `git log ${branchName} --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
+      // --decorate=full → refs come back as `refs/heads/<name>` / `refs/remotes/<r>/<n>` / `tag: refs/tags/<n>`
+      const command = `git log ${branchName} --decorate=full --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
       commandHistory.push(command)
       const { stdout } = await execAsync(command, { cwd: currentRepoPath })
-      
+
       const commits = stdout
         .trim()
         .split('\n')
-        .filter(line => line.trim())
-        .map(line => {
+        .filter((line) => line.trim())
+        .map((line) => {
           const [hash, shortHash, author, email, date, message, refs] = line.split('|')
-          const tags = refs ? refs.split(',').map(r => r.trim()).filter(r => r.startsWith('tag:')) : []
+          const tokens = refs
+            ? refs
+                .split(',')
+                .map((r) => r.trim())
+                .filter(Boolean)
+            : []
+          const tags = []
+          const localBranches = []
+          const remoteBranches = []
+          for (const tok of tokens) {
+            // strip leading "HEAD -> "
+            const cleaned = tok.startsWith('HEAD -> ') ? tok.slice(8) : tok
+            if (cleaned === 'HEAD') continue
+            if (cleaned.startsWith('tag: ')) {
+              tags.push(cleaned.slice(5).replace(/^refs\/tags\//, ''))
+              continue
+            }
+            const localMatch = cleaned.match(/^refs\/heads\/(.+)$/)
+            if (localMatch) {
+              localBranches.push(localMatch[1])
+              continue
+            }
+            const remoteMatch = cleaned.match(/^refs\/remotes\/(.+)$/)
+            if (remoteMatch && remoteMatch[1] !== 'origin/HEAD') {
+              remoteBranches.push(remoteMatch[1])
+              continue
+            }
+          }
           return {
             hash,
             shortHash,
@@ -762,10 +790,11 @@ ${fileContent
             email,
             date,
             message,
-            tags: tags.map(t => t.replace('tag: ', '').trim())
+            tags,
+            branches: { local: localBranches, remote: remoteBranches }
           }
         })
-      
+
       return success(commits)
     } catch (error) {
       console.error('Error getting branch commits:', error)
@@ -1508,4 +1537,274 @@ ${fileContent
       return fail(error.message)
     }
   })
+
+  // --- Commit → Branches map: for each commit hash, which branches contain it ---
+  // Strategy: list all local + remote branch refs, run `git log --pretty=%H -n LIMIT`
+  // in parallel for each, then invert the (branch → commits) lists into
+  // (commit → branches[]). Cheaper than `git branch --contains` per commit.
+  ipcMain.handle('git:getCommitBranchMap', async (_, options = {}) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    const limitPerBranch = options.limitPerBranch ?? 2000
+    try {
+      const { stdout: refsOut } = await execAsync(
+        `git for-each-ref --format='%(refname:short)|%(refname)' refs/heads refs/remotes`,
+        { cwd: currentRepoPath }
+      )
+      const refs = refsOut
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+        .map((l) => {
+          const [short, full] = l.split('|')
+          return {
+            name: short,
+            full,
+            isRemote: full?.startsWith('refs/remotes/')
+          }
+        })
+        .filter((r) => r.full !== 'refs/remotes/origin/HEAD')
+
+      const results = await Promise.all(
+        refs.map(async (ref) => {
+          try {
+            const { stdout } = await execAsync(
+              `git log --pretty=%H -n ${limitPerBranch} ${JSON.stringify(ref.name)}`,
+              { cwd: currentRepoPath, ...execOptions }
+            )
+            return {
+              ref,
+              hashes: stdout.split('\n').filter(Boolean)
+            }
+          } catch {
+            return { ref, hashes: [] }
+          }
+        })
+      )
+
+      const map = Object.create(null)
+      for (const { ref, hashes } of results) {
+        for (const h of hashes) {
+          let entry = map[h]
+          if (!entry) {
+            entry = { local: [], remote: [] }
+            map[h] = entry
+          }
+          if (ref.isRemote) entry.remote.push(ref.name)
+          else entry.local.push(ref.name)
+        }
+      }
+      return success({ map, branchCount: refs.length })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  // --- Git Graph: parse `git log --all --topo-order` into rows with lane assignments ---
+  ipcMain.handle('git:graphLog', async (_, options = {}) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    const limit = options.limit ?? 5000
+    return new Promise((resolve) => {
+      const { spawn } = require('child_process')
+      const args = [
+        'log',
+        '--all',
+        '--topo-order',
+        `--max-count=${limit}`,
+        '--date=iso-strict',
+        '--decorate=full',
+        '--pretty=format:%x01%H%x1f%h%x1f%P%x1f%an%x1f%ae%x1f%aI%x1f%D%x1f%s',
+        '-z'
+      ]
+      const child = spawn('git', args, { cwd: currentRepoPath })
+      let buf = ''
+      const commits = []
+      child.stdout.setEncoding('utf8')
+      child.stdout.on('data', (chunk) => {
+        buf += chunk
+        let nul
+        while ((nul = buf.indexOf('\0')) !== -1) {
+          const rec = buf.slice(0, nul)
+          buf = buf.slice(nul + 1)
+          const c = parseGraphRecord(rec)
+          if (c) commits.push(c)
+        }
+      })
+      let stderr = ''
+      child.stderr.on('data', (c) => (stderr += c))
+      child.on('error', (err) => resolve(fail(err.message)))
+      child.on('close', (code) => {
+        if (code !== 0) return resolve(fail(stderr || `git exited ${code}`))
+        if (buf.trim()) {
+          const c = parseGraphRecord(buf)
+          if (c) commits.push(c)
+        }
+        try {
+          const rows = buildGraphRows(commits)
+          resolve(success({ rows, total: rows.length }))
+        } catch (e) {
+          resolve(fail(e.message))
+        }
+      })
+    })
+  })
+}
+
+// === Graph helpers (pure functions, no shared state) ===
+function parseGraphRecord(rec) {
+  const start = rec.indexOf('\x01')
+  if (start === -1) return null
+  const body = rec.slice(start + 1)
+  const f = body.split('\x1f')
+  if (f.length < 8) return null
+  const [hash, shortHash, parentStr, an, ae, aI, decorate, ...rest] = f
+  const subject = rest.join('\x1f')
+  return {
+    hash,
+    shortHash,
+    parents: parentStr ? parentStr.split(' ').filter(Boolean) : [],
+    author: an,
+    email: ae,
+    date: aI,
+    subject,
+    refs: parseGraphDecorate(decorate)
+  }
+}
+
+function parseGraphDecorate(raw) {
+  if (!raw) return []
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((token) => {
+      if (token.startsWith('HEAD -> ')) {
+        const t = token.slice(8).replace(/^refs\/heads\//, '')
+        return { kind: 'head', target: t }
+      }
+      if (token === 'HEAD') return { kind: 'head' }
+      if (token.startsWith('tag: ')) {
+        return { kind: 'tag', name: token.slice(5).replace(/^refs\/tags\//, '') }
+      }
+      let m
+      if ((m = token.match(/^refs\/heads\/(.+)$/))) return { kind: 'local', name: m[1] }
+      if ((m = token.match(/^refs\/remotes\/([^/]+)\/(.+)$/)))
+        return { kind: 'remote', remote: m[1], name: m[2] }
+      if ((m = token.match(/^refs\/tags\/(.+)$/))) return { kind: 'tag', name: m[1] }
+      if (token === 'refs/stash') return { kind: 'stash' }
+      return { kind: 'other', raw: token }
+    })
+}
+
+function stableColorIdx(seed, col, paletteSize) {
+  let h = 0x811c9dc5
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return (h + col) % paletteSize
+}
+
+function buildGraphRows(commits) {
+  const PALETTE_SIZE = 15
+  const EMPTY = null
+  let lanes = []
+  let laneColors = []
+
+  const rows = []
+  for (let row = 0; row < commits.length; row++) {
+    const c = commits[row]
+    const before = lanes.slice()
+    const beforeColor = laneColors.slice()
+
+    // find existing lanes
+    let column = -1
+    for (let i = 0; i < lanes.length; i++) {
+      if (lanes[i] === c.hash) {
+        if (column === -1) column = i
+        else {
+          lanes[i] = EMPTY
+          laneColors[i] = EMPTY
+        }
+      }
+    }
+    let color
+    if (column === -1) {
+      column = firstEmpty(lanes)
+      const refSeed = c.refs.find((r) => r.kind === 'local' || r.kind === 'remote' || r.kind === 'head')
+      const seed = refSeed
+        ? refSeed.kind === 'remote'
+          ? `r:${refSeed.name}`
+          : refSeed.kind === 'head'
+            ? `h:${refSeed.target || c.hash}`
+            : `l:${refSeed.name}`
+        : c.hash
+      color = stableColorIdx(seed, column, PALETTE_SIZE)
+    } else {
+      color = laneColors[column] ?? stableColorIdx(c.hash, column, PALETTE_SIZE)
+    }
+    laneColors[column] = color
+
+    if (c.parents.length === 0) {
+      lanes[column] = EMPTY
+      laneColors[column] = EMPTY
+    } else {
+      lanes[column] = c.parents[0]
+      for (let p = 1; p < c.parents.length; p++) {
+        const pid = c.parents[p]
+        if (lanes.indexOf(pid) === -1) {
+          const newCol = firstEmpty(lanes)
+          lanes[newCol] = pid
+          laneColors[newCol] = stableColorIdx(pid, newCol, PALETTE_SIZE)
+        }
+      }
+    }
+    while (lanes.length > 0 && lanes[lanes.length - 1] === EMPTY) {
+      lanes.pop()
+      laneColors.pop()
+    }
+
+    const edges = []
+    for (let i = 0; i < before.length; i++) {
+      const exp = before[i]
+      if (exp === EMPTY) continue
+      if (exp === c.hash) {
+        edges.push({ from: i, to: column, color: beforeColor[i], kind: i === column ? 0 : 2 })
+      } else {
+        const newCol = lanes.indexOf(exp)
+        if (newCol !== -1) {
+          edges.push({ from: i, to: newCol, color: beforeColor[i], kind: newCol === i ? 0 : 3 })
+        }
+      }
+    }
+    for (let j = 0; j < lanes.length; j++) {
+      const exp = lanes[j]
+      if (exp === EMPTY) continue
+      if (j === column) continue
+      if (before.indexOf(exp) !== -1) continue
+      edges.push({ from: column, to: j, color: laneColors[j], kind: 1 })
+    }
+
+    rows.push({
+      hash: c.hash,
+      shortHash: c.shortHash,
+      parents: c.parents,
+      author: c.author,
+      email: c.email,
+      date: c.date,
+      subject: c.subject,
+      refs: c.refs,
+      column,
+      color,
+      width: Math.max(before.length, lanes.length),
+      isMerge: c.parents.length > 1,
+      edges
+    })
+  }
+  return rows
+}
+
+function firstEmpty(lanes) {
+  for (let i = 0; i < lanes.length; i++) if (lanes[i] === null) return i
+  lanes.push(null)
+  return lanes.length - 1
 }
