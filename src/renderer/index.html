@@ -27,10 +27,6 @@
       #root {
         height: 100%;
       }
-      /* macOS hiddenInset: leave room for traffic lights */
-      body.has-traffic-lights .app-titlebar {
-        padding-left: 78px;
-      }
       .app-titlebar {
         height: 32px;
         display: flex;
@@ -67,12 +63,6 @@
   <body>
     <div class="app-titlebar"><span class="app-title-dot"></span><span id="app-title">Tide Git</span></div>
     <div id="root"></div>
-    <script>
-      // mark when running in macOS hiddenInset so CSS can offset traffic lights
-      if (navigator.userAgent.includes('Mac')) {
-        document.body.classList.add('has-traffic-lights')
-      }
-    </script>
     <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

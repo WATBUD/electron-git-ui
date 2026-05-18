@@ -222,25 +222,28 @@ const BranchList = ({
   // Handle context menu — opens via ref so BranchList itself does NOT re-render
   // when a menu opens. Re-rendering this tree is expensive when there are many
   // branches + expanded commit lists.
-  const handleContextMenu = useCallback((e, type, target) => {
-    e.preventDefault()
+  const handleContextMenu = useCallback(
+    (e, type, target) => {
+      e.preventDefault()
 
-    let tags = []
-    if (type === 'branch') {
-      const branchObj = branches.find(b => (typeof b === 'string' ? b : b.name) === target)
-      tags = branchObj?.tags || []
-    } else if (type === 'commit') {
-      tags = target?.tags || []
-    }
+      let tags = []
+      if (type === 'branch') {
+        const branchObj = branches.find((b) => (typeof b === 'string' ? b : b.name) === target)
+        tags = branchObj?.tags || []
+      } else if (type === 'commit') {
+        tags = target?.tags || []
+      }
 
-    contextMenuRef.current?.open({
-      x: e.clientX,
-      y: e.clientY,
-      type,
-      target,
-      tags
-    })
-  }, [branches])
+      contextMenuRef.current?.open({
+        x: e.clientX,
+        y: e.clientY,
+        type,
+        target,
+        tags
+      })
+    },
+    [branches]
+  )
 
   // Close context menu
   const closeContextMenu = useCallback(() => {
@@ -248,48 +251,61 @@ const BranchList = ({
   }, [])
 
   // Sort and filter branches
-  const sortBranches = useCallback((branchesList) => {
-    return [...branchesList]
-      .filter((branch) => {
-        const name = typeof branch === 'string' ? branch : branch.name
-        const matchesBranchName = searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
-        
-        if (tagSearchTerm) {
-          const branchObj = typeof branch === 'string' 
-            ? branches.find(b => (typeof b === 'string' ? b : b.name) === name)
-            : branch
-          const tags = branchObj?.tags || []
-          const branchHasTag = tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
-          const commits = branchCommits[name] || []
-          const commitsHaveTag = commits.some(commit => 
-            commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
-          )
-          
-          return matchesBranchName && (branchHasTag || commitsHaveTag)
-        }
-        
-        return matchesBranchName
-      })
-      .sort((a, b) => {
-        const nameA = typeof a === 'string' ? a : a.name
-        const nameB = typeof b === 'string' ? b : b.name
-        if (nameB === currentBranch) return 1
-        if (nameA === currentBranch) return -1
-        return nameA.localeCompare(nameB)
-      })
-  }, [searchTerm, tagSearchTerm, branches, branchCommits, currentBranch])
+  const sortBranches = useCallback(
+    (branchesList) => {
+      return [...branchesList]
+        .filter((branch) => {
+          const name = typeof branch === 'string' ? branch : branch.name
+          const matchesBranchName =
+            searchTerm === '' || name.toLowerCase().includes(searchTerm.toLowerCase())
+
+          if (tagSearchTerm) {
+            const branchObj =
+              typeof branch === 'string'
+                ? branches.find((b) => (typeof b === 'string' ? b : b.name) === name)
+                : branch
+            const tags = branchObj?.tags || []
+            const branchHasTag = tags.some((tag) =>
+              tag.toLowerCase().includes(tagSearchTerm.toLowerCase())
+            )
+            const commits = branchCommits[name] || []
+            const commitsHaveTag = commits.some((commit) =>
+              commit.tags.some((tag) => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
+            )
+
+            return matchesBranchName && (branchHasTag || commitsHaveTag)
+          }
+
+          return matchesBranchName
+        })
+        .sort((a, b) => {
+          const nameA = typeof a === 'string' ? a : a.name
+          const nameB = typeof b === 'string' ? b : b.name
+          if (nameB === currentBranch) return 1
+          if (nameA === currentBranch) return -1
+          return nameA.localeCompare(nameB)
+        })
+    },
+    [searchTerm, tagSearchTerm, branches, branchCommits, currentBranch]
+  )
 
   // Filter commits by tag
-  const filterCommitsByTag = useCallback((commits) => {
-    if (!tagSearchTerm) return commits
-    return commits.filter(commit => 
-      commit.tags.some(tag => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
-    )
-  }, [tagSearchTerm])
+  const filterCommitsByTag = useCallback(
+    (commits) => {
+      if (!tagSearchTerm) return commits
+      return commits.filter((commit) =>
+        commit.tags.some((tag) => tag.toLowerCase().includes(tagSearchTerm.toLowerCase()))
+      )
+    },
+    [tagSearchTerm]
+  )
 
   // Memoized sorted branches
   const sortedLocalBranches = useMemo(() => sortBranches(branches), [sortBranches, branches])
-  const sortedRemoteBranches = useMemo(() => sortBranches(remoteBranches), [sortBranches, remoteBranches])
+  const sortedRemoteBranches = useMemo(
+    () => sortBranches(remoteBranches),
+    [sortBranches, remoteBranches]
+  )
 
   // Tree-flatten with folders collapsed/expanded for the mainstream sidebar look
   const localTreeEntries = useMemo(() => {
@@ -355,7 +371,7 @@ const BranchList = ({
       }, {})
 
       if (Object.keys(newCommits).length > 0) {
-        setBranchCommits(prev => ({ ...prev, ...newCommits }))
+        setBranchCommits((prev) => ({ ...prev, ...newCommits }))
       }
 
       setLoadingCommits(false)
@@ -369,22 +385,31 @@ const BranchList = ({
     if (!newBranchName.trim()) return
 
     const branchNames = branchPrefix
-      ? branchPrefix.split(',').map((p) => `${p.trim()}${newBranchName}`).join(',')
+      ? branchPrefix
+          .split(',')
+          .map((p) => `${p.trim()}${newBranchName}`)
+          .join(',')
       : newBranchName
     createBranchByNewBranchName(branchNames)
   }, [newBranchName, branchPrefix, createBranchByNewBranchName])
 
   // Handle rename branch
-  const handleRenameBranch = useCallback((oldName) => {
-    setRenameBranchState({ show: true, oldName, newName: oldName })
-    closeContextMenu()
-  }, [closeContextMenu])
+  const handleRenameBranch = useCallback(
+    (oldName) => {
+      setRenameBranchState({ show: true, oldName, newName: oldName })
+      closeContextMenu()
+    },
+    [closeContextMenu]
+  )
 
   // Handle create tag
-  const handleCreateTag = useCallback((branchName) => {
-    setCreateTagState({ show: true, branchName, tagName: '' })
-    closeContextMenu()
-  }, [closeContextMenu])
+  const handleCreateTag = useCallback(
+    (branchName) => {
+      setCreateTagState({ show: true, branchName, tagName: '' })
+      closeContextMenu()
+    },
+    [closeContextMenu]
+  )
 
   // Submit create tag
   const submitCreateTag = useCallback(async () => {
@@ -400,9 +425,9 @@ const BranchList = ({
       dispatch(getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT }))
         .unwrap()
         .then((result) => {
-          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
+          setBranchCommits((prev) => ({ ...prev, [branchName]: result.data }))
         })
-        .catch(err => console.error('Error refreshing branch commits:', err))
+        .catch((err) => console.error('Error refreshing branch commits:', err))
     })
 
     setCreateTagState({ show: false, branchName: '', tagName: '' })
@@ -417,28 +442,31 @@ const BranchList = ({
   }, [renameBranchState, onRename])
 
   // Handle branch click
-  const handleBranchClick = useCallback(async (branchName) => {
-    setExpandedBranches(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(branchName)) {
-        newSet.delete(branchName)
-      } else {
-        newSet.add(branchName)
+  const handleBranchClick = useCallback(
+    async (branchName) => {
+      setExpandedBranches((prev) => {
+        const newSet = new Set(prev)
+        if (newSet.has(branchName)) {
+          newSet.delete(branchName)
+        } else {
+          newSet.add(branchName)
+        }
+        return newSet
+      })
+
+      if (!branchCommits[branchName]) {
+        try {
+          const result = await dispatch(
+            getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
+          ).unwrap()
+          setBranchCommits((prev) => ({ ...prev, [branchName]: result.data }))
+        } catch (err) {
+          console.error('Error loading branch commits:', err)
+        }
       }
-      return newSet
-    })
-    
-    if (!branchCommits[branchName]) {
-      try {
-        const result = await dispatch(
-          getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
-        ).unwrap()
-        setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
-      } catch (err) {
-        console.error('Error loading branch commits:', err)
-      }
-    }
-  }, [branchCommits, dispatch])
+    },
+    [branchCommits, dispatch]
+  )
 
   // Handle refresh commits
   const handleRefreshCommits = useCallback(() => {
@@ -447,9 +475,9 @@ const BranchList = ({
       dispatch(getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT }))
         .unwrap()
         .then((result) => {
-          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
+          setBranchCommits((prev) => ({ ...prev, [branchName]: result.data }))
         })
-        .catch(err => console.error('Error refreshing branch commits:', err))
+        .catch((err) => console.error('Error refreshing branch commits:', err))
     })
 
     // Refresh tag search commits
@@ -460,7 +488,7 @@ const BranchList = ({
           const result = await dispatch(
             getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT })
           ).unwrap()
-          setBranchCommits(prev => ({ ...prev, [branchName]: result.data }))
+          setBranchCommits((prev) => ({ ...prev, [branchName]: result.data }))
         } catch (err) {
           console.error('Error loading branch commits:', err)
         }
@@ -514,7 +542,7 @@ const BranchList = ({
           </button>
         </div>
       </div>
-      
+
       {/* Search inputs */}
       <div className={styles.searchContainer}>
         <SearchInput
@@ -530,7 +558,7 @@ const BranchList = ({
           customStyle={{ flex: 1 }}
         />
       </div>
-      
+
       {/* Tag legend */}
       <div className={styles.tagLegend}>
         <span className={styles.legendItem}>
@@ -596,7 +624,7 @@ const BranchList = ({
           </div>
         </div>
       )}
-      
+
       {loadingCommits && tagSearchTerm && (
         <div className={styles.loadingHint}>
           <RefreshCw size={12} className={styles.spinning} />
@@ -605,9 +633,7 @@ const BranchList = ({
       )}
       {tagSearchTerm && matchingTags.length > 0 && (
         <div className={styles.matchingTagsSection}>
-          <div className={styles.matchingTagsHeader}>
-            Matching tags ({matchingTags.length})
-          </div>
+          <div className={styles.matchingTagsHeader}>Matching tags ({matchingTags.length})</div>
           <div className={styles.matchingTagsList}>
             {matchingTags.map((tag) => {
               const isDivergent = divergentTags.includes(tag)
@@ -662,9 +688,12 @@ const BranchList = ({
               <div
                 className={`${styles.branchGroup} ${effectiveLocalCollapsed ? styles.collapsed : ''}`}
                 style={
-                  !effectiveLocalCollapsed && !effectiveRemoteCollapsed
-                    ? { flexGrow: localPaneRatio }
-                    : undefined
+                  !effectiveLocalCollapsed && effectiveRemoteCollapsed
+                    ? // REMOTE collapsed → LOCAL fits content, leaves empty space below if short
+                      { flex: '0 1 auto' }
+                    : !effectiveLocalCollapsed && !effectiveRemoteCollapsed
+                      ? { flexGrow: localPaneRatio }
+                      : undefined
                 }
               >
                 <div
@@ -707,9 +736,16 @@ const BranchList = ({
                         }
                         const branchObj = entry.node.branchObj
                         const branch = entry.node.fullName
-                        const { ahead = 0, behind = 0, tags = [], isDetached = false, isCurrent = false } = (typeof branchObj === 'object' ? branchObj : {}) || {}
+                        const {
+                          ahead = 0,
+                          behind = 0,
+                          tags = [],
+                          isDetached = false,
+                          isCurrent = false
+                        } = (typeof branchObj === 'object' ? branchObj : {}) || {}
                         const isActive = isCurrent || branch === currentBranch
-                        const isExpanded = expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])
+                        const isExpanded =
+                          expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])
 
                         return (
                           <div key={`local-${branch}`}>
@@ -780,14 +816,21 @@ const BranchList = ({
                                       )
                                     })}
                                     {tags.length > 2 && (
-                                      <span className={styles.tagBadge} title={tags.slice(2).join(', ')}>
+                                      <span
+                                        className={styles.tagBadge}
+                                        title={tags.slice(2).join(', ')}
+                                      >
                                         +{tags.length - 2}
                                       </span>
                                     )}
                                   </div>
                                 )}
                                 <div className={styles.itemActions}>
-                                  <CopyButton textToCopy={branch} size={12} showCopiedText={false} />
+                                  <CopyButton
+                                    textToCopy={branch}
+                                    size={12}
+                                    showCopiedText={false}
+                                  />
                                   {!isActive && (
                                     <button
                                       onClick={(e) => {
@@ -806,112 +849,126 @@ const BranchList = ({
                             </div>
 
                             {/* Show commits when expanded or when tag search is active */}
-                            {(expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])) && branchCommits[branch] && (
-                              <div className={styles.commitHistory}>
-                                {filterCommitsByTag(branchCommits[branch]).length > 0 ? (
-                                  filterCommitsByTag(branchCommits[branch]).map((commit) => (
-                                    <div
-                                      key={commit.hash}
-                                      className={styles.commitItem}
-                                      onClick={() => handleViewCommit(commit)}
-                                      onContextMenu={(e) => handleContextMenu(e, 'commit', commit)}
-                                      style={{ cursor: 'pointer' }}
-                                      title="Click to view changes"
-                                    >
-                                      <div className={styles.commitDot} />
-                                      <div className={styles.commitDetails}>
-                                        <div className={styles.commitMessage}>{commit.message}</div>
-                                        <div className={styles.commitMeta}>
-                                          <span className={styles.commitHash}>
-                                            {commit.shortHash}
-                                          </span>
-                                          <span className={styles.commitAuthor}>{commit.author}</span>
-                                          {commit.date && (
-                                            <span
-                                              className={styles.commitDate}
-                                              title={formatAbsoluteTime(commit.date)}
-                                            >
-                                              <Clock size={9} />
-                                              {formatRelativeTime(commit.date)}
+                            {(expandedBranches.has(branch) ||
+                              (tagSearchTerm && branchCommits[branch])) &&
+                              branchCommits[branch] && (
+                                <div className={styles.commitHistory}>
+                                  {filterCommitsByTag(branchCommits[branch]).length > 0 ? (
+                                    filterCommitsByTag(branchCommits[branch]).map((commit) => (
+                                      <div
+                                        key={commit.hash}
+                                        className={styles.commitItem}
+                                        onClick={() => handleViewCommit(commit)}
+                                        onContextMenu={(e) =>
+                                          handleContextMenu(e, 'commit', commit)
+                                        }
+                                        style={{ cursor: 'pointer' }}
+                                        title="Click to view changes"
+                                      >
+                                        <div className={styles.commitDot} />
+                                        <div className={styles.commitDetails}>
+                                          <div className={styles.commitMessage}>
+                                            {commit.message}
+                                          </div>
+                                          <div className={styles.commitMeta}>
+                                            <span className={styles.commitHash}>
+                                              {commit.shortHash}
                                             </span>
-                                          )}
-                                          {commit.tags.length > 0 && (
-                                            <div className={styles.commitTags}>
-                                              {commit.tags.map((tag) => {
-                                                const isDivergent = divergentTags.includes(tag)
-                                                const isLocalOnly = localOnlyTags.includes(tag)
-                                                const isRemoteOnly = remoteOnlyTags.includes(tag)
-                                                const variant = isDivergent
-                                                  ? styles.divergent
-                                                  : isRemoteOnly
-                                                    ? styles.remoteOnly
-                                                    : isLocalOnly
-                                                      ? styles.localOnly
-                                                      : styles.synced
-                                                const titleText = isDivergent
-                                                  ? `${tag} (Divergent — local & remote point to different commits)`
-                                                  : isRemoteOnly
-                                                    ? `${tag} (Remote only)`
-                                                    : isLocalOnly
-                                                      ? `${tag} (Local only)`
-                                                      : `${tag} (Synced)`
-                                                return (
-                                                  <span
-                                                    key={tag}
-                                                    className={`${styles.commitTag} ${variant}`}
-                                                    title={titleText}
-                                                  >
-                                                    <Tag size={8} />
-                                                    {tag}
-                                                  </span>
-                                                )
-                                              })}
-                                            </div>
-                                          )}
-                                          {(() => {
-                                            const info = commit.branches
-                                            if (!info) return null
-                                            const all = [
-                                              ...(info.local || []).map((b) => ({
-                                                name: b,
-                                                isRemote: false,
-                                                isCurrent: b === branch
-                                              })),
-                                              ...(info.remote || []).map((b) => ({
-                                                name: b,
-                                                isRemote: true,
-                                                isCurrent: false
-                                              }))
-                                            ]
-                                            if (all.length === 0) return null
-                                            return (
-                                              <div className={styles.commitBranches}>
-                                                {all.map((b) => (
-                                                  <span
-                                                    key={(b.isRemote ? 'r:' : 'l:') + b.name}
-                                                    className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
-                                                    title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
-                                                  >
-                                                    <GitBranch size={8} />
-                                                    {b.name}
-                                                  </span>
-                                                ))}
+                                            <span className={styles.commitAuthor}>
+                                              {commit.author}
+                                            </span>
+                                            {commit.date && (
+                                              <span
+                                                className={styles.commitDate}
+                                                title={formatAbsoluteTime(commit.date)}
+                                              >
+                                                <Clock size={9} />
+                                                {formatRelativeTime(commit.date)}
+                                              </span>
+                                            )}
+                                            {commit.tags.length > 0 && (
+                                              <div className={styles.commitTags}>
+                                                {commit.tags.map((tag) => {
+                                                  const isDivergent = divergentTags.includes(tag)
+                                                  const isLocalOnly = localOnlyTags.includes(tag)
+                                                  const isRemoteOnly = remoteOnlyTags.includes(tag)
+                                                  const variant = isDivergent
+                                                    ? styles.divergent
+                                                    : isRemoteOnly
+                                                      ? styles.remoteOnly
+                                                      : isLocalOnly
+                                                        ? styles.localOnly
+                                                        : styles.synced
+                                                  const titleText = isDivergent
+                                                    ? `${tag} (Divergent — local & remote point to different commits)`
+                                                    : isRemoteOnly
+                                                      ? `${tag} (Remote only)`
+                                                      : isLocalOnly
+                                                        ? `${tag} (Local only)`
+                                                        : `${tag} (Synced)`
+                                                  return (
+                                                    <span
+                                                      key={tag}
+                                                      className={`${styles.commitTag} ${variant}`}
+                                                      title={titleText}
+                                                    >
+                                                      <Tag size={8} />
+                                                      {tag}
+                                                    </span>
+                                                  )
+                                                })}
                                               </div>
-                                            )
-                                          })()}
+                                            )}
+                                            {(() => {
+                                              const info = commit.branches
+                                              if (!info) return null
+                                              const all = [
+                                                ...(info.local || []).map((b) => ({
+                                                  name: b,
+                                                  isRemote: false,
+                                                  isCurrent: b === branch
+                                                })),
+                                                ...(info.remote || []).map((b) => ({
+                                                  name: b,
+                                                  isRemote: true,
+                                                  isCurrent: false
+                                                }))
+                                              ]
+                                              if (all.length === 0) return null
+                                              return (
+                                                <div className={styles.commitBranches}>
+                                                  {all.map((b) => (
+                                                    <span
+                                                      key={(b.isRemote ? 'r:' : 'l:') + b.name}
+                                                      className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
+                                                      title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
+                                                    >
+                                                      <GitBranch size={8} />
+                                                      {b.name}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              )
+                                            })()}
+                                          </div>
                                         </div>
                                       </div>
+                                    ))
+                                  ) : tagSearchTerm ? (
+                                    <div className={styles.noCommits}>
+                                      <p
+                                        style={{
+                                          fontSize: '11px',
+                                          color: 'rgba(255, 255, 255, 0.3)',
+                                          padding: '8px'
+                                        }}
+                                      >
+                                        No commits with tag "{tagSearchTerm}"
+                                      </p>
                                     </div>
-                                  ))
-                                ) : tagSearchTerm ? (
-                                  <div className={styles.noCommits}>
-                                    <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.3)', padding: '8px' }}>
-                                      No commits with tag "{tagSearchTerm}"
-                                    </p>
-                                  </div>
-                                ) : null}
-                              </div>
-                            )}
+                                  ) : null}
+                                </div>
+                              )}
                           </div>
                         )
                       })
@@ -959,7 +1016,8 @@ const BranchList = ({
                             Math.ceil((remoteScrollTop + remoteViewportH) / ROW_H) + OVERSCAN_ROWS
                           )
                           const slice = []
-                          for (let i = first; i <= last; i++) slice.push({ entry: remoteTreeEntries[i], idx: i })
+                          for (let i = first; i <= last; i++)
+                            slice.push({ entry: remoteTreeEntries[i], idx: i })
                           return (
                             <div
                               className={styles.virtualSpacer}
@@ -969,12 +1027,20 @@ const BranchList = ({
                                 const top = idx * ROW_H
                                 if (entry.kind === 'folder') {
                                   const leafCount = countLeaves(entry.node)
-                                  const folderCollapsed = collapsedFolders.has(`remote:${entry.node.path}`)
+                                  const folderCollapsed = collapsedFolders.has(
+                                    `remote:${entry.node.path}`
+                                  )
                                   return (
                                     <div
                                       key={`remote-folder-${entry.node.path}`}
                                       className={styles.branchItem}
-                                      style={{ position: 'absolute', top, left: 0, right: 0, height: ROW_H }}
+                                      style={{
+                                        position: 'absolute',
+                                        top,
+                                        left: 0,
+                                        right: 0,
+                                        height: ROW_H
+                                      }}
                                       onClick={() => toggleFolder(`remote:${entry.node.path}`)}
                                     >
                                       <div
@@ -999,7 +1065,13 @@ const BranchList = ({
                                     key={`remote-${branch}`}
                                     onDoubleClick={() => !isActive && onCheckout(branch)}
                                     className={`${styles.branchItem} ${isActive ? styles.active : ''}`}
-                                    style={{ position: 'absolute', top, left: 0, right: 0, height: ROW_H }}
+                                    style={{
+                                      position: 'absolute',
+                                      top,
+                                      left: 0,
+                                      right: 0,
+                                      height: ROW_H
+                                    }}
                                     onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                                   >
                                     <div
@@ -1008,7 +1080,9 @@ const BranchList = ({
                                     >
                                       <span className={styles.folderChevronPlaceholder} />
                                       <GitBranch size={13} className={styles.itemIcon} />
-                                      <span className={styles.branchNameText}>{entry.node.name}</span>
+                                      <span className={styles.branchNameText}>
+                                        {entry.node.name}
+                                      </span>
                                       {isActive && (
                                         <CheckCircle2 size={12} className={styles.activeCheck} />
                                       )}

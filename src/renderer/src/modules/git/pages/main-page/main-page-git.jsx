@@ -51,6 +51,7 @@ import {
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
 import { GIT_TABS } from '../../constants/tabs'
+import { useActiveTabHook } from '../../hooks/useActiveTabHook'
 import {
   AlertCircle,
   FileEdit,
@@ -65,7 +66,8 @@ import {
 export const MainPageGit = () => {
   const [newBranchName, setNewBranchName] = useState('')
   const [activeTab, setActiveTab] = useState(GIT_TABS.PROJECTS)
-  const { confirmDialog, requestConfirm, handleConfirm, handleCancel, setToggleValue, getTitle } = useConfirmDialog()
+  const { confirmDialog, requestConfirm, handleConfirm, handleCancel, setToggleValue, getTitle } =
+    useConfirmDialog()
   const error = useSelector((state) => state.git.error)
 
   // Get state from Redux
@@ -93,6 +95,7 @@ export const MainPageGit = () => {
   const divergentTags = useSelector((state) => state.git.divergentTags || [])
   const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const dispatch = useDispatch()
+  const refreshTab = useActiveTabHook()
 
   // When a merge starts having conflicts, jump to the files tab so the user
   // can resolve them. Triggers on the false → true transition.
@@ -117,31 +120,17 @@ export const MainPageGit = () => {
       dispatch(loadFileStatus())
       dispatch(checkMergeInProgress())
       dispatch(loadTags())
-
     }
   }, [repoPath, dispatch])
 
   useEffect(() => {
     const handleFocus = () => {
-      if (repoPath) {
-        if (activeTab === GIT_TABS.FILES) {
-          dispatch(loadFileStatus())
-        }
-        if (activeTab === GIT_TABS.BRANCH_VIEW) {
-          dispatch(checkMergeInProgress())
-          dispatch(loadBranches())
-          // Refresh tag info silently — keeps divergent/remoteOnly badges fresh
-          dispatch(loadTags())
-        }
-        if (activeTab === GIT_TABS.STASHES) {
-          dispatch(loadStashes())
-        }
-      }
+      if (repoPath) refreshTab(activeTab)
     }
 
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [repoPath, activeTab, dispatch])
+  }, [repoPath, activeTab, refreshTab])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -150,11 +139,9 @@ export const MainPageGit = () => {
         if (projects[index]) {
           e.preventDefault()
           if (projects[index] !== repoPath) {
-            dispatch(openRepository(projects[index])).then(() => {
-              setActiveTab(GIT_TABS.BRANCH_VIEW)
-            })
+            dispatch(openRepository(projects[index])).then(() => refreshTab(activeTab))
           } else {
-            //setActiveTab(GIT_TABS.BRANCH_VIEW)
+            refreshTab(activeTab)
           }
         }
       }
@@ -162,7 +149,7 @@ export const MainPageGit = () => {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [projects, repoPath, dispatch])
+  }, [projects, repoPath, activeTab, refreshTab, dispatch])
 
   const handleFileClick = async ({ file, isStaged }) => {
     const result = await dispatch(getFileDiff({ file, isStaged }))
@@ -205,20 +192,7 @@ export const MainPageGit = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    if (tab === GIT_TABS.FILES) {
-      dispatch(loadFileStatus())
-    }
-    if (tab === GIT_TABS.BRANCH_VIEW) {
-      dispatch(checkMergeInProgress())
-      dispatch(loadBranches())
-      dispatch(loadTags())
-    }
-    if (tab === GIT_TABS.GRAPH) {
-      dispatch(loadCommitHistory())
-    }
-    if (tab === GIT_TABS.STASHES) {
-      dispatch(loadStashes())
-    }
+    refreshTab(tab)
   }
 
   // Handle delete tag confirmation request from BranchContextMenu
@@ -291,11 +265,11 @@ export const MainPageGit = () => {
             }}
             onStash={async (includeStaged, customMessage) => {
               try {
-                const defaultMessage = includeStaged 
+                const defaultMessage = includeStaged
                   ? 'Auto stash from toolbar (all changes)'
                   : 'Auto stash from toolbar (unstaged only)'
                 const message = customMessage || defaultMessage
-                
+
                 if (includeStaged) {
                   // Stash all files (staged + unstaged)
                   const result = await dispatch(pushStash(message))
@@ -305,13 +279,15 @@ export const MainPageGit = () => {
                 } else {
                   // Stash only unstaged files, preserve staged files
                   const unstagedFiles = (fileStatus || [])
-                    .filter(f => !f.isStaged)
-                    .map(f => f.file)
-                  
-                  const result = await dispatch(pushStash({ 
-                    message: message,
-                    files: unstagedFiles.length > 0 ? unstagedFiles : undefined
-                  }))
+                    .filter((f) => !f.isStaged)
+                    .map((f) => f.file)
+
+                  const result = await dispatch(
+                    pushStash({
+                      message: message,
+                      files: unstagedFiles.length > 0 ? unstagedFiles : undefined
+                    })
+                  )
                   if (pushStash.fulfilled.match(result)) {
                     dispatch(loadFileStatus())
                   }
@@ -430,9 +406,7 @@ export const MainPageGit = () => {
                     fileStatus={fileStatus}
                     repoPath={repoPath}
                     selectedFileDiff={selectedFileDiff}
-                    onFileClick={({ file, isStaged }) =>
-                      handleFileClick({ file, isStaged })
-                    }
+                    onFileClick={({ file, isStaged }) => handleFileClick({ file, isStaged })}
                     onStageFile={async (files) => {
                       const result = await dispatch(stageFile(files))
                       if (stageFile.fulfilled.match(result)) {
@@ -482,7 +456,9 @@ export const MainPageGit = () => {
                     onApply={async (stashIndex) => dispatch(applyStash(stashIndex))}
                     onPop={async (stashIndex) => dispatch(popStash(stashIndex))}
                     onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
-                    onRename={async (stashIndex, newMessage) => dispatch(renameStash({ stashIndex, newMessage }))}
+                    onRename={async (stashIndex, newMessage) =>
+                      dispatch(renameStash({ stashIndex, newMessage }))
+                    }
                     onSelectStash={(stashIndex) => dispatch(getStashDiff(stashIndex))}
                   />
                 )}
@@ -497,7 +473,7 @@ export const MainPageGit = () => {
       </div>
       <LoadingModal message={loadingMessage} />
       <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
-      
+
       {/* Global ConfirmDialog for tag and branch deletion */}
       <ConfirmDialog
         show={confirmDialog.show}

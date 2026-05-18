@@ -1,7 +1,7 @@
 import React from 'react'
 import styles from './LeftSideBar.module.css'
 import { GIT_TABS } from '../../constants/tabs'
-import { Folder, GitBranch, FileText, Package } from 'lucide-react'
+import { Folder, GitBranch, FileText, Package, GitMerge } from 'lucide-react'
 
 const LeftSideBar = ({ activeTab, onTabChange, isRepoSelected }) => {
   const menuItems = [
@@ -15,7 +15,15 @@ const LeftSideBar = ({ activeTab, onTabChange, isRepoSelected }) => {
     <div className={styles.sidebar}>
       <div className={styles.sidebarScroll}>
         <div className={styles.sidebarHeader}>
-          <span>GIT UI</span>
+          <div className={styles.brand}>
+            <span className={styles.brandLogo}>
+              <GitMerge size={14} strokeWidth={2.4} />
+            </span>
+            <div className={styles.brandText}>
+              <span className={styles.brandName}>Tide Git</span>
+              <span className={styles.brandTagline}>Workspace</span>
+            </div>
+          </div>
         </div>
         <nav className={styles.menu}>
           {menuItems.map((item) => {
