@@ -18,13 +18,34 @@ if (process.platform === 'darwin') {
 }
 
 function createWindow() {
-  // Create the browser window.
+  const isMac = process.platform === 'darwin'
+  const isWin = process.platform === 'win32'
   const mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 1280,
+    height: 820,
+    minWidth: 960,
+    minHeight: 640,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    backgroundColor: '#14141c',
+    title: 'Tide Git',
+    ...(isMac
+      ? {
+          titleBarStyle: 'hiddenInset',
+          trafficLightPosition: { x: 14, y: 10 },
+          vibrancy: 'under-window',
+          visualEffectState: 'active'
+        }
+      : isWin
+        ? {
+            titleBarStyle: 'hidden',
+            titleBarOverlay: {
+              color: '#1e1e2e',
+              symbolColor: '#cccccc',
+              height: 32
+            }
+          }
+        : { icon }),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

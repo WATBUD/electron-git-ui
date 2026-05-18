@@ -1,17 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Git UI</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <title>Tide Git</title>
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#14141c" />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com"
     />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #14141c;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+          'Helvetica Neue', sans-serif;
+        overflow: hidden;
+      }
+      #root {
+        height: 100%;
+      }
+      /* macOS hiddenInset: leave room for traffic lights */
+      body.has-traffic-lights .app-titlebar {
+        padding-left: 78px;
+      }
+      .app-titlebar {
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+          180deg,
+          rgba(38, 38, 48, 0.85) 0%,
+          rgba(28, 28, 38, 0.85) 100%
+        );
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        -webkit-app-region: drag;
+        user-select: none;
+        flex-shrink: 0;
+      }
+      .app-titlebar .app-title-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 8px;
+        border-radius: 50%;
+        background-color: #66b3ff;
+        box-shadow: 0 0 8px rgba(102, 179, 255, 0.6);
+      }
+    </style>
   </head>
 
   <body>
+    <div class="app-titlebar"><span class="app-title-dot"></span><span id="app-title">Tide Git</span></div>
     <div id="root"></div>
+    <script>
+      // mark when running in macOS hiddenInset so CSS can offset traffic lights
+      if (navigator.userAgent.includes('Mac')) {
+        document.body.classList.add('has-traffic-lights')
+      }
+    </script>
     <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>
