@@ -561,10 +561,10 @@
 .commitItem {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  height: 24px;
-  padding: 0 12px 0 32px;
+  min-height: 24px;
+  padding: 4px 12px 4px 32px;
   cursor: pointer;
   transition: background-color 0.1s;
 }
@@ -599,7 +599,8 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
 
 .commitMessage {
@@ -613,12 +614,13 @@
 }
 
 .commitMeta {
-  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 3px 8px;
   font-size: 10px;
   color: rgba(255, 255, 255, 0.4);
+  min-width: 0;
 }
 
 .commitHash {
@@ -683,10 +685,7 @@
   border-radius: 7px;
   font-size: 9px;
   font-weight: 500;
-  max-width: 110px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   border: 1px solid currentColor;
   background-color: rgba(255, 255, 255, 0.04);
 }

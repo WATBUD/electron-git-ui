@@ -20,71 +20,19 @@ import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from './CommitDiffModal'
 import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
 import { getBranchCommits } from '../../store/git/gitThunks'
+import {
+  BRANCH_COMMITS_LIMIT,
+  ROW_H,
+  OVERSCAN_ROWS,
+  indentStyle,
+  buildBranchTree,
+  countLeaves,
+  flattenTree
+} from './branchTree'
+import { TagBadge } from './TagBadge'
+import { RenameBranchModal } from './RenameBranchModal'
+import { CreateTagModal } from './CreateTagModal'
 import styles from './BranchList.module.css'
-
-// Constants
-const BRANCH_COMMITS_LIMIT = 1000
-const INDENT_PX = 14
-const BASE_PADDING_PX = 10
-const ROW_H = 26
-const OVERSCAN_ROWS = 8
-
-// Compute horizontal indent for a tree entry's branchMain (left padding).
-const indentStyle = (depth) => ({ paddingLeft: BASE_PADDING_PX + depth * INDENT_PX })
-
-// Build a tree from a flat branch list using `/` as path separator.
-// Leaf nodes carry the original branchObj; folder nodes hold children.
-const buildBranchTree = (branchList) => {
-  const root = { type: 'folder', name: '', children: new Map(), path: '' }
-  for (const branchObj of branchList) {
-    const name = typeof branchObj === 'string' ? branchObj : branchObj.name
-    const parts = name.split('/')
-    let node = root
-    for (let i = 0; i < parts.length - 1; i++) {
-      const seg = parts[i]
-      const path = parts.slice(0, i + 1).join('/')
-      let next = node.children.get(seg)
-      if (!next) {
-        next = { type: 'folder', name: seg, children: new Map(), path }
-        node.children.set(seg, next)
-      }
-      node = next
-    }
-    const leafSeg = parts[parts.length - 1]
-    node.children.set(leafSeg, { type: 'leaf', name: leafSeg, fullName: name, branchObj })
-  }
-  return root
-}
-
-// Count leaves under a folder (for the count badge).
-const countLeaves = (node) => {
-  if (node.type === 'leaf') return 1
-  let n = 0
-  for (const child of node.children.values()) n += countLeaves(child)
-  return n
-}
-
-// Flatten the tree into a sorted array of render entries.
-// Folders sort before their siblings and are sorted alphabetically; leaves last.
-const flattenTree = (node, depth, collapsedFolders, currentBranch, out) => {
-  const entries = Array.from(node.children.values()).sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
-    // current branch always first within its folder
-    if (a.type === 'leaf' && a.fullName === currentBranch) return -1
-    if (b.type === 'leaf' && b.fullName === currentBranch) return 1
-    return a.name.localeCompare(b.name)
-  })
-  for (const child of entries) {
-    if (child.type === 'folder') {
-      const collapsed = collapsedFolders.has(child.path)
-      out.push({ kind: 'folder', node: child, depth, collapsed })
-      if (!collapsed) flattenTree(child, depth + 1, collapsedFolders, currentBranch, out)
-    } else {
-      out.push({ kind: 'leaf', node: child, depth })
-    }
-  }
-  return out
-}
 
 const BranchList = ({
   branches = [],
@@ -639,43 +587,24 @@ const BranchList = ({
         <div className={styles.matchingTagsSection}>
           <div className={styles.matchingTagsHeader}>Matching tags ({matchingTags.length})</div>
           <div className={styles.matchingTagsList}>
-            {matchingTags.map((tag) => {
-              const isDivergent = divergentTags.includes(tag)
-              const isLocalOnly = localOnlyTags.includes(tag)
-              const isRemoteOnly = remoteOnlyTags.includes(tag)
-              const variant = isDivergent
-                ? styles.divergent
-                : isRemoteOnly
-                  ? styles.remoteOnly
-                  : isLocalOnly
-                    ? styles.localOnly
-                    : styles.synced
-              const titleText = isDivergent
-                ? 'Divergent — local & remote point to different commits (right-click to delete)'
-                : isRemoteOnly
-                  ? 'Remote only (right-click to delete)'
-                  : isLocalOnly
-                    ? 'Local only (right-click to delete)'
-                    : 'Synced (right-click to delete)'
-              return (
-                <span
-                  key={tag}
-                  className={`${styles.tagBadge} ${variant} ${styles.matchingTagItem}`}
-                  title={titleText}
-                  onContextMenu={(e) =>
-                    handleContextMenu(e, 'tag', {
-                      name: tag,
-                      isLocalOnly,
-                      isRemoteOnly,
-                      isDivergent
-                    })
-                  }
-                >
-                  <Tag size={9} />
-                  {tag}
-                </span>
-              )
-            })}
+            {matchingTags.map((tag) => (
+              <TagBadge
+                key={tag}
+                tag={tag}
+                localOnlyTags={localOnlyTags}
+                remoteOnlyTags={remoteOnlyTags}
+                divergentTags={divergentTags}
+                className={styles.matchingTagItem}
+                onContextMenu={(e) =>
+                  handleContextMenu(e, 'tag', {
+                    name: tag,
+                    isLocalOnly: localOnlyTags.includes(tag),
+                    isRemoteOnly: remoteOnlyTags.includes(tag),
+                    isDivergent: divergentTags.includes(tag)
+                  })
+                }
+              />
+            ))}
           </div>
         </div>
       )}
@@ -758,7 +687,7 @@ const BranchList = ({
                             >
                               <div
                                 className={styles.branchMain}
-                                style={{ paddingLeft: 0 + entry.depth * INDENT_PX }}
+                                style={indentStyle(entry.depth)}
                               >
                                 <span className={styles.folderChevronPlaceholder} />
                                 <GitBranch size={13} className={styles.itemIcon} />
@@ -807,35 +736,16 @@ const BranchList = ({
                                 </div>
                                 {tags.length > 0 && (
                                   <div className={styles.tagBadges}>
-                                    {tags.slice(0, 2).map((tag) => {
-                                      const isDivergent = divergentTags.includes(tag)
-                                      const isLocalOnly = localOnlyTags.includes(tag)
-                                      const isRemoteOnly = remoteOnlyTags.includes(tag)
-                                      const variant = isDivergent
-                                        ? styles.divergent
-                                        : isRemoteOnly
-                                          ? styles.remoteOnly
-                                          : isLocalOnly
-                                            ? styles.localOnly
-                                            : styles.synced
-                                      const titleText = isDivergent
-                                        ? `${tag} (Divergent — local & remote point to different commits)`
-                                        : isRemoteOnly
-                                          ? `${tag} (Remote only)`
-                                          : isLocalOnly
-                                            ? `${tag} (Local only)`
-                                            : `${tag} (Synced)`
-                                      return (
-                                        <span
-                                          key={tag}
-                                          className={`${styles.tagBadge} ${variant}`}
-                                          title={titleText}
-                                        >
-                                          <Tag size={8} />
-                                          {tag}
-                                        </span>
-                                      )
-                                    })}
+                                    {tags.slice(0, 2).map((tag) => (
+                                      <TagBadge
+                                        key={tag}
+                                        tag={tag}
+                                        iconSize={8}
+                                        localOnlyTags={localOnlyTags}
+                                        remoteOnlyTags={remoteOnlyTags}
+                                        divergentTags={divergentTags}
+                                      />
+                                    ))}
                                     {tags.length > 2 && (
                                       <span
                                         className={styles.tagBadge}
@@ -889,35 +799,16 @@ const BranchList = ({
                                             )}
                                             {commit.tags.length > 0 && (
                                               <div className={styles.commitTags}>
-                                                {commit.tags.map((tag) => {
-                                                  const isDivergent = divergentTags.includes(tag)
-                                                  const isLocalOnly = localOnlyTags.includes(tag)
-                                                  const isRemoteOnly = remoteOnlyTags.includes(tag)
-                                                  const variant = isDivergent
-                                                    ? styles.divergent
-                                                    : isRemoteOnly
-                                                      ? styles.remoteOnly
-                                                      : isLocalOnly
-                                                        ? styles.localOnly
-                                                        : styles.synced
-                                                  const titleText = isDivergent
-                                                    ? `${tag} (Divergent — local & remote point to different commits)`
-                                                    : isRemoteOnly
-                                                      ? `${tag} (Remote only)`
-                                                      : isLocalOnly
-                                                        ? `${tag} (Local only)`
-                                                        : `${tag} (Synced)`
-                                                  return (
-                                                    <span
-                                                      key={tag}
-                                                      className={`${styles.commitTag} ${variant}`}
-                                                      title={titleText}
-                                                    >
-                                                      <Tag size={8} />
-                                                      {tag}
-                                                    </span>
-                                                  )
-                                                })}
+                                                {commit.tags.map((tag) => (
+                                                  <TagBadge
+                                                    key={tag}
+                                                    tag={tag}
+                                                    inline
+                                                    localOnlyTags={localOnlyTags}
+                                                    remoteOnlyTags={remoteOnlyTags}
+                                                    divergentTags={divergentTags}
+                                                  />
+                                                ))}
                                               </div>
                                             )}
                                             {(() => {
@@ -1126,96 +1017,17 @@ const BranchList = ({
         </div>
       </div>
 
-      {renameBranchState.show && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setRenameBranchState({ show: false, oldName: '', newName: '' })}
-        >
-          <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
-            <h3>Rename Branch</h3>
-            <div className={styles.modalBody}>
-              <div className={styles.modalOldName}>
-                <span>Current:</span>
-                <code>{renameBranchState.oldName}</code>
-              </div>
-              <input
-                value={renameBranchState.newName}
-                onChange={(e) =>
-                  setRenameBranchState((prev) => ({ ...prev, newName: e.target.value }))
-                }
-                placeholder="New branch name"
-                className={styles.modalInput}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submitRename()
-                }}
-              />
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => setRenameBranchState({ show: false, oldName: '', newName: '' })}
-                className={styles.modalCancel}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitRename}
-                disabled={
-                  !renameBranchState.newName ||
-                  renameBranchState.newName === renameBranchState.oldName
-                }
-                className={styles.modalConfirm}
-              >
-                Rename
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RenameBranchModal
+        state={renameBranchState}
+        setState={setRenameBranchState}
+        onSubmit={submitRename}
+      />
 
-      {createTagState.show && (
-        <div
-          className={styles.modalOverlay}
-          onClick={() => setCreateTagState({ show: false, branchName: '', tagName: '' })}
-        >
-          <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
-            <h3>Create Tag</h3>
-            <div className={styles.modalBody}>
-              <div className={styles.modalOldName}>
-                <span>Branch:</span>
-                <code>{createTagState.branchName?.replace('origin/', '')}</code>
-              </div>
-              <input
-                value={createTagState.tagName}
-                onChange={(e) =>
-                  setCreateTagState((prev) => ({ ...prev, tagName: e.target.value }))
-                }
-                placeholder="Tag name (e.g., v1.0.0)"
-                className={styles.modalInput}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') submitCreateTag()
-                }}
-              />
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                onClick={() => setCreateTagState({ show: false, branchName: '', tagName: '' })}
-                className={styles.modalCancel}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitCreateTag}
-                disabled={!createTagState.tagName || !createTagState.tagName.trim()}
-                className={styles.modalConfirm}
-              >
-                Create Tag
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateTagModal
+        state={createTagState}
+        setState={setCreateTagState}
+        onSubmit={submitCreateTag}
+      />
 
       <CommitDiffModal commit={viewingCommit} onClose={closeCommitDiffModal} />
 
