@@ -25,8 +25,12 @@ import styles from './BranchList.module.css'
 // Constants
 const BRANCH_COMMITS_LIMIT = 1000
 const INDENT_PX = 14
+const BASE_PADDING_PX = 10
 const ROW_H = 26
 const OVERSCAN_ROWS = 8
+
+// Compute horizontal indent for a tree entry's branchMain (left padding).
+const indentStyle = (depth) => ({ paddingLeft: BASE_PADDING_PX + depth * INDENT_PX })
 
 // Build a tree from a flat branch list using `/` as path separator.
 // Leaf nodes carry the original branchObj; folder nodes hold children.
@@ -719,10 +723,7 @@ const BranchList = ({
                               className={styles.branchItem}
                               onClick={() => toggleFolder(entry.node.path)}
                             >
-                              <div
-                                className={styles.branchMain}
-                                style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
-                              >
+                              <div className={styles.branchMain} style={indentStyle(entry.depth)}>
                                 <ChevronDown
                                   size={12}
                                   className={`${styles.folderChevron} ${entry.collapsed ? styles.collapsed : ''}`}
@@ -757,7 +758,7 @@ const BranchList = ({
                             >
                               <div
                                 className={styles.branchMain}
-                                style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                                style={{ paddingLeft: 0 + entry.depth * INDENT_PX }}
                               >
                                 <span className={styles.folderChevronPlaceholder} />
                                 <GitBranch size={13} className={styles.itemIcon} />
@@ -770,6 +771,26 @@ const BranchList = ({
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />
                                 )}
+                                <div className={styles.itemActions}>
+                                  <CopyButton
+                                    textToCopy={branch}
+                                    size={12}
+                                    showCopiedText={false}
+                                  />
+                                  {!isActive && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        if (onRequestDeleteBranch) {
+                                          onRequestDeleteBranch(branch, false)
+                                        }
+                                      }}
+                                      className={styles.itemDeleteBtn}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
                                 <div className={styles.syncStatus}>
                                   {ahead > 0 && (
                                     <span className={styles.ahead} title={`${ahead} ahead`}>
@@ -825,26 +846,6 @@ const BranchList = ({
                                     )}
                                   </div>
                                 )}
-                                <div className={styles.itemActions}>
-                                  <CopyButton
-                                    textToCopy={branch}
-                                    size={12}
-                                    showCopiedText={false}
-                                  />
-                                  {!isActive && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        if (onRequestDeleteBranch) {
-                                          onRequestDeleteBranch(branch, false)
-                                        }
-                                      }}
-                                      className={styles.itemDeleteBtn}
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  )}
-                                </div>
                               </div>
                             </div>
 
@@ -1045,7 +1046,7 @@ const BranchList = ({
                                     >
                                       <div
                                         className={styles.branchMain}
-                                        style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                                        style={indentStyle(entry.depth)}
                                       >
                                         <ChevronDown
                                           size={12}
@@ -1076,7 +1077,7 @@ const BranchList = ({
                                   >
                                     <div
                                       className={styles.branchMain}
-                                      style={{ paddingLeft: 8 + entry.depth * INDENT_PX }}
+                                      style={indentStyle(entry.depth)}
                                     >
                                       <span className={styles.folderChevronPlaceholder} />
                                       <GitBranch size={13} className={styles.itemIcon} />
