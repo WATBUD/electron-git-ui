@@ -36,11 +36,11 @@
 .commitTag {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 4px;
-  height: 13px;
-  border-radius: 6px;
-  font-size: 8px;
+  gap: 3px;
+  padding: 1px 7px;
+  height: 17px;
+  border-radius: 9px;
+  font-size: 11px;
   font-weight: 500;
   border: 1px solid currentColor;
   background-color: rgba(255, 255, 255, 0.04);

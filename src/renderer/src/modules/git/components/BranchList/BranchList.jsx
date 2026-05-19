@@ -270,7 +270,7 @@ const BranchList = ({
 
   const remoteTreeEntries = useMemo(() => {
     const tree = buildBranchTree(sortedRemoteBranches)
-    return flattenTree(tree, 0, collapsedFolders, currentBranch, [])
+    return flattenTree(tree, 0, collapsedFolders, currentBranch, [], 'remote:')
   }, [sortedRemoteBranches, collapsedFolders, currentBranch])
 
   // Auto-collapse when a filter wipes out a section (preserves user's manual toggle for non-empty case)
@@ -777,9 +777,6 @@ const BranchList = ({
                                       >
                                         <div className={styles.commitDot} />
                                         <div className={styles.commitDetails}>
-                                          <div className={styles.commitMessage}>
-                                            {commit.message}
-                                          </div>
                                           <div className={styles.commitMeta}>
                                             <span className={styles.commitHash}>
                                               {commit.shortHash}
@@ -792,7 +789,7 @@ const BranchList = ({
                                                 className={styles.commitDate}
                                                 title={formatAbsoluteTime(commit.date)}
                                               >
-                                                <Clock size={9} />
+                                                <Clock size={11} />
                                                 {formatRelativeTime(commit.date)}
                                               </span>
                                             )}
@@ -834,13 +831,16 @@ const BranchList = ({
                                                       className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
                                                       title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
                                                     >
-                                                      <GitBranch size={8} />
+                                                      <GitBranch size={10} />
                                                       {b.name}
                                                     </span>
                                                   ))}
                                                 </div>
                                               )
                                             })()}
+                                          </div>
+                                          <div className={styles.commitMessage}>
+                                            {commit.message}
                                           </div>
                                         </div>
                                       </div>

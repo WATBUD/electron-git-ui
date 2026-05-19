@@ -537,11 +537,11 @@
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  min-height: 24px;
+  gap: 10px;
+  min-height: 30px;
   /* `--commit-indent` is set inline based on parent branch's tree depth so the
      dot lines up under the branch's GitBranch icon. Default mirrors depth=0. */
-  padding: 4px 12px 4px var(--commit-indent, 41px);
+  padding: 6px 14px 6px var(--commit-indent, 41px);
   cursor: pointer;
   transition: background-color 0.1s;
 }
@@ -560,13 +560,14 @@
 
 .commitDot {
   flex-shrink: 0;
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(20, 20, 28, 1);
   z-index: 1;
-  margin-left: -8px;
+  margin-left: -9px;
 }
 
 .commitItem:hover .commitDot { background-color: #66b3ff; }
@@ -583,8 +584,9 @@
 .commitMessage {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.92);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -594,20 +596,22 @@
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 3px 8px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
+  gap: 4px 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
   min-width: 0;
 }
 
 .commitHash {
   font-family: SF Mono, Menlo, Consolas, monospace;
   color: #ffd34d;
-  font-size: 9px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
 }
 
 .commitAuthor {
-  max-width: 80px;
+  max-width: 110px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -616,7 +620,7 @@
 .commitDate {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -627,17 +631,17 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 
 .commitBranchBadge {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 5px;
-  height: 14px;
-  border-radius: 7px;
-  font-size: 9px;
+  gap: 3px;
+  padding: 1px 7px;
+  height: 17px;
+  border-radius: 9px;
+  font-size: 11px;
   font-weight: 500;
   white-space: nowrap;
   border: 1px solid currentColor;

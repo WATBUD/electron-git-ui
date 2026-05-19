@@ -57,7 +57,16 @@ export const countLeaves = (node) => {
 
 // Flatten the tree into a sorted array of render entries.
 // Folders sort before their siblings, current branch always first within its level.
-export const flattenTree = (node, depth, collapsedFolders, currentBranch, out) => {
+// `pathPrefix` lets a caller namespace `collapsedFolders` keys (e.g. "remote:")
+// so local/remote folder collapse state don't collide.
+export const flattenTree = (
+  node,
+  depth,
+  collapsedFolders,
+  currentBranch,
+  out,
+  pathPrefix = ''
+) => {
   const entries = Array.from(node.children.values()).sort((a, b) => {
     if (a.type !== b.type) return a.type === 'folder' ? -1 : 1
     if (a.type === 'leaf' && a.fullName === currentBranch) return -1
@@ -66,9 +75,11 @@ export const flattenTree = (node, depth, collapsedFolders, currentBranch, out) =
   })
   for (const child of entries) {
     if (child.type === 'folder') {
-      const collapsed = collapsedFolders.has(child.path)
+      const key = pathPrefix + child.path
+      const collapsed = collapsedFolders.has(key)
       out.push({ kind: 'folder', node: child, depth, collapsed })
-      if (!collapsed) flattenTree(child, depth + 1, collapsedFolders, currentBranch, out)
+      if (!collapsed)
+        flattenTree(child, depth + 1, collapsedFolders, currentBranch, out, pathPrefix)
     } else {
       out.push({ kind: 'leaf', node: child, depth })
     }

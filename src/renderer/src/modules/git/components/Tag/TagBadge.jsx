@@ -56,7 +56,7 @@ export const TagBadge = React.memo(function TagBadge({
       onContextMenu={onContextMenu}
       onClick={onClick}
     >
-      <Tag size={iconSize ?? (inline ? 8 : 9)} />
+      <Tag size={iconSize ?? (inline ? 10 : 11)} />
       {tag}
     </span>
   )
