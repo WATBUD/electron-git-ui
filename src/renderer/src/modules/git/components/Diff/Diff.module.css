@@ -1,0 +1,135 @@
+/* === Diff domain styles ===
+ * Split layout (file list + content) + per-line classification.
+ * Used by CommitDiffModal today; future StashDiff / WorkingDiff can reuse.
+ */
+
+.split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.fileList {
+  flex-shrink: 0;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.15);
+  padding: 6px 0;
+}
+
+.resizer {
+  flex-shrink: 0;
+  width: 5px;
+  margin: 0 -2px;
+  cursor: col-resize;
+  background-color: transparent;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  z-index: 1;
+  transition: background-color 0.15s;
+}
+
+.resizer:hover,
+.resizer:active {
+  background-color: rgba(10, 132, 255, 0.35);
+}
+
+.detail {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* --- File list items --- */
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 14px;
+  background-color: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: left;
+  transition: background-color 0.12s;
+}
+
+.fileItem:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+.fileItemActive,
+.fileItemActive:hover {
+  background-color: rgba(10, 132, 255, 0.22);
+}
+
+.fileStatus {
+  display: inline-flex;
+  width: 18px;
+  flex-shrink: 0;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.fileStatus.status_A { color: #34c759; }
+.fileStatus.status_M { color: #0a84ff; }
+.fileStatus.status_D { color: #ff3b30; }
+.fileStatus.status_R { color: #5e5ce6; }
+.fileStatus.status_C { color: #5e5ce6; }
+
+.fileName {
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  min-width: 0;
+  flex: 1;
+}
+
+/* --- Diff content --- */
+.content {
+  margin: 0;
+  padding: 12px 18px;
+  font-family: SF Mono, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.context { color: rgba(255, 255, 255, 0.6); }
+
+.add {
+  background-color: rgba(52, 199, 89, 0.12);
+  color: #58e08a;
+}
+
+.del {
+  background-color: rgba(255, 59, 48, 0.12);
+  color: #ff7a72;
+}
+
+.hunk {
+  color: #5e5ce6;
+  background-color: rgba(94, 92, 230, 0.08);
+}
+
+.meta { color: rgba(255, 255, 255, 0.4); }
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}

@@ -1,5 +1,7 @@
 import { forwardRef, useState, useCallback, useImperativeHandle } from 'react'
-import { BranchContextMenu } from './BranchContextMenu'
+import { BranchActionMenu } from './BranchActionMenu'
+import { CommitActionMenu } from '../Commit/CommitActionMenu'
+import { TagActionMenu } from '../Tag/TagActionMenu'
 
 const INITIAL_STATE = {
   show: false,
@@ -10,6 +12,12 @@ const INITIAL_STATE = {
   tags: []
 }
 
+/**
+ * Dispatches the right context menu component based on the `type` parameter
+ * passed to `open()`. Each menu component is fully self-contained (state,
+ * submenus, click-outside) — this controller only owns the open/close flag
+ * and the imperative API.
+ */
 export const BranchContextMenuController = forwardRef(function BranchContextMenuController(
   props,
   ref
@@ -26,18 +34,21 @@ export const BranchContextMenuController = forwardRef(function BranchContextMenu
 
   useImperativeHandle(ref, () => ({ open, close }), [open, close])
 
-  return (
-    <BranchContextMenu
-      {...props}
-      show={state.show}
-      x={state.x}
-      y={state.y}
-      type={state.type}
-      target={state.target}
-      branchTags={state.tags}
-      onClose={close}
-    />
-  )
+  const sharedProps = {
+    ...props,
+    show: state.show,
+    x: state.x,
+    y: state.y,
+    target: state.target,
+    branchTags: state.tags,
+    onClose: close
+  }
+
+  if (!state.show) return null
+  if (state.type === 'branch') return <BranchActionMenu {...sharedProps} />
+  if (state.type === 'commit') return <CommitActionMenu {...sharedProps} />
+  if (state.type === 'tag') return <TagActionMenu {...sharedProps} />
+  return null
 })
 
 export default BranchContextMenuController

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Tag } from 'lucide-react'
-import styles from '../BranchList/BranchList.module.css'
+import styles from './Tag.module.css'
 
 /**
  * Single source of truth for tag "variant" classification.

@@ -18,7 +18,7 @@ import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
-import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
+import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
 import { getBranchCommits } from '../../store/git/gitThunks'
 import {
   BRANCH_COMMITS_LIMIT,
@@ -30,6 +30,7 @@ import {
   flattenTree
 } from './branchTree'
 import { TagBadge, CreateTagModal } from '../Tag'
+import tagStyles from '../Tag/Tag.module.css'
 import { RenameBranchModal } from './RenameBranchModal'
 import styles from './BranchList.module.css'
 
@@ -550,11 +551,13 @@ const BranchList = ({
             </div>
             <div className={styles.divergentWarningTags}>
               {divergentTags.slice(0, 5).map((tag) => (
-                <button
+                <TagBadge
                   key={tag}
-                  type="button"
-                  className={`${styles.tagBadge} ${styles.divergent} ${styles.matchingTagItem}`}
-                  title="Click to search this tag — right-click on the matching badge to delete the local copy"
+                  tag={tag}
+                  localOnlyTags={localOnlyTags}
+                  remoteOnlyTags={remoteOnlyTags}
+                  divergentTags={divergentTags}
+                  className={tagStyles.matchingTagItem}
                   onClick={() => setTagSearchTerm(tag)}
                   onContextMenu={(e) =>
                     handleContextMenu(e, 'tag', {
@@ -562,10 +565,7 @@ const BranchList = ({
                       isDivergent: true
                     })
                   }
-                >
-                  <Tag size={9} />
-                  {tag}
-                </button>
+                />
               ))}
               {divergentTags.length > 5 && (
                 <span className={styles.divergentWarningMore}>
@@ -735,7 +735,7 @@ const BranchList = ({
                                   )}
                                 </div>
                                 {tags.length > 0 && (
-                                  <div className={styles.tagBadges}>
+                                  <div className={tagStyles.tagBadges}>
                                     {tags.slice(0, 2).map((tag) => (
                                       <TagBadge
                                         key={tag}
@@ -748,7 +748,7 @@ const BranchList = ({
                                     ))}
                                     {tags.length > 2 && (
                                       <span
-                                        className={styles.tagBadge}
+                                        className={tagStyles.tagBadge}
                                         title={tags.slice(2).join(', ')}
                                       >
                                         +{tags.length - 2}
@@ -798,7 +798,7 @@ const BranchList = ({
                                               </span>
                                             )}
                                             {commit.tags.length > 0 && (
-                                              <div className={styles.commitTags}>
+                                              <div className={tagStyles.commitTags}>
                                                 {commit.tags.map((tag) => (
                                                   <TagBadge
                                                     key={tag}
