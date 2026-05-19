@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { ipcMain, dialog, shell } from 'electron'
 import { exec } from 'child_process'
 import { promisify } from 'util'
@@ -20,14 +21,14 @@ const escapeFileName = (fileName) => {
   if (fileName.startsWith('"') && fileName.endsWith('"')) {
     cleanFile = fileName.slice(1, -1)
   }
-  
+
   // Escape special characters that could be interpreted by shell or git
   return cleanFile
-    .replace(/\\/g, '\\\\')  // Escape backslashes first
-    .replace(/"/g, '\\"')     // Escape double quotes
-    .replace(/\$/g, '\\$')    // Escape dollar signs
-    .replace(/`/g, '\\`')     // Escape backticks
-    .replace(/!/g, '\\!')     // Escape exclamation marks
+    .replace(/\\/g, '\\\\') // Escape backslashes first
+    .replace(/"/g, '\\"') // Escape double quotes
+    .replace(/\$/g, '\\$') // Escape dollar signs
+    .replace(/`/g, '\\`') // Escape backticks
+    .replace(/!/g, '\\!') // Escape exclamation marks
 }
 
 let currentRepoPath = null
@@ -41,7 +42,8 @@ export function setupGitHandlers() {
     }
 
     try {
-      const { stdout, stderr } = await exec(rawCommand, {
+      commandHistory.push(rawCommand)
+      const { stdout, stderr } = await execAsync(rawCommand, {
         cwd: currentRepoPath
       })
 
@@ -74,12 +76,12 @@ export function setupGitHandlers() {
     try {
       const escapedFile = escapeFileName(file)
       const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
-      
+
       // Use -- to separate options from file paths
-      const command = isStaged 
-        ? `git diff --cached -- "${escapedFile}"` 
+      const command = isStaged
+        ? `git diff --cached -- "${escapedFile}"`
         : `git diff -- "${escapedFile}"`
-      
+
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
 
@@ -386,10 +388,7 @@ ${fileContent
       }
 
       Object.keys(localTagRef).forEach((tagName) => {
-        if (
-          remoteTagRef[tagName] &&
-          localTagRef[tagName] !== remoteTagRef[tagName]
-        ) {
+        if (remoteTagRef[tagName] && localTagRef[tagName] !== remoteTagRef[tagName]) {
           divergentTagNames.add(tagName)
         }
       })
@@ -826,7 +825,7 @@ ${fileContent
           const status = parts[0]
           // Renames/copies: "R100\told\tnew" — show new path
           const file = parts[parts.length - 1]
-          const oldFile = (status?.startsWith('R') || status?.startsWith('C')) ? parts[1] : null
+          const oldFile = status?.startsWith('R') || status?.startsWith('C') ? parts[1] : null
           return { status, file, oldFile }
         })
 
@@ -1198,19 +1197,19 @@ ${fileContent
 
       // git writes conflict/failure details to stdout (e.g. "CONFLICT (content): ...")
       // and a short error to stderr. error.message alone is just "Command failed: ...".
-      const reason = [error.stdout, error.stderr]
-        .map((s) => (s || '').trim())
-        .filter(Boolean)
-        .join('\n') || error.message
+      const reason =
+        [error.stdout, error.stderr]
+          .map((s) => (s || '').trim())
+          .filter(Boolean)
+          .join('\n') || error.message
 
       // Detect whether the failure is a conflict (MERGE_HEAD exists) so the UI
       // can jump to the file-status view and let the user resolve conflicts.
       let hasConflict = false
       try {
-        const { stdout: mergeHead } = await execAsync(
-          'git rev-parse -q --verify MERGE_HEAD',
-          { cwd: currentRepoPath }
-        ).catch(() => ({ stdout: '' }))
+        const { stdout: mergeHead } = await execAsync('git rev-parse -q --verify MERGE_HEAD', {
+          cwd: currentRepoPath
+        }).catch(() => ({ stdout: '' }))
         hasConflict = mergeHead.trim().length > 0
       } catch (e) {
         hasConflict = false
@@ -1251,10 +1250,7 @@ ${fileContent
           return ''
         }
       }
-      const [name, email] = await Promise.all([
-        readKey('user.name'),
-        readKey('user.email')
-      ])
+      const [name, email] = await Promise.all([readKey('user.name'), readKey('user.email')])
       return success({ name, email })
     } catch (error) {
       return fail(error.message)
@@ -1387,7 +1383,9 @@ ${fileContent
         }
       }
       return fail(
-        stashStep.stderr || stashStep.stdout || 'No unstaged changes to stash for the selected files'
+        stashStep.stderr ||
+          stashStep.stdout ||
+          'No unstaged changes to stash for the selected files'
       )
     }
 
@@ -1410,12 +1408,7 @@ ${fileContent
   ipcMain.handle('git:stashPush', async (_, message, files, keepIndex) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {
-      const fileList =
-        files && files.length > 0
-          ? Array.isArray(files)
-            ? files
-            : [files]
-          : null
+      const fileList = files && files.length > 0 ? (Array.isArray(files) ? files : [files]) : null
 
       if (keepIndex && fileList) {
         return await stashUnstagedOnly(message, fileList)
@@ -1746,7 +1739,9 @@ function buildGraphRows(commits) {
     let color
     if (column === -1) {
       column = firstEmpty(lanes)
-      const refSeed = c.refs.find((r) => r.kind === 'local' || r.kind === 'remote' || r.kind === 'head')
+      const refSeed = c.refs.find(
+        (r) => r.kind === 'local' || r.kind === 'remote' || r.kind === 'head'
+      )
       const seed = refSeed
         ? refSeed.kind === 'remote'
           ? `r:${refSeed.name}`

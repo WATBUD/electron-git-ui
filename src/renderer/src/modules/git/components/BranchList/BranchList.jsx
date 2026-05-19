@@ -19,7 +19,7 @@ import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
 import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
-import { getBranchCommits } from '../../store/git/gitThunks'
+import { getBranchCommits, fastForwardAllBranches } from '../../store/git/gitThunks'
 import { setLoading } from '../../store/git/gitSlice'
 import {
   BRANCH_COMMITS_LIMIT,
@@ -37,6 +37,7 @@ import { RenameBranchModal } from './RenameBranchModal'
 import { CreateBranchModal } from './CreateBranchModal'
 import { useCommitDisplayOptions } from '../Commit/CommitDisplayOptions'
 import { CommitTagLegend } from '../Commit/CommitTagLegend'
+/* eslint-disable react/prop-types */
 import styles from './BranchList.module.css'
 
 const BranchList = ({
@@ -46,8 +47,6 @@ const BranchList = ({
   loading,
   onCheckout,
   onCheckoutCommit,
-  onDelete,
-  onDeleteRemote,
   onMerge,
   createBranchByNewBranchName,
   selectedPrefixes = [],
@@ -341,6 +340,14 @@ const BranchList = ({
     loadAllCommits()
   }, [tagSearchTerm, branches.length, branchCommits, dispatch])
 
+  const handleFastForwardAll = useCallback(async () => {
+    try {
+      await dispatch(fastForwardAllBranches()).unwrap()
+    } catch (err) {
+      console.error('Failed to fast-forward all branches:', err)
+    }
+  }, [dispatch])
+
   // Submit create branch from modal
   const submitCreateBranch = useCallback(() => {
     const { branchName } = createBranchState
@@ -484,6 +491,14 @@ const BranchList = ({
           >
             <Plus size={13} />
             <span>Create Branch</span>
+          </button>
+          <button
+            onClick={handleFastForwardAll}
+            className={styles.headerFetchBtn}
+            title="Fast-forward all local tracking branches to their upstream remote counterparts"
+          >
+            <RefreshCw size={12} />
+            <span>Fast-Forward All</span>
           </button>
           <div className={styles.headerPrefixSection}>
             <Tag size={12} className={styles.prefixIcon} />
@@ -659,7 +674,6 @@ const BranchList = ({
                         const {
                           ahead = 0,
                           behind = 0,
-                          tags = [],
                           isDetached = false,
                           isCurrent = false
                         } = (typeof branchObj === 'object' ? branchObj : {}) || {}
@@ -687,6 +701,20 @@ const BranchList = ({
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />
                                 )}
+                                <div className={styles.syncStatus}>
+                                  {ahead > 0 && (
+                                    <span className={styles.ahead} title={`${ahead} ahead`}>
+                                      <ArrowUp size={9} />
+                                      {ahead}
+                                    </span>
+                                  )}
+                                  {behind > 0 && (
+                                    <span className={styles.behind} title={`${behind} behind`}>
+                                      <ArrowDown size={9} />
+                                      {behind}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className={styles.itemActions}>
                                   <CopyButton
                                     textToCopy={branch}
@@ -707,23 +735,6 @@ const BranchList = ({
                                     </button>
                                   )}
                                 </div>
-                                <div className={styles.syncStatus}>
-                                  {ahead > 0 && (
-                                    <span className={styles.ahead} title={`${ahead} ahead`}>
-                                      <ArrowUp size={9} />
-                                      {ahead}
-                                    </span>
-                                  )}
-                                  {behind > 0 && (
-                                    <span className={styles.behind} title={`${behind} behind`}>
-                                      <ArrowDown size={9} />
-                                      {behind}
-                                    </span>
-                                  )}
-                                </div>
-                                {/* Tags on the branch tip are intentionally
-                                   omitted here — they show up on the matching
-                                   commit row when the branch is expanded. */}
                               </div>
                             </div>
 
@@ -833,7 +844,7 @@ const BranchList = ({
                                           padding: '8px'
                                         }}
                                       >
-                                        No commits with tag "{tagSearchTerm}"
+                                        No commits with tag &quot;{tagSearchTerm}&quot;
                                       </p>
                                     </div>
                                   ) : null}

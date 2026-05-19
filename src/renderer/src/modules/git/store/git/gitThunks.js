@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { updatePreviousHistoryIndex } from '../../store/git'
+import { updatePreviousHistoryIndex, setLoading } from './gitSlice'
 // Generic async function to handle Git API calls with error handling
 async function callGit(fn, rejectWithValue, fallbackError, fnName) {
   try {
@@ -45,21 +46,18 @@ export const loadCommitHistory = createAsyncThunk(
   }
 )
 
-export const loadTags = createAsyncThunk(
-  'git/loadTags',
-  async (_, { rejectWithValue }) => {
-    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-    if (rejectIfNotInitialized) return rejectIfNotInitialized
+export const loadTags = createAsyncThunk('git/loadTags', async (_, { rejectWithValue }) => {
+  const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+  if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    const result = await callGit(
-      () => window.git.loadTags(),
-      rejectWithValue,
-      'Failed to load tags',
-      'loadTags'
-    )
-    return result
-  }
-)
+  const result = await callGit(
+    () => window.git.loadTags(),
+    rejectWithValue,
+    'Failed to load tags',
+    'loadTags'
+  )
+  return result
+})
 
 // Background-only — does the slow ls-remote tag query and updates
 // remoteOnlyTags / divergentTags. Does NOT touch loadingMessage so the
@@ -89,7 +87,8 @@ export const deleteTag = createAsyncThunk(
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
     // Back-compat: callers passing isRemote (boolean) → translate to mode
-    const resolvedMode = mode || (typeof isRemote === 'boolean' ? (isRemote ? 'remote' : 'both') : 'both')
+    const resolvedMode =
+      mode || (typeof isRemote === 'boolean' ? (isRemote ? 'remote' : 'both') : 'both')
 
     const result = await callGit(
       () => window.git.deleteTag(tagName, resolvedMode),
@@ -117,21 +116,18 @@ export const createTag = createAsyncThunk(
   }
 )
 
-export const abortMerge = createAsyncThunk(
-  'git/abortMerge',
-  async (_, { rejectWithValue }) => {
-    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-    if (rejectIfNotInitialized) return rejectIfNotInitialized
+export const abortMerge = createAsyncThunk('git/abortMerge', async (_, { rejectWithValue }) => {
+  const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+  if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    const result = await callGit(
-      () => window.git.mergeAbort(),
-      rejectWithValue,
-      'Failed to abort merge',
-      'abortMerge'
-    )
-    return result
-  }
-)
+  const result = await callGit(
+    () => window.git.mergeAbort(),
+    rejectWithValue,
+    'Failed to abort merge',
+    'abortMerge'
+  )
+  return result
+})
 
 export const checkMergeInProgress = createAsyncThunk(
   'git/checkMergeInProgress',
@@ -602,10 +598,10 @@ export const fetchCommandHistory = createAsyncThunk(
       'Error updating command history',
       'getCommandHistory'
     )
-    
+
     // Don't automatically update previousHistoryIndex here
     // It should be manually updated at the start of operations
-    
+
     return result
   }
 )
@@ -710,18 +706,21 @@ export const getFileDiff = createAsyncThunk(
 
 // ── Stash thunks ────────────────────────────────────────────────────────────────────
 
-export const loadStashes = createAsyncThunk('git/loadStashes', async (_, { rejectWithValue, dispatch }) => {
-  const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-  if (rejectIfNotInitialized) return rejectIfNotInitialized
-  const result = await callGit(
-    () => window.git.stashList(),
-    rejectWithValue,
-    'Failed to load stashes',
-    'stashList'
-  )
-  await dispatch(fetchCommandHistory())
-  return result
-})
+export const loadStashes = createAsyncThunk(
+  'git/loadStashes',
+  async (_, { rejectWithValue, dispatch }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+    const result = await callGit(
+      () => window.git.stashList(),
+      rejectWithValue,
+      'Failed to load stashes',
+      'stashList'
+    )
+    await dispatch(fetchCommandHistory())
+    return result
+  }
+)
 
 export const pushStash = createAsyncThunk(
   'git/pushStash',
@@ -797,7 +796,7 @@ export const getStashDiff = createAsyncThunk(
   'git/getStashDiff',
   async (stashIndex, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
-    if (rejectIfNotInitialized) return rejectIfNotInitialization
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
     const result = await callGit(
       () => window.git.getStashDiff(stashIndex),
       rejectWithValue,
@@ -822,5 +821,130 @@ export const renameStash = createAsyncThunk(
     // Only proceed with updates if successful
     await Promise.all([dispatch(loadStashes()), dispatch(fetchCommandHistory())])
     return result
+  }
+)
+
+export const fastForwardAllBranches = createAsyncThunk(
+  'git/fastForwardAllBranches',
+  async (_, { rejectWithValue, dispatch, getState }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    // Mark the start of this operation
+    markOperationStart(dispatch, getState)
+    dispatch(setLoading('Running Fast-Forward All...'))
+
+    try {
+      // Step 1: fetch all --prune
+      dispatch(setLoading('Fetching from remote...'))
+      const fetchRes = await window.git.exec('git fetch --all --prune')
+      if (!fetchRes.success) {
+        throw new Error(fetchRes.message || 'Fetch failed')
+      }
+
+      // Step 2: Get current branch name
+      const currentBranchRes = await window.git.exec('git branch --show-current')
+      if (!currentBranchRes.success) {
+        throw new Error(currentBranchRes.message || 'Failed to identify current branch')
+      }
+      const originalBranch = currentBranchRes.data.trim()
+
+      // Step 3: Get all local branches and their upstreams
+      const forEachRefRes = await window.git.exec(
+        "git for-each-ref --format='%(refname:short) %(upstream:short)' refs/heads"
+      )
+      if (!forEachRefRes.success) {
+        throw new Error(forEachRefRes.message || 'Failed to list tracking branches')
+      }
+
+      const branchLines = forEachRefRes.data
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      const trackingBranches = []
+      for (const line of branchLines) {
+        const [branchName, upstreamName] = line.split(/\s+/)
+        if (branchName && upstreamName) {
+          trackingBranches.push({ branchName, upstreamName })
+        }
+      }
+
+      if (trackingBranches.length === 0) {
+        alert('ℹ️ No tracking branches found to update.')
+        await dispatch(loadBranches())
+        return { success: true, message: 'No tracking branches found to update.' }
+      }
+
+      const results = []
+      let successCount = 0
+      let failCount = 0
+
+      // Step 4: Iterate and update tracking branches
+      for (const { branchName, upstreamName } of trackingBranches) {
+        dispatch(setLoading(`Updating ${branchName}...`))
+
+        // Checkout the target branch
+        const checkoutRes = await window.git.exec(`git checkout ${branchName}`)
+        if (!checkoutRes.success) {
+          results.push({ branchName, success: false, error: checkoutRes.message })
+          failCount++
+          continue
+        }
+
+        // Run merge --ff-only
+        const mergeRes = await window.git.exec(`git merge --ff-only ${upstreamName}`)
+        if (mergeRes.success) {
+          results.push({ branchName, success: true })
+          successCount++
+        } else {
+          results.push({ branchName, success: false, error: mergeRes.message })
+          failCount++
+        }
+      }
+
+      // Step 5: Restore original branch
+      if (originalBranch) {
+        dispatch(setLoading(`Restoring current branch (${originalBranch})...`))
+        await window.git.exec(`git checkout ${originalBranch}`)
+      }
+
+      // Reload state after everything completes
+      await Promise.all([
+        dispatch(loadBranches()),
+        dispatch(loadCommitHistory()),
+        dispatch(fetchCommandHistory())
+      ])
+
+      // Build summary result
+      const summaryMsg = `Fast-Forward completed: ${successCount} updated successfully, ${failCount} skipped/failed.`
+
+      if (failCount > 0) {
+        const failedDetails = results
+          .filter((r) => !r.success)
+          .map((r) => `  - ${r.branchName}: ${r.error}`)
+          .join('\n')
+
+        alert(
+          `⚠️ Fast-Forward Partial Success\n\n${summaryMsg}\n\nFailed branches:\n${failedDetails}`
+        )
+      } else {
+        alert(
+          `✅ Fast-Forward Success\n\nAll ${successCount} tracking branches successfully updated!`
+        )
+      }
+
+      return { success: true, results }
+    } catch (err) {
+      // In case of unhandled error, make sure we at least reload states
+      await Promise.all([
+        dispatch(loadBranches()),
+        dispatch(loadCommitHistory()),
+        dispatch(fetchCommandHistory())
+      ])
+      return rejectWithValue(err.message || 'Fast-Forward All failed')
+    } finally {
+      dispatch(setLoading(''))
+    }
   }
 )

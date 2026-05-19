@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { createSlice } from '@reduxjs/toolkit'
 import {
   loadCommitHistory,
@@ -37,7 +38,8 @@ import {
   renameStash,
   getStashDiff,
   fetchUserConfig,
-  setUserConfig
+  setUserConfig,
+  fastForwardAllBranches
 } from './gitThunks'
 
 const STORAGE_KEYS = {
@@ -377,6 +379,18 @@ const gitSlice = createSlice({
         state.loadingMessage = ''
       })
       .addCase(fetchFromRemote.rejected, (state, action) => {
+        state.loadingMessage = ''
+        state.error = action.payload
+      })
+      // fastForwardAllBranches
+      .addCase(fastForwardAllBranches.pending, (state) => {
+        state.loadingMessage = 'Running Fast-Forward All...'
+        state.error = null
+      })
+      .addCase(fastForwardAllBranches.fulfilled, (state) => {
+        state.loadingMessage = ''
+      })
+      .addCase(fastForwardAllBranches.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
       })

@@ -570,7 +570,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
+  margin-left: 6px;
 }
 
 .ahead,
@@ -606,6 +606,7 @@
   gap: 2px;
   opacity: 0;
   transition: opacity 0.12s;
+  margin-left: auto;
 }
 
 .branchItem:hover .itemActions {
@@ -1063,4 +1064,38 @@
 
 .contextMenuItem:hover .submenuArrow {
   color: #fff;
+}
+
+.headerFetchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 122, 255, 0.4);
+  background: linear-gradient(180deg, rgba(0, 122, 255, 0.22), rgba(0, 122, 255, 0.12));
+  color: #66b3ff;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.18s var(--ease);
+  flex-shrink: 0;
+}
+
+.headerFetchBtn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(0, 122, 255, 0.32), rgba(0, 122, 255, 0.2));
+  border-color: rgba(0, 122, 255, 0.6);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 122, 255, 0.25);
+}
+
+.headerFetchBtn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.headerFetchBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
