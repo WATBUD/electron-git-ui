@@ -55,13 +55,23 @@
   align-items: center;
   padding: 6px 8px 6px 12px;
   border-bottom: 1px solid var(--border-color-light);
-  transition: background-color 0.2s;
+  transition: background-color 0.15s;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  user-select: none;
 }
 
 .commandItem:hover {
-  background-color: rgba(79, 70, 229, 0.05);
+  background-color: rgba(79, 70, 229, 0.08);
+}
+
+.commandItem:active {
+  background-color: rgba(79, 70, 229, 0.14);
+}
+
+.commandItemCopied {
+  background-color: rgba(52, 199, 89, 0.15) !important;
 }
 
 .commandItem.previousCommand {
@@ -121,33 +131,32 @@
 }
 
 .copyButton {
-  display: flex;
+  flex-shrink: 0;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px;
+  padding: 3px 6px;
+  margin-left: 8px;
   background: transparent;
-  border: 1px solid var(--border-color);
+  border: 1px solid transparent;
   border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  transition: all 0.2s;
-  opacity: 0;
+  color: var(--text-muted);
+  opacity: 0.45;
+  transition: opacity 0.12s, color 0.12s, background-color 0.12s;
+  pointer-events: none;
 }
 
 .commandItem:hover .copyButton {
   opacity: 1;
-}
-
-.copyButton:hover {
-  background: var(--background-hover);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
+  color: #4f46e5;
+  background-color: rgba(79, 70, 229, 0.12);
 }
 
 .copyButton.copied {
-  background: var(--success-color);
-  border-color: var(--success-color);
-  color: white;
+  opacity: 1;
+  background-color: #34c759;
+  color: #fff;
+  border-color: #34c759;
 }
 
 .copiedText {

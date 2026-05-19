@@ -21,6 +21,7 @@ import {
   mergeBranch,
   checkoutBranch,
   checkoutCommit,
+  resetToCommit,
   deleteRemoteBranch,
   fetchFromRemote,
   pullFromRemote,
@@ -215,6 +216,24 @@ export const MainPageGit = () => {
     })
   }
 
+  // Handle reset-to-commit confirmation request (soft/mixed/hard).
+  // Mainstream pattern: always confirm because the operation moves HEAD;
+  // hard mode adds an extra warning since working tree is wiped.
+  const handleRequestResetToCommit = (commitHash, mode) => {
+    const modeText = {
+      soft: 'Soft (keep all changes staged)',
+      mixed: 'Mixed (keep changes unstaged, default)',
+      hard: 'Hard — DISCARD all working-tree & staged changes'
+    }[mode]
+    requestConfirm({
+      type: 'reset',
+      name: `${commitHash?.substring(0, 7)} · ${modeText}`,
+      onConfirm: async () => {
+        await dispatch(resetToCommit({ commitHash, mode }))
+      }
+    })
+  }
+
   // Handle delete branch confirmation request
   const handleRequestDeleteBranch = (branchName, isRemote = false) => {
     requestConfirm({
@@ -349,6 +368,7 @@ export const MainPageGit = () => {
                     }}
                     onRequestDeleteTag={handleRequestDeleteTag}
                     onRequestDeleteBranch={handleRequestDeleteBranch}
+                    onRequestResetToCommit={handleRequestResetToCommit}
                     onPushTag={async (tagName) => {
                       try {
                         await window.git.pushTag(tagName)

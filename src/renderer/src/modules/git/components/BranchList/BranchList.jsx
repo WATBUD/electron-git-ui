@@ -57,6 +57,7 @@ const BranchList = ({
   onDeleteTag,
   onRequestDeleteTag,
   onRequestDeleteBranch,
+  onRequestResetToCommit,
   onPushTag
 }) => {
   const contextMenuRef = useRef(null)
@@ -1045,6 +1046,7 @@ const BranchList = ({
         onDeleteTag={onDeleteTag}
         onRequestDeleteTag={onRequestDeleteTag}
         onRequestDeleteBranch={onRequestDeleteBranch}
+        onRequestResetToCommit={onRequestResetToCommit}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
       />

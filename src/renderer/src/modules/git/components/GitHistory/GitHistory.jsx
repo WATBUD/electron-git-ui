@@ -54,18 +54,19 @@ export const GitHistory = () => {
                   commandHistory.length - 1 - index === previousHistoryIndex
                     ? styles.previousCommand
                     : ''
-                }`}
+                } ${copiedIndex === index ? styles.commandItemCopied : ''}`}
+                onClick={() => copyToClipboard(command, index)}
+                title="Click anywhere on the row to copy"
               >
                 <span className={styles.commandNumber}>{commandHistory.length - index}.</span>
                 <span className={styles.commandText}>{command}</span>
-                <button
+                <span
                   className={`${styles.copyButton} ${copiedIndex === index ? styles.copied : ''}`}
-                  onClick={() => copyToClipboard(command, index)}
-                  title="Copy command"
+                  aria-hidden="true"
                 >
-                  <Copy size={14} />
+                  <Copy size={13} />
                   {copiedIndex === index && <span className={styles.copiedText}>Copied!</span>}
-                </button>
+                </span>
               </div>
             ))
         )}

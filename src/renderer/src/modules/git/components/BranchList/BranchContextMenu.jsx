@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { GitMerge, ArrowDownLeft, Edit3, Tag, Copy, GitBranch, Upload, ChevronRight, Trash2 } from 'lucide-react'
+import { GitMerge, ArrowDownLeft, Edit3, Tag, Copy, GitBranch, Upload, ChevronRight, Trash2, RotateCcw, AlertTriangle } from 'lucide-react'
 import styles from './BranchList.module.css'
 
 export const BranchContextMenu = ({
@@ -23,22 +23,26 @@ export const BranchContextMenu = ({
   divergentTags = [], // list of tags whose local & remote point to different commits
   onRefreshCommits, // callback to refresh commits after tag operations
   onRequestDeleteTag, // callback to request tag deletion confirmation from parent
-  onRequestDeleteBranch // callback to request branch deletion confirmation from parent
+  onRequestDeleteBranch, // callback to request branch deletion confirmation from parent
+  onRequestResetToCommit // callback to request reset-to-commit confirmation from parent
 }) => {
   const contextMenuRef = useRef(null)
   const submenuRef = useRef(null)
   const [expandedTagSubmenu, setExpandedTagSubmenu] = useState(null)
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 })
   const [isPushing, setIsPushing] = useState(false)
+  const [showResetSubmenu, setShowResetSubmenu] = useState(false)
+  const [resetSubmenuPos, setResetSubmenuPos] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       const clickedInMenu = contextMenuRef.current?.contains(e.target)
       const clickedInSubmenu = submenuRef.current?.contains(e.target)
-      
+
       if (!clickedInMenu && !clickedInSubmenu) {
         onClose()
         setExpandedTagSubmenu(null)
+        setShowResetSubmenu(false)
       }
     }
 
@@ -58,6 +62,72 @@ export const BranchContextMenu = ({
       left: rect.right
     })
     setExpandedTagSubmenu(tagName)
+  }
+
+  const handleResetHover = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setResetSubmenuPos({ top: rect.top, left: rect.right })
+    setShowResetSubmenu(true)
+    setExpandedTagSubmenu(null)
+  }
+
+  const renderResetSubmenu = (commitHash) => {
+    if (!showResetSubmenu) return null
+    const modes = [
+      {
+        mode: 'soft',
+        label: 'Soft',
+        hint: 'Keep all changes staged',
+        icon: <RotateCcw size={14} />
+      },
+      {
+        mode: 'mixed',
+        label: 'Mixed',
+        hint: 'Keep changes unstaged (default)',
+        icon: <RotateCcw size={14} />
+      },
+      {
+        mode: 'hard',
+        label: 'Hard',
+        hint: 'DISCARD all changes — destructive',
+        icon: <AlertTriangle size={14} />,
+        destructive: true
+      }
+    ]
+    return (
+      <div
+        ref={submenuRef}
+        className={styles.contextMenu}
+        style={{ top: resetSubmenuPos.top, left: resetSubmenuPos.left, zIndex: 3001 }}
+        onMouseEnter={() => setShowResetSubmenu(true)}
+      >
+        <div className={styles.contextMenuHeader}>Reset HEAD to commit</div>
+        <div className={styles.contextMenuContent}>
+          {modes.map(({ mode, label, hint, icon, destructive }) => (
+            <button
+              key={mode}
+              className={styles.contextMenuItem}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowResetSubmenu(false)
+                onClose()
+                if (onRequestResetToCommit) {
+                  onRequestResetToCommit(commitHash, mode)
+                }
+              }}
+              style={destructive ? { color: '#ff3b30' } : undefined}
+              title={hint}
+            >
+              {icon}
+              <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                <span style={{ fontWeight: 500 }}>{label}</span>
+                <span style={{ fontSize: 10, opacity: 0.55 }}>{hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   const copyToClipboard = async (text) => {
@@ -351,6 +421,18 @@ export const BranchContextMenu = ({
               <span>Copy Hash</span>
             </button>
 
+            {onRequestResetToCommit && (
+              <button
+                className={`${styles.contextMenuItem} ${styles.hasSubmenu}`}
+                onMouseEnter={handleResetHover}
+                onMouseLeave={() => setShowResetSubmenu(false)}
+              >
+                <RotateCcw size={14} />
+                <span>Reset HEAD to here</span>
+                <ChevronRight size={14} className={styles.submenuArrow} />
+              </button>
+            )}
+
             {/* Tag submenus for commit */}
             {commit?.tags && commit.tags.length > 0 && (
               <>
@@ -373,6 +455,7 @@ export const BranchContextMenu = ({
         </div>
 
         {renderTagSubmenu()}
+        {renderResetSubmenu(commit?.hash)}
       </>
     )
   }

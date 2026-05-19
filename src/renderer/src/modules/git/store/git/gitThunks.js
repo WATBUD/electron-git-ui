@@ -369,6 +369,29 @@ export const checkoutCommit = createAsyncThunk(
   }
 )
 
+// Hard/soft/mixed reset of HEAD to a target commit. Reloads branches + file
+// status + history afterwards so all panels reflect the new HEAD.
+export const resetToCommit = createAsyncThunk(
+  'git/resetToCommit',
+  async ({ commitHash, mode }, { rejectWithValue, dispatch }) => {
+    if (!window.git) {
+      return rejectWithValue('Git API not initialized')
+    }
+    const result = await callGit(
+      () => window.git.resetToCommit({ commitHash, mode }),
+      rejectWithValue,
+      `Failed to reset (${mode})`,
+      'resetToCommit'
+    )
+    await Promise.all([
+      dispatch(loadBranches()),
+      dispatch(loadFileStatus()),
+      dispatch(loadCommitHistory())
+    ])
+    return result
+  }
+)
+
 export const checkoutBranch = createAsyncThunk(
   'git/checkoutBranch',
   async (branchName, { rejectWithValue, dispatch }) => {

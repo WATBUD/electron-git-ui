@@ -1599,6 +1599,22 @@ ${fileContent
     }
   })
 
+  // --- Reset HEAD to a specific commit (soft / mixed / hard) ---
+  ipcMain.handle('git:resetToCommit', async (_, { commitHash, mode = 'mixed' } = {}) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    if (!commitHash) return fail('Commit hash required')
+    const flag = { soft: '--soft', mixed: '--mixed', hard: '--hard' }[mode]
+    if (!flag) return fail(`Invalid reset mode: ${mode}`)
+    try {
+      const cmd = `git reset ${flag} ${commitHash}`
+      commandHistory.push(cmd)
+      const { stdout, stderr } = await execAsync(cmd, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr, mode })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
   // --- Git Graph: parse `git log --all --topo-order` into rows with lane assignments ---
   ipcMain.handle('git:graphLog', async (_, options = {}) => {
     if (!currentRepoPath) return fail('No repository selected')

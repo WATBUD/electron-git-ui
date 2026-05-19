@@ -51,7 +51,8 @@ contextBridge.exposeInMainWorld('git', {
   renameStash: (stashIndex, newMessage) => ipcRenderer.invoke('git:renameStash', stashIndex, newMessage),
   getStashDiff: (stashIndex) => ipcRenderer.invoke('git:getStashDiff', stashIndex),
   graphLog: (options) => ipcRenderer.invoke('git:graphLog', options),
-  getCommitBranchMap: (options) => ipcRenderer.invoke('git:getCommitBranchMap', options)
+  getCommitBranchMap: (options) => ipcRenderer.invoke('git:getCommitBranchMap', options),
+  resetToCommit: (args) => ipcRenderer.invoke('git:resetToCommit', args)
 })
 
 // Debug log to verify git object is exposed
