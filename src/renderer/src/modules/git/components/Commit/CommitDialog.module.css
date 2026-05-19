@@ -1,0 +1,163 @@
+/* Dialog styles - macOS Sheet style */
+.dialogOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start; /* macOS sheets drop from top */
+  justify-content: center;
+  z-index: 2000;
+  padding-top: 40px;
+}
+
+.dialog {
+  background-color: rgba(45, 45, 60, 0.8);
+  backdrop-filter: blur(30px) saturate(150%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 20px;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: sheetDrop 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes sheetDrop {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialog h3 {
+  margin: 0 0 16px 0;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.dialogContent {
+  margin-bottom: 24px;
+}
+
+/* Mac-style Toggle Switch for Dialogs */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 13px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.checkboxLabel:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toggleSwitch {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.toggleSwitch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+input[type='checkbox']:checked + .toggleSwitch {
+  background-color: #34c759;
+}
+
+input[type='checkbox']:checked + .toggleSwitch::after {
+  transform: translateX(14px);
+}
+
+.dialogButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialogButtons button {
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.cancelBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.confirmBtn {
+  background: #007aff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: #0066d6;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.commitMessageInput {
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.commitMessageInput:focus {
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}

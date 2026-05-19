@@ -256,3 +256,28 @@
   background: #484f58;
 }
 
+.copyAndCommitBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #34c759 0%, #20c997 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.copyAndCommitBtn:hover {
+  background: linear-gradient(135deg, #30b751 0%, #1db889 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+}
+
+.copyAndCommitBtn:active {
+  transform: translateY(0);
+}
+

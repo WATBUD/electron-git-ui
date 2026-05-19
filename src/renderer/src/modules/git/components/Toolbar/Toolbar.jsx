@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
+/* eslint-disable react/prop-types */
+import { useState, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { fetchUserConfig, setUserConfig } from '../../store/git'
+import { CommitDialog } from '../Commit'
 import styles from './Toolbar.module.css'
 import {
   Download,
@@ -33,7 +35,6 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   const authorRef = useRef(null)
 
   // Get Redux state
-  const fileStatus = useSelector((state) => state.git.fileStatus || [])
   const repoPath = useSelector((state) => state.git.repoPath)
   const currentBranch = useSelector((state) => state.git.currentBranch)
   const userConfig = useSelector((state) => state.git.userConfig)
@@ -41,6 +42,15 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   useEffect(() => {
     if (repoPath) dispatch(fetchUserConfig())
   }, [repoPath, dispatch])
+
+  useEffect(() => {
+    const handleOpenCommit = (e) => {
+      setCommitMessage(e.detail.message || '')
+      setShowCommitDialog(true)
+    }
+    window.addEventListener('open-commit-dialog', handleOpenCommit)
+    return () => window.removeEventListener('open-commit-dialog', handleOpenCommit)
+  }, [])
 
   useEffect(() => {
     if (!showAuthorEditor) {
@@ -356,55 +366,16 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
         </ModalPortal>
       )}
 
-      {showCommitDialog && (
-        <ModalPortal>
-          <div className={styles.dialogOverlay} onClick={() => setShowCommitDialog(false)}>
-            <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
-              <h3>Commit Changes</h3>
-              <div className={styles.dialogContent}>
-                <textarea
-                  value={commitMessage}
-                  onChange={(e) => setCommitMessage(e.target.value)}
-                  placeholder="Enter commit message..."
-                  className={styles.commitMessageInput}
-                  autoFocus
-                />
-                <label className={styles.checkboxLabel}>
-                  <span>Push after commit</span>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="checkbox"
-                      style={{
-                        position: 'absolute',
-                        opacity: 0,
-                        width: '100%',
-                        height: '100%',
-                        cursor: 'pointer',
-                        zIndex: 1
-                      }}
-                      checked={commitAndPush}
-                      onChange={(e) => setCommitAndPush(e.target.checked)}
-                    />
-                    <div className={styles.toggleSwitch}></div>
-                  </div>
-                </label>
-              </div>
-              <div className={styles.dialogButtons}>
-                <button onClick={() => setShowCommitDialog(false)} className={styles.cancelBtn}>
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCommit}
-                  disabled={loading || !commitMessage.trim()}
-                  className={styles.confirmBtn}
-                >
-                  {commitAndPush ? 'Commit & Push' : 'Commit'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
+      <CommitDialog
+        show={showCommitDialog}
+        onClose={() => setShowCommitDialog(false)}
+        onConfirm={handleCommit}
+        loading={loading}
+        commitMessage={commitMessage}
+        setCommitMessage={setCommitMessage}
+        commitAndPush={commitAndPush}
+        setCommitAndPush={setCommitAndPush}
+      />
 
       {showStashDialog && (
         <ModalPortal>

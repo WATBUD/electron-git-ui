@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+/* eslint-disable react/prop-types */
+import { useState, useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { Copy, Check, X, Sparkles } from 'lucide-react'
 import { ModalPortal } from '../ModalPortal'
@@ -11,14 +12,18 @@ export const DiffModal = ({ diff, onClose, show }) => {
   const [viewMode, setViewMode] = useState('diff') // 'diff' or 'message'
 
   // Clear generated message when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (show) {
       setGeneratedMessage('')
     }
   }, [show])
 
   if (!show) return null
-  const displayDiff = diff || (diff === '' ? 'No staged changes found. Stage some changes to see the diff.' : 'No staged changes found.')
+  const displayDiff =
+    diff ||
+    (diff === ''
+      ? 'No staged changes found. Stage some changes to see the diff.'
+      : 'No staged changes found.')
 
   const isValidMessage = (message) => {
     if (!message) return false
@@ -30,7 +35,7 @@ export const DiffModal = ({ diff, onClose, show }) => {
       'All AI models are currently unavailable',
       'All models failed'
     ]
-    return !errorPatterns.some(pattern => message.includes(pattern))
+    return !errorPatterns.some((pattern) => message.includes(pattern))
   }
 
   const handleCopy = () => {
@@ -40,15 +45,11 @@ export const DiffModal = ({ diff, onClose, show }) => {
     } else {
       textToCopy = displayDiff
     }
-    
+
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
-  }
-
-  const toggleViewMode = () => {
-    setViewMode(prev => prev === 'diff' ? 'message' : 'diff')
   }
 
   const generateCommitMessage = async () => {
@@ -57,23 +58,25 @@ export const DiffModal = ({ diff, onClose, show }) => {
       setIsGenerating(true)
       setGeneratedMessage('') // Clear previous message immediately
     })
-    
+
     try {
       // Get Google Gemini API key from environment variable
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY
       console.log('API Key value:', apiKey)
       console.log('API Key length:', apiKey?.length)
-      
+
       if (!apiKey) {
         console.error('Google Gemini API key not configured')
-        setGeneratedMessage('API key not configured. Please set VITE_GEMINI_API_KEY in your environment.')
+        setGeneratedMessage(
+          'API key not configured. Please set VITE_GEMINI_API_KEY in your environment.'
+        )
         return
       }
-      
+
       // AI Router with multi-model fallback
       const MODELS = [
         // 'models/gemini-2.5-flash',
-        'models/gemini-2.5-flash-lite', 
+        'models/gemini-2.5-flash-lite'
         // 'models/gemini-2.0-flash',
         // 'models/gemini-2.0-flash-lite'
       ]
@@ -91,7 +94,7 @@ export const DiffModal = ({ diff, onClose, show }) => {
 
           if (response.status === 503) {
             console.warn(`Model ${model} temporarily unavailable, retry ${i + 1}/${retries}`)
-            await new Promise(resolve => setTimeout(resolve, 500 * (i + 1)))
+            await new Promise((resolve) => setTimeout(resolve, 500 * (i + 1)))
             continue
           }
 
@@ -121,15 +124,18 @@ export const DiffModal = ({ diff, onClose, show }) => {
 
       // Limit diff content to avoid errors
       const maxDiffLength = 6000
-      const truncatedDiff = displayDiff.length > maxDiffLength 
-        ? displayDiff.substring(0, maxDiffLength) + '\n... (truncated)'
-        : displayDiff
-      
+      const truncatedDiff =
+        displayDiff.length > maxDiffLength
+          ? displayDiff.substring(0, maxDiffLength) + '\n... (truncated)'
+          : displayDiff
+
       // Prepare payload
       const payload = {
-        contents: [{
-          parts: [{
-            text: `Generate a commit message in this format:
+        contents: [
+          {
+            parts: [
+              {
+                text: `Generate a commit message in this format:
 
 type: brief description
 
@@ -154,11 +160,13 @@ fix: resolve authentication timeout issues
 - improve error handling for expired tokens
 
 Diff:\n${truncatedDiff}\n\nCommit message:`
-          }]
-        }],
+              }
+            ]
+          }
+        ],
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 500,
+          maxOutputTokens: 500
         }
       }
 
@@ -166,7 +174,7 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
       const data = await generateWithFallback(payload)
       console.log('AI Router Response data:', data)
       const message = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-      
+
       if (message) {
         setGeneratedMessage(message)
         setViewMode('message')
@@ -182,17 +190,27 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
       } else {
         throw new Error('No message generated')
       }
-      
     } catch (error) {
       console.error('Error generating commit message:', error)
-      
+
       // Handle API errors
-      if (error.message && (error.message.includes('429') || error.message.includes('quota') || error.message.includes('limit'))) {
-        setGeneratedMessage('Gemini API quota exceeded. Free tier has limits. Please try again later or check billing.')
-        alert('⚠️ Gemini API quota exceeded\n\nFree tier has usage limits. Please try again later or consider upgrading your plan.')
+      if (
+        error.message &&
+        (error.message.includes('429') ||
+          error.message.includes('quota') ||
+          error.message.includes('limit'))
+      ) {
+        setGeneratedMessage(
+          'Gemini API quota exceeded. Free tier has limits. Please try again later or check billing.'
+        )
+        alert(
+          '⚠️ Gemini API quota exceeded\n\nFree tier has usage limits. Please try again later or consider upgrading your plan.'
+        )
       } else if (error.message && error.message.includes('All models failed')) {
         setGeneratedMessage('All AI models are currently unavailable. Please try again later.')
-        alert('⚠️ All AI models unavailable\n\nAll Gemini models are currently experiencing issues. Please try again in a few minutes.')
+        alert(
+          '⚠️ All AI models unavailable\n\nAll Gemini models are currently experiencing issues. Please try again in a few minutes.'
+        )
       } else {
         setGeneratedMessage('Failed to generate commit message. Please try again.')
         alert('⚠️ Generation failed\n\nUnable to generate commit message. Please try again.')
@@ -202,11 +220,14 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
     }
   }
 
-  
-  const copyGeneratedMessage = () => {
+  const handleCopyAndCommit = () => {
     if (isValidMessage(generatedMessage)) {
       navigator.clipboard.writeText(generatedMessage).then(() => {
-        // Could add a toast notification here
+        const event = new CustomEvent('open-commit-dialog', {
+          detail: { message: generatedMessage }
+        })
+        window.dispatchEvent(event)
+        onClose()
       })
     }
   }
@@ -251,10 +272,24 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
                   </>
                 )}
               </button>
+              {viewMode === 'message' && isValidMessage(generatedMessage) && (
+                <button
+                  className={styles.copyAndCommitBtn}
+                  onClick={handleCopyAndCommit}
+                  title="Copy AI message and open Commit dialog"
+                >
+                  <Sparkles size={18} />
+                  <span>Copy & Commit</span>
+                </button>
+              )}
               <button
                 className={`${styles.copyBtn} ${copied ? styles.copied : ''}`}
                 onClick={handleCopy}
-                title={viewMode === 'message' && isValidMessage(generatedMessage) ? "Copy commit message to clipboard" : "Copy diff to clipboard"}
+                title={
+                  viewMode === 'message' && isValidMessage(generatedMessage)
+                    ? 'Copy commit message to clipboard'
+                    : 'Copy diff to clipboard'
+                }
               >
                 {copied ? <Check size={18} /> : <Copy size={18} />}
                 <span>{copied ? 'Copied!' : 'Copy'}</span>
@@ -271,7 +306,16 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
                   <h4>Generated Commit Message</h4>
                 </div>
                 <div className={styles.generatedMessageContent}>
-                  <pre style={{whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '14px', lineHeight: '1.5'}}>{generatedMessage}</pre>
+                  <pre
+                    style={{
+                      whiteSpace: 'pre-wrap',
+                      fontFamily: 'monospace',
+                      fontSize: '14px',
+                      lineHeight: '1.5'
+                    }}
+                  >
+                    {generatedMessage}
+                  </pre>
                 </div>
               </div>
             </div>

@@ -1,1 +1,2 @@
-export { CommitDiffModal, default } from './CommitDiffModal'
+export { CommitDiffModal } from './CommitDiffModal'
+export { CommitDialog } from './CommitDialog'
