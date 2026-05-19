@@ -17,6 +17,7 @@ export const GitStashes = ({
   onApply,
   onPop,
   onDrop,
+  onRequestDrop,
   onRename,
   onSelectStash
 }) => {
@@ -25,22 +26,11 @@ export const GitStashes = ({
   const [renamingStash, setRenamingStash] = useState(null)
   const [newStashMessage, setNewStashMessage] = useState('')
   const [showRenameModal, setShowRenameModal] = useState(false)
-  const [dropConfirm, setDropConfirm] = useState(null)
   const contextMenuRef = useRef(null)
 
   const handleSelectStash = (index) => {
     setSelectedStashIndex(index)
     onSelectStash(index)
-  }
-
-  const handleDropConfirm = async () => {
-    if (!dropConfirm) return
-    const { stashIndex } = dropConfirm
-    await onDrop(stashIndex)
-    setDropConfirm(null)
-    if (selectedStashIndex === stashIndex) {
-      setSelectedStashIndex(null)
-    }
   }
 
   const handleRename = async () => {
@@ -100,9 +90,20 @@ export const GitStashes = ({
     [onPop]
   )
 
-  const handleContextMenuDrop = useCallback((stashIndex, stashMessage) => {
-    setDropConfirm({ stashIndex, stashMessage })
-  }, [])
+  const handleContextMenuDrop = useCallback(
+    (stashIndex, stashMessage) => {
+      // Defer to the parent's unified ConfirmDialog flow (matches branch/tag/reset UX);
+      // fall back to direct drop if no requester is wired.
+      if (onRequestDrop) {
+        onRequestDrop(stashIndex, stashMessage, () => {
+          if (selectedStashIndex === stashIndex) setSelectedStashIndex(null)
+        })
+      } else {
+        onDrop?.(stashIndex)
+      }
+    },
+    [onRequestDrop, onDrop, selectedStashIndex]
+  )
 
   const handleCloseContextMenu = useCallback(() => {
     contextMenuRef.current?.close()
@@ -341,45 +342,6 @@ export const GitStashes = ({
         onRename={handleContextMenuRename}
         onDrop={handleContextMenuDrop}
       />
-
-      {dropConfirm && (
-        <div className={styles.modalOverlay} onClick={() => setDropConfirm(null)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h3>Drop Stash</h3>
-            <div className={styles.modalContent}>
-              <p style={{ margin: 0, color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>
-                Permanently delete this stash?
-              </p>
-              <p
-                style={{
-                  marginTop: 8,
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.6)',
-                  wordBreak: 'break-word'
-                }}
-              >
-                {dropConfirm.stashMessage}
-              </p>
-            </div>
-            <div className={styles.modalButtons}>
-              <button onClick={() => setDropConfirm(null)} className={styles.cancelBtn}>
-                Cancel
-              </button>
-              <button
-                onClick={handleDropConfirm}
-                disabled={loading}
-                className={styles.confirmBtn}
-                style={{ background: '#ff3b30', borderColor: '#ff3b30' }}
-              >
-                Drop
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showRenameModal && (
         <div className={styles.modalOverlay} onClick={handleCancelRename}>

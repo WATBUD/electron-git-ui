@@ -17,7 +17,7 @@ import {
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenuController } from './BranchContextMenuController'
-import { CommitDiffModal } from './CommitDiffModal'
+import { CommitDiffModal } from '../Commit'
 import { formatRelativeTime, formatAbsoluteTime } from './relativeTime'
 import { getBranchCommits } from '../../store/git/gitThunks'
 import {
@@ -29,9 +29,8 @@ import {
   countLeaves,
   flattenTree
 } from './branchTree'
-import { TagBadge } from './TagBadge'
+import { TagBadge, CreateTagModal } from '../Tag'
 import { RenameBranchModal } from './RenameBranchModal'
-import { CreateTagModal } from './CreateTagModal'
 import styles from './BranchList.module.css'
 
 const BranchList = ({

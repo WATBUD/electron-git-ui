@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import styles from './ConfirmDialog.module.css'
 
@@ -15,6 +15,31 @@ export const ConfirmDialog = ({
   toggleValue = false,
   onToggleChange
 }) => {
+  const confirmBtnRef = useRef(null)
+
+  // Keyboard shortcuts while dialog is open:
+  //   Enter → confirm (matches the focused confirm button)
+  //   Escape → cancel
+  useEffect(() => {
+    if (!show) return
+    // Move focus to the confirm button so Enter triggers it natively.
+    confirmBtnRef.current?.focus()
+    const handleKey = (e) => {
+      if (e.key === 'Enter') {
+        // Ignore Enter when the user is editing a text input (e.g. composing IME).
+        const tag = document.activeElement?.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return
+        e.preventDefault()
+        onConfirm?.()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel?.()
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [show, onConfirm, onCancel])
+
   if (!show) return null
 
   return (
@@ -61,8 +86,10 @@ export const ConfirmDialog = ({
             {cancelText}
           </button>
           <button
+            ref={confirmBtnRef}
             onClick={onConfirm}
             className={`${styles.confirmBtn} ${styles[`confirmBtn-${variant}`]}`}
+            autoFocus
           >
             {confirmText}
           </button>

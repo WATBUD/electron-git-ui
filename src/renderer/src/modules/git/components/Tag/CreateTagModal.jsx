@@ -1,5 +1,5 @@
 import React from 'react'
-import styles from './BranchList.module.css'
+import styles from '../BranchList/BranchList.module.css'
 
 export const CreateTagModal = ({ state, setState, onSubmit }) => {
   if (!state.show) return null

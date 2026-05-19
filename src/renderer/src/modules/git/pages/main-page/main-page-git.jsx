@@ -234,6 +234,18 @@ export const MainPageGit = () => {
     })
   }
 
+  // Handle drop-stash confirmation via the shared ConfirmDialog UX.
+  const handleRequestDropStash = (stashIndex, stashMessage, afterDrop) => {
+    requestConfirm({
+      type: 'stash',
+      name: stashMessage,
+      onConfirm: async () => {
+        await dispatch(dropStash(stashIndex))
+        if (typeof afterDrop === 'function') afterDrop()
+      }
+    })
+  }
+
   // Handle delete branch confirmation request
   const handleRequestDeleteBranch = (branchName, isRemote = false) => {
     requestConfirm({
@@ -476,6 +488,7 @@ export const MainPageGit = () => {
                     onApply={async (stashIndex) => dispatch(applyStash(stashIndex))}
                     onPop={async (stashIndex) => dispatch(popStash(stashIndex))}
                     onDrop={async (stashIndex) => dispatch(dropStash(stashIndex))}
+                    onRequestDrop={handleRequestDropStash}
                     onRename={async (stashIndex, newMessage) =>
                       dispatch(renameStash({ stashIndex, newMessage }))
                     }

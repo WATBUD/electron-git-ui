@@ -81,6 +81,8 @@ export const useConfirmDialog = () => {
         return `Are you sure you want to delete the local branch "${name}"? This action cannot be undone.`
       case 'reset':
         return `Reset HEAD to ${name}? This will move the current branch tip.`
+      case 'stash':
+        return `Permanently delete this stash?\n"${name}"`
       default:
         return `Are you sure you want to proceed?`
     }
@@ -94,6 +96,8 @@ export const useConfirmDialog = () => {
         return 'Delete Branch'
       case 'reset':
         return 'Reset HEAD'
+      case 'stash':
+        return 'Drop Stash'
       default:
         return 'Confirm'
     }

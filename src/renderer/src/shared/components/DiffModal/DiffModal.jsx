@@ -171,8 +171,14 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
         setGeneratedMessage(message)
         setViewMode('message')
         console.log('Generated message:', message)
-        // Auto-copy only successful commit messages to clipboard
-        await navigator.clipboard.writeText(message)
+        // Auto-copy is best-effort; clipboard can throw when the window isn't
+        // focused or permissions are denied — that must NOT turn a successful
+        // generation into a failure toast.
+        try {
+          await navigator.clipboard.writeText(message)
+        } catch (clipboardErr) {
+          console.warn('Auto-copy skipped:', clipboardErr?.message || clipboardErr)
+        }
       } else {
         throw new Error('No message generated')
       }
