@@ -20,11 +20,13 @@ import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
 import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
 import { getBranchCommits } from '../../store/git/gitThunks'
+import { setLoading } from '../../store/git/gitSlice'
 import {
   BRANCH_COMMITS_LIMIT,
   ROW_H,
   OVERSCAN_ROWS,
   indentStyle,
+  commitIndentStyle,
   buildBranchTree,
   countLeaves,
   flattenTree
@@ -364,26 +366,42 @@ const BranchList = ({
     [closeContextMenu]
   )
 
-  // Submit create tag
-  const submitCreateTag = useCallback(async () => {
-    if (!createTagState.tagName?.trim() || !onCreateTag) {
-      setCreateTagState({ show: false, branchName: '', tagName: '' })
-      return
-    }
-
-    await onCreateTag(createTagState.tagName, createTagState.branchName)
-
-    // Refresh commits for all expanded branches
-    Array.from(expandedBranches).forEach((branchName) => {
-      dispatch(getBranchCommits({ branchName, limit: BRANCH_COMMITS_LIMIT }))
-        .unwrap()
-        .then((result) => {
-          setBranchCommits((prev) => ({ ...prev, [branchName]: result.data }))
-        })
-        .catch((err) => console.error('Error refreshing branch commits:', err))
-    })
-
+  // Submit create tag.
+  // Close the modal immediately and explicitly own loadingMessage for the
+  // whole "create + refresh tags + refresh branches + refresh expanded commits"
+  // pipeline. We can't rely solely on createTag.pending/fulfilled because:
+  //   - createTag.fulfilled clears loadingMessage halfway through the flow
+  //   - loadTags / loadBranches that run afterwards are silent (no message)
+  // So the global LoadingModal would only flash briefly.
+  const submitCreateTag = useCallback(() => {
+    const { tagName, branchName } = createTagState
     setCreateTagState({ show: false, branchName: '', tagName: '' })
+    if (!tagName?.trim() || !onCreateTag) return
+
+    dispatch(setLoading('Creating tag…'))
+    ;(async () => {
+      try {
+        await onCreateTag(tagName, branchName)
+        // createTag.fulfilled has just cleared the message — re-assert for the
+        // expanded-commit refresh phase so the loader stays visible until done.
+        dispatch(setLoading('Refreshing branches…'))
+        const expanded = Array.from(expandedBranches)
+        await Promise.all(
+          expanded.map((bn) =>
+            dispatch(getBranchCommits({ branchName: bn, limit: BRANCH_COMMITS_LIMIT }))
+              .unwrap()
+              .then((result) =>
+                setBranchCommits((prev) => ({ ...prev, [bn]: result.data }))
+              )
+              .catch((err) => console.error('Error refreshing branch commits:', err))
+          )
+        )
+      } catch (err) {
+        console.error('Create tag failed:', err)
+      } finally {
+        dispatch(setLoading(''))
+      }
+    })()
   }, [createTagState, onCreateTag, expandedBranches, dispatch])
 
   // Submit rename
@@ -734,28 +752,9 @@ const BranchList = ({
                                     </span>
                                   )}
                                 </div>
-                                {tags.length > 0 && (
-                                  <div className={tagStyles.tagBadges}>
-                                    {tags.slice(0, 2).map((tag) => (
-                                      <TagBadge
-                                        key={tag}
-                                        tag={tag}
-                                        iconSize={8}
-                                        localOnlyTags={localOnlyTags}
-                                        remoteOnlyTags={remoteOnlyTags}
-                                        divergentTags={divergentTags}
-                                      />
-                                    ))}
-                                    {tags.length > 2 && (
-                                      <span
-                                        className={tagStyles.tagBadge}
-                                        title={tags.slice(2).join(', ')}
-                                      >
-                                        +{tags.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
+                                {/* Tags on the branch tip are intentionally
+                                   omitted here — they show up on the matching
+                                   commit row when the branch is expanded. */}
                               </div>
                             </div>
 
@@ -773,7 +772,7 @@ const BranchList = ({
                                         onContextMenu={(e) =>
                                           handleContextMenu(e, 'commit', commit)
                                         }
-                                        style={{ cursor: 'pointer' }}
+                                        style={{ cursor: 'pointer', ...commitIndentStyle(entry.depth) }}
                                         title="Click to view changes"
                                       >
                                         <div className={styles.commitDot} />

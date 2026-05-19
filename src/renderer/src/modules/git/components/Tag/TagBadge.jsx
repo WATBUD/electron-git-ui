@@ -17,6 +17,7 @@ export const classifyTag = (tagName, { localOnlyTags, remoteOnlyTags, divergentT
       : isLocalOnly
         ? styles.localOnly
         : styles.synced
+
   const title = isDivergent
     ? `${tagName} (Divergent — local & remote point to different commits)`
     : isRemoteOnly

@@ -539,7 +539,9 @@
   align-items: flex-start;
   gap: 8px;
   min-height: 24px;
-  padding: 4px 12px 4px 32px;
+  /* `--commit-indent` is set inline based on parent branch's tree depth so the
+     dot lines up under the branch's GitBranch icon. Default mirrors depth=0. */
+  padding: 4px 12px 4px var(--commit-indent, 41px);
   cursor: pointer;
   transition: background-color 0.1s;
 }
@@ -547,7 +549,7 @@
 .commitItem::before {
   content: '';
   position: absolute;
-  left: 23px;
+  left: calc(var(--commit-indent, 41px) - 5px);
   top: 0;
   bottom: 0;
   width: 1px;

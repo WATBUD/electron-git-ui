@@ -11,6 +11,18 @@ export const indentStyle = (depth) => ({
   paddingLeft: BASE_PADDING_PX + depth * INDENT_PX
 })
 
+// Inline style for the commit row under an expanded branch so its dot lines up
+// directly under the branch's GitBranch icon center. Sets `--commit-indent`
+// consumed by `.commitItem` / `.commitItem::before` in BranchList.module.css.
+//   = BASE_PADDING_PX (10) + depth*INDENT_PX
+//   + folderChevronPlaceholder (14)  // space reserved by branch row
+//   + branchMain gap (6)             // gap before the icon
+//   + half of GitBranch icon (~6.5)  // align to icon center
+//   + dot half-width adjustment (~4.5) so dot center == icon center
+export const commitIndentStyle = (depth) => ({
+  '--commit-indent': `${BASE_PADDING_PX + depth * INDENT_PX + 14 + 6 + 6.5 + 4.5}px`
+})
+
 // Build a tree from a flat branch list using `/` as path separator.
 // Leaf nodes carry the original branchObj; folder nodes hold children.
 export const buildBranchTree = (branchList) => {
