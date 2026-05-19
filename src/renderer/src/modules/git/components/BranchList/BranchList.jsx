@@ -34,6 +34,9 @@ import {
 import { TagBadge, CreateTagModal } from '../Tag'
 import tagStyles from '../Tag/Tag.module.css'
 import { RenameBranchModal } from './RenameBranchModal'
+import { CreateBranchModal } from './CreateBranchModal'
+import { useCommitDisplayOptions } from '../Commit/CommitDisplayOptions'
+import { CommitTagLegend } from '../Commit/CommitTagLegend'
 import styles from './BranchList.module.css'
 
 const BranchList = ({
@@ -46,8 +49,6 @@ const BranchList = ({
   onDelete,
   onDeleteRemote,
   onMerge,
-  newBranchName,
-  setNewBranchName,
   createBranchByNewBranchName,
   selectedPrefixes = [],
   onRename,
@@ -72,6 +73,10 @@ const BranchList = ({
     show: false,
     branchName: '',
     tagName: ''
+  })
+  const [createBranchState, setCreateBranchState] = useState({
+    show: false,
+    branchName: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [tagSearchTerm, setTagSearchTerm] = useState('')
@@ -162,6 +167,7 @@ const BranchList = ({
   const [loadingCommits, setLoadingCommits] = useState(false)
   const [viewingCommit, setViewingCommit] = useState(null)
   const dispatch = useDispatch()
+  const { options: commitDisplay, toggle: toggleCommitDisplay } = useCommitDisplayOptions()
 
   const handleViewCommit = useCallback((commit) => {
     setViewingCommit(commit)
@@ -335,18 +341,20 @@ const BranchList = ({
     loadAllCommits()
   }, [tagSearchTerm, branches.length, branchCommits, dispatch])
 
-  // Handle create branch
-  const handleCreateBranch = useCallback(() => {
-    if (!newBranchName.trim()) return
+  // Submit create branch from modal
+  const submitCreateBranch = useCallback(() => {
+    const { branchName } = createBranchState
+    setCreateBranchState({ show: false, branchName: '' })
+    if (!branchName?.trim() || !createBranchByNewBranchName) return
 
     const branchNames = branchPrefix
       ? branchPrefix
           .split(',')
-          .map((p) => `${p.trim()}${newBranchName}`)
+          .map((p) => `${p.trim()}${branchName}`)
           .join(',')
-      : newBranchName
+      : branchName
     createBranchByNewBranchName(branchNames)
-  }, [newBranchName, branchPrefix, createBranchByNewBranchName])
+  }, [createBranchState, branchPrefix, createBranchByNewBranchName])
 
   // Handle rename branch
   const handleRenameBranch = useCallback(
@@ -390,9 +398,7 @@ const BranchList = ({
           expanded.map((bn) =>
             dispatch(getBranchCommits({ branchName: bn, limit: BRANCH_COMMITS_LIMIT }))
               .unwrap()
-              .then((result) =>
-                setBranchCommits((prev) => ({ ...prev, [bn]: result.data }))
-              )
+              .then((result) => setBranchCommits((prev) => ({ ...prev, [bn]: result.data })))
               .catch((err) => console.error('Error refreshing branch commits:', err))
           )
         )
@@ -471,6 +477,14 @@ const BranchList = ({
     <div className={styles.branchManagement}>
       <div className={styles.header}>
         <div className={styles.headerTitle}>
+          <button
+            onClick={() => setCreateBranchState({ show: true, branchName: '' })}
+            className={styles.headerCreateBtn}
+            title="Create new branch"
+          >
+            <Plus size={13} />
+            <span>Create Branch</span>
+          </button>
           <div className={styles.headerPrefixSection}>
             <Tag size={12} className={styles.prefixIcon} />
             <span className={styles.prefixHeaderLabel}>Prefix</span>
@@ -489,31 +503,6 @@ const BranchList = ({
         </div>
       </div>
 
-      <div className={styles.topTools}>
-        <div className={styles.createSection}>
-          <input
-            type="text"
-            value={newBranchName}
-            onChange={setNewBranchName}
-            placeholder="New branch name..."
-            className={styles.branchInput}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newBranchName.trim() && !loading) {
-                handleCreateBranch()
-              }
-            }}
-          />
-          <button
-            onClick={handleCreateBranch}
-            disabled={loading || !newBranchName.trim()}
-            className={styles.createBtn}
-          >
-            <Plus size={14} />
-            <span>Create</span>
-          </button>
-        </div>
-      </div>
-
       {/* Search inputs */}
       <div className={styles.searchContainer}>
         <SearchInput
@@ -528,34 +517,6 @@ const BranchList = ({
           placeholder="Search tags..."
           customStyle={{ flex: 1 }}
         />
-      </div>
-
-      {/* Tag legend */}
-      <div className={styles.tagLegend}>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendBadge} ${styles.localOnly}`}>
-            <Tag size={8} />
-          </span>
-          <span className={styles.legendText}>Local only</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendBadge} ${styles.remoteOnly}`}>
-            <Tag size={8} />
-          </span>
-          <span className={styles.legendText}>Remote only</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendBadge} ${styles.synced}`}>
-            <Tag size={8} />
-          </span>
-          <span className={styles.legendText}>Synced</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendBadge} ${styles.divergent}`}>
-            <Tag size={8} />
-          </span>
-          <span className={styles.legendText}>Divergent</span>
-        </span>
       </div>
 
       {/* Divergent tag warning — these block `git fetch` with "would clobber existing tag" */}
@@ -657,6 +618,17 @@ const BranchList = ({
                   />
                   <span>LOCAL</span>
                   <span className={styles.groupCount}>{sortedLocalBranches.length}</span>
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    style={{ marginLeft: '10px', display: 'flex', alignItems: 'center' }}
+                  >
+                    <CommitTagLegend
+                      commitDisplay={commitDisplay}
+                      toggleCommitDisplay={toggleCommitDisplay}
+                      style={{ paddingBottom: 0, gap: '10px' }}
+                    />
+                  </div>
                 </div>
                 {!effectiveLocalCollapsed && (
                   <div className={styles.groupContent}>
@@ -703,10 +675,7 @@ const BranchList = ({
                               className={`${styles.branchItem} ${isActive ? styles.active : ''} ${isExpanded ? styles.expanded : ''}`}
                               onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
                             >
-                              <div
-                                className={styles.branchMain}
-                                style={indentStyle(entry.depth)}
-                              >
+                              <div className={styles.branchMain} style={indentStyle(entry.depth)}>
                                 <span className={styles.folderChevronPlaceholder} />
                                 <GitBranch size={13} className={styles.itemIcon} />
                                 <span className={styles.branchNameText}>{entry.node.name}</span>
@@ -772,19 +741,26 @@ const BranchList = ({
                                         onContextMenu={(e) =>
                                           handleContextMenu(e, 'commit', commit)
                                         }
-                                        style={{ cursor: 'pointer', ...commitIndentStyle(entry.depth) }}
+                                        style={{
+                                          cursor: 'pointer',
+                                          ...commitIndentStyle(entry.depth)
+                                        }}
                                         title="Click to view changes"
                                       >
                                         <div className={styles.commitDot} />
                                         <div className={styles.commitDetails}>
                                           <div className={styles.commitMeta}>
-                                            <span className={styles.commitHash}>
-                                              {commit.shortHash}
-                                            </span>
-                                            <span className={styles.commitAuthor}>
-                                              {commit.author}
-                                            </span>
-                                            {commit.date && (
+                                            {commitDisplay.hash && (
+                                              <span className={styles.commitHash}>
+                                                {commit.shortHash}
+                                              </span>
+                                            )}
+                                            {commitDisplay.author && (
+                                              <span className={styles.commitAuthor}>
+                                                {commit.author}
+                                              </span>
+                                            )}
+                                            {commitDisplay.date && commit.date && (
                                               <span
                                                 className={styles.commitDate}
                                                 title={formatAbsoluteTime(commit.date)}
@@ -793,7 +769,7 @@ const BranchList = ({
                                                 {formatRelativeTime(commit.date)}
                                               </span>
                                             )}
-                                            {commit.tags.length > 0 && (
+                                            {commitDisplay.tags && commit.tags.length > 0 && (
                                               <div className={tagStyles.commitTags}>
                                                 {commit.tags.map((tag) => (
                                                   <TagBadge
@@ -807,41 +783,44 @@ const BranchList = ({
                                                 ))}
                                               </div>
                                             )}
-                                            {(() => {
-                                              const info = commit.branches
-                                              if (!info) return null
-                                              const all = [
-                                                ...(info.local || []).map((b) => ({
-                                                  name: b,
-                                                  isRemote: false,
-                                                  isCurrent: b === branch
-                                                })),
-                                                ...(info.remote || []).map((b) => ({
-                                                  name: b,
-                                                  isRemote: true,
-                                                  isCurrent: false
-                                                }))
-                                              ]
-                                              if (all.length === 0) return null
-                                              return (
-                                                <div className={styles.commitBranches}>
-                                                  {all.map((b) => (
-                                                    <span
-                                                      key={(b.isRemote ? 'r:' : 'l:') + b.name}
-                                                      className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
-                                                      title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
-                                                    >
-                                                      <GitBranch size={10} />
-                                                      {b.name}
-                                                    </span>
-                                                  ))}
-                                                </div>
-                                              )
-                                            })()}
+                                            {commitDisplay.branches &&
+                                              (() => {
+                                                const info = commit.branches
+                                                if (!info) return null
+                                                const all = [
+                                                  ...(info.local || []).map((b) => ({
+                                                    name: b,
+                                                    isRemote: false,
+                                                    isCurrent: b === branch
+                                                  })),
+                                                  ...(info.remote || []).map((b) => ({
+                                                    name: b,
+                                                    isRemote: true,
+                                                    isCurrent: false
+                                                  }))
+                                                ]
+                                                if (all.length === 0) return null
+                                                return (
+                                                  <div className={styles.commitBranches}>
+                                                    {all.map((b) => (
+                                                      <span
+                                                        key={(b.isRemote ? 'r:' : 'l:') + b.name}
+                                                        className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
+                                                        title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
+                                                      >
+                                                        <GitBranch size={10} />
+                                                        {b.name}
+                                                      </span>
+                                                    ))}
+                                                  </div>
+                                                )
+                                              })()}
                                           </div>
-                                          <div className={styles.commitMessage}>
-                                            {commit.message}
-                                          </div>
+                                          {commitDisplay.message && (
+                                            <div className={styles.commitMessage}>
+                                              {commit.message}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                     ))
@@ -1015,6 +994,13 @@ const BranchList = ({
           )}
         </div>
       </div>
+
+      <CreateBranchModal
+        state={createBranchState}
+        setState={setCreateBranchState}
+        onSubmit={submitCreateBranch}
+        branchPrefix={branchPrefix}
+      />
 
       <RenameBranchModal
         state={renameBranchState}
