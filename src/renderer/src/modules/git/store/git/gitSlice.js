@@ -88,6 +88,10 @@ const initialState = {
   fileStatus: [],
   loading: false,
   loadingMessage: '',
+  // When non-empty, takes precedence over `loadingMessage`. Use this when a
+  // caller needs to keep the LoadingModal visible across multiple thunks whose
+  // own pending/fulfilled cases would otherwise clear `loadingMessage`.
+  loadingOverride: '',
   commandHistory: [],
   previousHistoryIndex: -1,
   repoPath: null,
@@ -136,6 +140,12 @@ const gitSlice = createSlice({
     },
     stopLoading: (state) => {
       state.loadingMessage = ''
+    },
+    setLoadingOverride: (state, action) => {
+      state.loadingOverride = action.payload || ''
+    },
+    clearLoadingOverride: (state) => {
+      state.loadingOverride = ''
     },
     clearCachedDiff: (state) => {
       state.cachedDiff = null
@@ -645,6 +655,8 @@ export const {
   clearError,
   setLoading,
   stopLoading,
+  setLoadingOverride,
+  clearLoadingOverride,
   clearCachedDiff,
   addPrefix,
   removePrefix,

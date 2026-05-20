@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types, no-unused-vars */
 import React, { useRef, useState } from 'react'
 import { GitMerge, ArrowDownLeft, Edit3, Tag, ChevronRight, Trash2 } from 'lucide-react'
 import { TagSubmenu } from '../Tag/TagSubmenu'
@@ -58,9 +59,7 @@ export const BranchActionMenu = ({
   return (
     <>
       <div ref={menuRef} className={styles.contextMenu} style={{ top: y, left: x }}>
-        <div className={styles.contextMenuHeader}>
-          {branchName?.replace('origin/', '')}
-        </div>
+        <div className={styles.contextMenuHeader}>{branchName?.replace('origin/', '')}</div>
         <div className={styles.contextMenuContent}>
           <button
             className={styles.contextMenuItem}
@@ -69,6 +68,7 @@ export const BranchActionMenu = ({
               onClose?.()
             }}
             disabled={isCurrentBranch}
+            onMouseEnter={() => setHoveredTag(null)}
           >
             <GitMerge size={14} />
             <span>Merge into {currentBranch}</span>
@@ -80,6 +80,7 @@ export const BranchActionMenu = ({
               onClose?.()
             }}
             disabled={isCurrentBranch}
+            onMouseEnter={() => setHoveredTag(null)}
           >
             <ArrowDownLeft size={14} />
             <span>Checkout</span>
@@ -91,6 +92,7 @@ export const BranchActionMenu = ({
               onClose?.()
             }}
             disabled={!branchName || isRemoteBranch}
+            onMouseEnter={() => setHoveredTag(null)}
           >
             <Edit3 size={14} />
             <span>Rename</span>
@@ -102,6 +104,7 @@ export const BranchActionMenu = ({
               onClose?.()
             }}
             disabled={isRemoteBranch}
+            onMouseEnter={() => setHoveredTag(null)}
           >
             <Tag size={14} />
             <span>Create Tag</span>
@@ -115,6 +118,7 @@ export const BranchActionMenu = ({
                 onRequestDeleteBranch?.(branchName, isRemoteBranch)
               }}
               style={{ color: '#ff3b30' }}
+              onMouseEnter={() => setHoveredTag(null)}
             >
               <Trash2 size={14} />
               <span>Delete Branch</span>
@@ -129,7 +133,6 @@ export const BranchActionMenu = ({
                   key={tagName}
                   className={`${styles.contextMenuItem} ${styles.hasSubmenu}`}
                   onMouseEnter={(e) => handleTagHover(e, tagName)}
-                  onMouseLeave={() => setHoveredTag(null)}
                 >
                   <Tag size={14} />
                   <span>{tagName}</span>

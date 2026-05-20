@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types, no-unused-vars */
 import React, { useRef, useState } from 'react'
 import { Tag, GitBranch, Copy, ChevronRight, RotateCcw } from 'lucide-react'
 import { TagSubmenu } from '../Tag/TagSubmenu'
@@ -71,6 +72,10 @@ export const CommitActionMenu = ({
               onCreateTag?.(commit?.hash)
               onClose?.()
             }}
+            onMouseEnter={() => {
+              setHoveredTag(null)
+              setShowReset(false)
+            }}
           >
             <Tag size={14} />
             <span>Create Tag</span>
@@ -80,6 +85,10 @@ export const CommitActionMenu = ({
             onClick={() => {
               ;(onCheckoutCommit || onCheckout)?.(commit?.hash)
               onClose?.()
+            }}
+            onMouseEnter={() => {
+              setHoveredTag(null)
+              setShowReset(false)
             }}
           >
             <GitBranch size={14} />
@@ -92,6 +101,10 @@ export const CommitActionMenu = ({
               await copyToClipboard(commit?.hash)
               onClose?.()
             }}
+            onMouseEnter={() => {
+              setHoveredTag(null)
+              setShowReset(false)
+            }}
           >
             <Copy size={14} />
             <span>Copy Hash</span>
@@ -101,7 +114,6 @@ export const CommitActionMenu = ({
             <button
               className={`${branchStyles.contextMenuItem} ${branchStyles.hasSubmenu}`}
               onMouseEnter={handleResetHover}
-              onMouseLeave={() => setShowReset(false)}
             >
               <RotateCcw size={14} />
               <span>Reset HEAD to here</span>
@@ -117,7 +129,6 @@ export const CommitActionMenu = ({
                   key={tagName}
                   className={`${branchStyles.contextMenuItem} ${branchStyles.hasSubmenu}`}
                   onMouseEnter={(e) => handleTagHover(e, tagName)}
-                  onMouseLeave={() => setHoveredTag(null)}
                 >
                   <Tag size={14} />
                   <span>{tagName}</span>

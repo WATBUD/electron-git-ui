@@ -78,9 +78,15 @@ export const MainPageGit = () => {
   const currentBranch = useSelector((state) => state.git.currentBranch)
   const fileStatus = useSelector((state) => state.git.fileStatus)
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
+  const loadingOverride = useSelector((state) => state.git.loadingOverride)
+  // `loadingOverride` lets a long pipeline (e.g. create-tag → loadTags →
+  // loadBranches → refresh expanded commits) keep the LoadingModal visible
+  // across multiple thunks even when each thunk's fulfilled case clears
+  // `loadingMessage`. Override wins; otherwise fall back to thunk-set message.
+  const effectiveLoadingMessage = loadingOverride || loadingMessage
   // `state.git.loading` is never flipped — derive from loadingMessage so
   // inline spinners (e.g. BranchList "Fetching branches...") actually fire.
-  const loading = !!loadingMessage
+  const loading = !!effectiveLoadingMessage
   const repoPath = useSelector((state) => state.git.repoPath)
   const mergeStatus = useSelector((state) => state.git.mergeStatus)
   const prefixes = useSelector((state) => state.git.prefixes)
@@ -504,7 +510,7 @@ export const MainPageGit = () => {
           <FooterArea />
         </div>
       </div>
-      <LoadingModal message={loadingMessage} />
+      <LoadingModal message={effectiveLoadingMessage} />
       <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
 
       {/* Global ConfirmDialog for tag and branch deletion */}

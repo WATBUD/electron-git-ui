@@ -20,7 +20,7 @@ import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
 import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
 import { getBranchCommits, fastForwardAllBranches } from '../../store/git/gitThunks'
-import { setLoading } from '../../store/git/gitSlice'
+import { setLoadingOverride, clearLoadingOverride } from '../../store/git/gitSlice'
 import {
   BRANCH_COMMITS_LIMIT,
   ROW_H,
@@ -393,13 +393,15 @@ const BranchList = ({
     setCreateTagState({ show: false, branchName: '', tagName: '' })
     if (!tagName?.trim() || !onCreateTag) return
 
-    dispatch(setLoading('Creating tag…'))
+    // Use loadingOverride so the LoadingModal stays up across createTag →
+    // loadTags → loadBranches → expanded-commit refresh. Each individual
+    // thunk's pending/fulfilled would otherwise clear loadingMessage and
+    // make the loader flicker / disappear before the UI actually refreshes.
+    dispatch(setLoadingOverride('Creating tag…'))
     ;(async () => {
       try {
         await onCreateTag(tagName, branchName)
-        // createTag.fulfilled has just cleared the message — re-assert for the
-        // expanded-commit refresh phase so the loader stays visible until done.
-        dispatch(setLoading('Refreshing branches…'))
+        dispatch(setLoadingOverride('Refreshing branches…'))
         const expanded = Array.from(expandedBranches)
         await Promise.all(
           expanded.map((bn) =>
@@ -412,7 +414,7 @@ const BranchList = ({
       } catch (err) {
         console.error('Create tag failed:', err)
       } finally {
-        dispatch(setLoading(''))
+        dispatch(clearLoadingOverride())
       }
     })()
   }, [createTagState, onCreateTag, expandedBranches, dispatch])
