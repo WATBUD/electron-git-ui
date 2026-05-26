@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './modules/git/store'
 import { MainPageGit } from './modules/git/pages/main-page/main-page-git'
-import { MainPageMacro } from './modules/macro-recorder/pages/main-page/main-page-macro'
+
 import { App as AntdApp } from 'antd'
 import 'antd/dist/reset.css'
 import './main.css'
@@ -59,7 +59,7 @@ const App = () => {
       </nav> */}
 
       <div style={{ flex: 1, overflow: 'auto' }}>
-        <AntdApp>{currentPage === PAGES.GIT ? <MainPageGit /> : <MainPageMacro />}</AntdApp>
+        <AntdApp>{currentPage === PAGES.GIT ? <MainPageGit /> : null}</AntdApp>
       </div>
     </div>
   )

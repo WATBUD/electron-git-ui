@@ -2,12 +2,13 @@ import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupGitHandlers } from './gitIpcHandlers'
-import { setupMacroHandlers } from './macroIpcHandlers'
+
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 const iconPath = isDev
   ? join(__dirname, '../../assets/appIcon.png')
   : join(__dirname, '../../assets/appIcon.icns')
+const appIcon = nativeImage.createFromPath(iconPath);
 
 // Disable Autofill features to prevent DevTools errors
 app.commandLine.appendSwitch('disable-features', 'Autofill')
@@ -29,6 +30,7 @@ function createWindow() {
     autoHideMenuBar: true,
     backgroundColor: '#14141c',
     title: 'Tide Git',
+    icon: process.platform === 'win32' ? nativeImage.createFromPath(join(__dirname, '../../assets/appIcon.ico')) : appIcon,
     ...(isMac
       ? {
           titleBarStyle: 'hiddenInset',
@@ -108,7 +110,7 @@ app.whenReady().then(() => {
 
   // Set up IPC handlers
   setupGitHandlers()
-  setupMacroHandlers()
+
 
   createWindow()
 
