@@ -224,7 +224,7 @@ export const FileStatus = ({
 
   // Separate files by staging status and apply search filter
   const filteredFiles = React.useMemo(() => {
-    const filtered = _fileStatus.filter(file => 
+    const filtered = _fileStatus.filter(file =>
       file.file.toLowerCase().includes(searchTerm.toLowerCase())
     )
     return {
@@ -235,6 +235,33 @@ export const FileStatus = ({
 
   const stagedFiles = filteredFiles.staged
   const unstagedFiles = filteredFiles.unstaged
+
+  // After staging/unstaging the active file, advance to the next file in the
+  // same section so the user can keep reviewing without re-clicking.
+  const advanceActiveFile = (file, fromStaged) => {
+    if (typeof file !== 'string') return
+    if (activeFile?.file !== file || activeFile?.isStaged !== fromStaged) return
+    const list = fromStaged ? filteredFiles.staged : filteredFiles.unstaged
+    const idx = list.findIndex(f => f.file === file)
+    if (idx === -1) return
+    const next = list[idx + 1] || list[idx - 1] || null
+    if (next) {
+      setActiveFile({ file: next.file, isStaged: fromStaged })
+      onFileClick({ file: next.file, isStaged: fromStaged })
+    } else {
+      setActiveFile(null)
+    }
+  }
+
+  const handleStageFile = (file) => {
+    advanceActiveFile(file, false)
+    onStageFile(file)
+  }
+
+  const handleUnstageFile = (file) => {
+    advanceActiveFile(file, true)
+    onUnstageFile(file)
+  }
 
   if (!loading && _fileStatus.length === 0) {
     return (
@@ -305,8 +332,8 @@ export const FileStatus = ({
               selectedFiles={selectedFiles}
               onFileClick={handleFileClick}
               onContextMenu={handleContextMenu}
-              onStageFile={onStageFile}
-              onUnstageFile={onUnstageFile}
+              onStageFile={handleStageFile}
+              onUnstageFile={handleUnstageFile}
               getStatusIcon={getStatusIcon}
               onStageAll={handleUnstageAll}
               onUnstageAll={handleUnstageAll}
@@ -322,8 +349,8 @@ export const FileStatus = ({
               selectedFiles={selectedFiles}
               onFileClick={handleFileClick}
               onContextMenu={handleContextMenu}
-              onStageFile={onStageFile}
-              onUnstageFile={onUnstageFile}
+              onStageFile={handleStageFile}
+              onUnstageFile={handleUnstageFile}
               getStatusIcon={getStatusIcon}
               onStageAll={handleStageAll}
               onUnstageAll={handleUnstageAll}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import {
   ChevronDown,
   Plus,
@@ -165,7 +165,10 @@ const BranchList = ({
   const [branchCommits, setBranchCommits] = useState({})
   const [loadingCommits, setLoadingCommits] = useState(false)
   const [viewingCommit, setViewingCommit] = useState(null)
+  const [dirtyWarning, setDirtyWarning] = useState(false)
   const dispatch = useDispatch()
+  const fileStatus = useSelector((s) => s.git.fileStatus || [])
+  const hasUncommittedChanges = fileStatus.length > 0
   const { options: commitDisplay, toggle: toggleCommitDisplay } = useCommitDisplayOptions()
 
   const handleViewCommit = useCallback((commit) => {
@@ -341,12 +344,19 @@ const BranchList = ({
   }, [tagSearchTerm, branches.length, branchCommits, dispatch])
 
   const handleFastForwardAll = useCallback(async () => {
+    // Block when the working tree has uncommitted or staged changes — a
+    // fast-forward can otherwise leave the user in a messy partial state if
+    // git refuses to move HEAD on the dirty branch.
+    if (hasUncommittedChanges) {
+      setDirtyWarning(true)
+      return
+    }
     try {
       await dispatch(fastForwardAllBranches()).unwrap()
     } catch (err) {
       console.error('Failed to fast-forward all branches:', err)
     }
-  }, [dispatch])
+  }, [dispatch, hasUncommittedChanges])
 
   // Submit create branch from modal
   const submitCreateBranch = useCallback(() => {
@@ -1014,6 +1024,33 @@ const BranchList = ({
         onSubmit={submitCreateBranch}
         branchPrefix={branchPrefix}
       />
+
+      {dirtyWarning && (
+        <div className={styles.modalOverlay} onClick={() => setDirtyWarning(false)}>
+          <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
+            <h3>Uncommitted changes</h3>
+            <div className={styles.modalBody}>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'rgba(255,255,255,0.85)' }}>
+                You have <strong>{fileStatus.length}</strong> uncommitted file
+                {fileStatus.length === 1 ? '' : 's'}.
+              </p>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+                Please <strong>commit</strong> or <strong>stash</strong> your changes before
+                fast-forwarding — otherwise git may refuse to move the current branch.
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setDirtyWarning(false)}
+                className={styles.modalConfirm}
+                autoFocus
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <RenameBranchModal
         state={renameBranchState}

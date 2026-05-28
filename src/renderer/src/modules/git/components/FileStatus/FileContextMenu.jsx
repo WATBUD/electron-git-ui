@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useLayoutEffect, useState } from 'react'
 import { message } from 'antd'
 import {
   Copy,
@@ -7,6 +7,8 @@ import {
   Trash2
 } from 'lucide-react'
 import styles from './FileStatus.module.css'
+
+const VIEWPORT_MARGIN = 8
 
 export const FileContextMenu = ({
   show,
@@ -24,6 +26,9 @@ export const FileContextMenu = ({
   isNewFile
 }) => {
   const contextMenuRef = useRef(null)
+  // Hold the clamped position separately so first paint can already use the
+  // adjusted coords (no visible flicker when shifting near viewport edges).
+  const [pos, setPos] = useState({ top: y, left: x, ready: false })
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,6 +39,31 @@ export const FileContextMenu = ({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [onClose])
+
+  // Re-measure + clamp to viewport whenever the menu opens or the requested
+  // anchor changes. Runs synchronously before paint via useLayoutEffect.
+  useLayoutEffect(() => {
+    if (!show) {
+      setPos({ top: y, left: x, ready: false })
+      return
+    }
+    const el = contextMenuRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    let nextLeft = x
+    let nextTop = y
+    if (nextLeft + rect.width > vw - VIEWPORT_MARGIN) {
+      // Flip leftward — anchor right edge to viewport right minus margin.
+      nextLeft = Math.max(VIEWPORT_MARGIN, vw - rect.width - VIEWPORT_MARGIN)
+    }
+    if (nextTop + rect.height > vh - VIEWPORT_MARGIN) {
+      // Flip upward — anchor bottom edge to viewport bottom minus margin.
+      nextTop = Math.max(VIEWPORT_MARGIN, vh - rect.height - VIEWPORT_MARGIN)
+    }
+    setPos({ top: nextTop, left: nextLeft, ready: true })
+  }, [show, x, y])
 
   const handleCopyFileName = () => {
     if (isMultipleSelection) {
@@ -113,8 +143,11 @@ export const FileContextMenu = ({
       ref={contextMenuRef}
       className={styles.contextMenu}
       style={{
-        top: y,
-        left: x
+        top: pos.top,
+        left: pos.left,
+        // Hide for the very first paint while we measure & clamp; reveal once
+        // adjusted coords are committed to avoid an off-screen flash.
+        visibility: pos.ready ? 'visible' : 'hidden'
       }}
     >
       <div className={styles.contextMenuHeader}>
