@@ -392,7 +392,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                   autoFocus
                 />
                 <label className={styles.checkboxLabel}>
-                  <span>Include staged changes</span>
+                  <span>Also stash staged changes</span>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="checkbox"
@@ -416,8 +416,8 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                     style={{ marginRight: '8px', verticalAlign: 'middle' }}
                   />
                   {includeStaged
-                    ? 'All changes (staged and unstaged) will be stashed.'
-                    : 'Only unstaged changes will be stashed. Staged changes will remain.'}
+                    ? 'Staged and unstaged changes will be stashed together.'
+                    : 'Only unstaged changes go into the stash. Staged changes stay in the index.'}
                 </div>
               </div>
               <div className={styles.dialogButtons}>

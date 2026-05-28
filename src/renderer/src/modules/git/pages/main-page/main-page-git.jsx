@@ -314,16 +314,12 @@ export const MainPageGit = () => {
                     dispatch(loadFileStatus())
                   }
                 } else {
-                  // Stash only unstaged files, preserve staged files
-                  const unstagedFiles = (fileStatus || [])
-                    .filter((f) => !f.isStaged)
-                    .map((f) => f.file)
-
+                  // Exclude staged from stash via the temp-commit dance:
+                  //   git commit -m "__temp__" ; git stash ; git reset --soft HEAD~1
+                  // This handles partially-staged files correctly (the staged
+                  // hunks stay staged, only the unstaged hunks land in stash).
                   const result = await dispatch(
-                    pushStash({
-                      message: message,
-                      files: unstagedFiles.length > 0 ? unstagedFiles : undefined
-                    })
+                    pushStash({ message, excludeStaged: true })
                   )
                   if (pushStash.fulfilled.match(result)) {
                     dispatch(loadFileStatus())

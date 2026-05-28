@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { RefreshButton } from '../../../../shared/components/RefreshButton'
 import { FileCode, FolderOpen, ExternalLink, FileX } from 'lucide-react'
 import { FileList } from './FileList'
@@ -191,6 +191,47 @@ export const FileStatus = ({
   }, [])
 
   const diffLines = React.useMemo(() => parseDiff(selectedFileDiff), [selectedFileDiff, parseDiff])
+
+  // Refresh the active file's diff when the window regains focus, so external
+  // edits (terminal, editor) show up without the user re-clicking the file.
+  // Reading via refs because onFileClick is an inline arrow at the page level
+  // (new identity every render) — without refs this effect would re-bind on
+  // every render and could miss a focus event mid-rebind.
+  const activeFileRef = useRef(activeFile)
+  const onFileClickRef = useRef(onFileClick)
+  const onRefreshRef = useRef(onRefresh)
+  useEffect(() => {
+    activeFileRef.current = activeFile
+    onFileClickRef.current = onFileClick
+    onRefreshRef.current = onRefresh
+  })
+
+  useEffect(() => {
+    let lastRefresh = 0
+    const refresh = () => {
+      // Debounce: focus + visibilitychange can both fire on the same return-
+      // from-background. 300ms is short enough to feel instant, long enough
+      // to dedupe the pair.
+      const now = Date.now()
+      if (now - lastRefresh < 300) return
+      lastRefresh = now
+
+      onRefreshRef.current?.()
+      const active = activeFileRef.current
+      if (active) {
+        onFileClickRef.current({ file: active.file, isStaged: active.isStaged })
+      }
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      window.removeEventListener('focus', refresh)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
 
   // Keyboard navigation
   useEffect(() => {

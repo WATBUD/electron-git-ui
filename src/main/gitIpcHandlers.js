@@ -1438,6 +1438,76 @@ ${fileContent
     }
   })
 
+  // Stash unstaged changes only, preserving the index (staged state).
+  // Sequence requested by the user:
+  //   1. git commit -m "__temp__" — park staged changes as a temp commit so
+  //      the working tree's only remaining diff is the unstaged delta.
+  //   2. git stash push -m <msg>  — stash that unstaged delta.
+  //   3. git reset --soft HEAD~1  — unwind the temp commit, restoring the
+  //      parked content back into the index (staged again).
+  // --soft is required: a default `git reset HEAD~1` (--mixed) would move the
+  // parked content into the working tree as *unstaged*, defeating the goal
+  // of "keep staged state intact."
+  ipcMain.handle('git:stashExcludeStaged', async (_, message) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    try {
+      const staged = await runGit(['diff', '--cached', '--name-only'])
+      const hasStaged = staged.code === 0 && staged.stdout.trim().length > 0
+
+      // No staged content → no need for the park/unwind dance; fall through
+      // to a plain `git stash push`.
+      if (!hasStaged) {
+        const args = ['stash', 'push']
+        if (message) args.push('-m', message)
+        commandHistory.push(`git ${args.join(' ')}`)
+        const r = await runGit(args)
+        if (r.code === 0) return success({ output: r.stdout || r.stderr })
+        return fail(r.stderr || r.stdout || `Git exit code ${r.code}`)
+      }
+
+      const tempLabel = '__git_ui_stash_park__'
+      const commitArgs = ['commit', '-m', tempLabel]
+      commandHistory.push(`git ${commitArgs.join(' ')}`)
+      const commit = await runGit(commitArgs)
+      if (commit.code !== 0) {
+        return fail(commit.stderr || commit.stdout || 'Failed to park staged changes')
+      }
+
+      const stashArgs = ['stash', 'push']
+      if (message) stashArgs.push('-m', message)
+      commandHistory.push(`git ${stashArgs.join(' ')}`)
+      const stash = await runGit(stashArgs)
+
+      if (stash.code !== 0) {
+        // Stash failed (e.g. nothing unstaged). Always unwind the temp commit
+        // so the repo doesn't end up with a stray "__temp__" commit on HEAD.
+        const rollback = await runGit(['reset', '--soft', 'HEAD~1'])
+        const stashErr = stash.stderr || stash.stdout || 'No unstaged changes to stash'
+        if (rollback.code !== 0) {
+          return fail(
+            `${stashErr}. Failed to unwind temp commit — run \`git reset --soft HEAD~1\` manually.`
+          )
+        }
+        return fail(stashErr)
+      }
+
+      const resetArgs = ['reset', '--soft', 'HEAD~1']
+      commandHistory.push(`git ${resetArgs.join(' ')}`)
+      const reset = await runGit(resetArgs)
+      if (reset.code !== 0) {
+        return fail(
+          `Stashed unstaged changes, but failed to unwind temp commit: ${
+            reset.stderr || reset.stdout
+          }. Run \`git reset --soft HEAD~1\` manually.`
+        )
+      }
+
+      return success({ output: stash.stdout || stash.stderr })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:stashApply', async (_, stashIndex) => {
     if (!currentRepoPath) return fail('No repository selected')
     try {

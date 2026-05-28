@@ -726,18 +726,22 @@ export const pushStash = createAsyncThunk(
   'git/pushStash',
   async (args, { rejectWithValue, dispatch }) => {
     // If args is a string, it's the message (legacy)
-    // If args is an object, it can have { message, files, keepIndex }
+    // If args is an object, it can have { message, files, keepIndex, excludeStaged }
     const message = typeof args === 'string' ? args : args?.message
     const files = typeof args === 'object' ? args?.files : undefined
     const keepIndex = typeof args === 'object' ? args?.keepIndex : undefined
+    const excludeStaged = typeof args === 'object' ? args?.excludeStaged : undefined
 
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
     const result = await callGit(
-      () => window.git.stashPush(message, files, keepIndex),
+      () =>
+        excludeStaged
+          ? window.git.stashExcludeStaged(message)
+          : window.git.stashPush(message, files, keepIndex),
       rejectWithValue,
       'Failed to push stash',
-      'stashPush'
+      excludeStaged ? 'stashExcludeStaged' : 'stashPush'
     )
     await Promise.all([dispatch(loadStashes()), dispatch(loadFileStatus())])
     return result

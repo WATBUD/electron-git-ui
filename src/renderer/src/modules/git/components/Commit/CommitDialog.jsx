@@ -17,12 +17,14 @@ export const CommitDialog = ({
 
   useEffect(() => {
     if (show && textareaRef.current) {
-      // Focus and move cursor to the end of text
-      const len = commitMessage.length
+      // Place cursor at the end on open so a pre-filled message is easy to
+      // append to. Intentionally not depending on commitMessage — re-running
+      // on every keystroke would yank the caret to the end mid-typing.
+      const len = textareaRef.current.value.length
       textareaRef.current.focus()
       textareaRef.current.setSelectionRange(len, len)
     }
-  }, [show, commitMessage])
+  }, [show])
 
   if (!show) return null
 
