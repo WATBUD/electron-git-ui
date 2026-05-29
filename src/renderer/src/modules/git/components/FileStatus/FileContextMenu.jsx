@@ -4,7 +4,9 @@ import {
   Copy,
   ExternalLink,
   Archive,
-  Trash2
+  Trash2,
+  Plus,
+  ArrowLeft
 } from 'lucide-react'
 import styles from './FileStatus.module.css'
 
@@ -23,6 +25,8 @@ export const FileContextMenu = ({
   onDiscardChanges,
   onRemoveFile,
   onStashFile,
+  onStageFile,
+  onUnstageFile,
   isNewFile
 }) => {
   const contextMenuRef = useRef(null)
@@ -108,6 +112,28 @@ export const FileContextMenu = ({
     }
   }
 
+  const handleStageMultiple = async () => {
+    try {
+      await onStageFile(selectedFiles)
+      message.success(`${selectedFiles.length} files staged`)
+      onClose()
+    } catch (error) {
+      message.error('Failed to stage files')
+      console.error('Stage error:', error)
+    }
+  }
+
+  const handleUnstageMultiple = async () => {
+    try {
+      await onUnstageFile(selectedFiles)
+      message.success(`${selectedFiles.length} files unstaged`)
+      onClose()
+    } catch (error) {
+      message.error('Failed to unstage files')
+      console.error('Unstage error:', error)
+    }
+  }
+
   const handleDiscardOrRemove = async () => {
     try {
       if (isMultipleSelection) {
@@ -156,6 +182,22 @@ export const FileContextMenu = ({
         </span>
       </div>
       <div className={styles.contextMenuContent}>
+        {isMultipleSelection && (
+          <>
+            {isStaged ? (
+              <button className={styles.contextMenuItem} onClick={handleUnstageMultiple}>
+                <ArrowLeft size={14} />
+                <span>Unstage {selectedCount} files</span>
+              </button>
+            ) : (
+              <button className={styles.contextMenuItem} onClick={handleStageMultiple}>
+                <Plus size={14} />
+                <span>Stage {selectedCount} files</span>
+              </button>
+            )}
+            <div className={styles.contextMenuDivider} />
+          </>
+        )}
         <button className={styles.contextMenuItem} onClick={handleCopyFileName}>
           <Copy size={14} />
           <span>{isMultipleSelection ? 'Copy file names' : 'Copy file name'}</span>

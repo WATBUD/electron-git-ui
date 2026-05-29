@@ -467,6 +467,8 @@ export const FileStatus = ({
         onDiscardChanges={onDiscardChanges}
         onRemoveFile={onRemoveFile}
         onStashFile={onStashFile}
+        onStageFile={handleStageFile}
+        onUnstageFile={handleUnstageFile}
         isNewFile={isNewFile}
       />
     </div>
