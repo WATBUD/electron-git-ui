@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { updatePreviousHistoryIndex, setLoading } from './gitSlice'
+import { updatePreviousHistoryIndex, setLoading, showResultDialog } from './gitSlice'
 // Generic async function to handle Git API calls with error handling
 async function callGit(fn, rejectWithValue, fallbackError, fnName) {
   try {
@@ -875,7 +875,14 @@ export const fastForwardAllBranches = createAsyncThunk(
       }
 
       if (trackingBranches.length === 0) {
-        alert('ℹ️ No tracking branches found to update.')
+        dispatch(setLoading(''))
+        dispatch(
+          showResultDialog({
+            variant: 'info',
+            title: 'Fast-Forward',
+            content: 'No tracking branches found to update.'
+          })
+        )
         await dispatch(loadBranches())
         return { success: true, message: 'No tracking branches found to update.' }
       }
@@ -923,18 +930,30 @@ export const fastForwardAllBranches = createAsyncThunk(
       // Build summary result
       const summaryMsg = `Fast-Forward completed: ${successCount} updated successfully, ${failCount} skipped/failed.`
 
+      // Show result via the in-house ResultDialog (matches main UI's
+      // frosted-glass look). Clearing setLoading first so the LoadingModal
+      // disappears before the result dialog appears.
+      dispatch(setLoading(''))
       if (failCount > 0) {
         const failedDetails = results
           .filter((r) => !r.success)
           .map((r) => `  - ${r.branchName}: ${r.error}`)
           .join('\n')
 
-        alert(
-          `⚠️ Fast-Forward Partial Success\n\n${summaryMsg}\n\nFailed branches:\n${failedDetails}`
+        dispatch(
+          showResultDialog({
+            variant: 'warning',
+            title: 'Fast-Forward Partial Success',
+            content: `${summaryMsg}\n\nFailed branches:\n${failedDetails}`
+          })
         )
       } else {
-        alert(
-          `✅ Fast-Forward Success\n\nAll ${successCount} tracking branches successfully updated!`
+        dispatch(
+          showResultDialog({
+            variant: 'success',
+            title: 'Fast-Forward Success',
+            content: `All ${successCount} tracking branches successfully updated!`
+          })
         )
       }
 

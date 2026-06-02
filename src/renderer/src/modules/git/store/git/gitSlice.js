@@ -110,7 +110,11 @@ const initialState = {
   remoteOnlyTags: [],
   divergentTags: [],
   tagsLoading: false,
-  userConfig: { name: '', email: '' }
+  userConfig: { name: '', email: '' },
+  // Imperative result dialog (success/info/warning/error). Driven by thunks
+  // via showResultDialog/closeResultDialog; rendered by ResultDialog in the
+  // main page so we don't need antd's static Modal API.
+  resultDialog: null
 }
 
 const gitSlice = createSlice({
@@ -189,6 +193,13 @@ const gitSlice = createSlice({
     },
     setSelectedFileDiff: (state, action) => {
       state.selectedFileDiff = action.payload
+    },
+    showResultDialog: (state, action) => {
+      // payload: { variant: 'success'|'info'|'warning'|'error', title, content }
+      state.resultDialog = action.payload
+    },
+    closeResultDialog: (state) => {
+      state.resultDialog = null
     }
   },
   extraReducers: (builder) => {
@@ -664,7 +675,9 @@ export const {
   addProject,
   removeProject,
   reorderProjects,
-  setSelectedFileDiff
+  setSelectedFileDiff,
+  showResultDialog,
+  closeResultDialog
 } = gitSlice.actions
 
 export default gitSlice.reducer

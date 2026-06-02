@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ErrorModal } from '../../../../shared/components/ErrorModal'
 import { ConfirmDialog } from '../../../../shared/components/ConfirmDialog'
+import { ResultDialog } from '../../../../shared/components/ResultDialog'
 import { useConfirmDialog } from '../../../../shared/hooks/useConfirmDialog'
 import { Toolbar } from '../../components/Toolbar'
 import { FileStatus } from '../../components/FileStatus'
@@ -47,7 +48,8 @@ import {
   getStashDiff,
   loadTags,
   createTag,
-  deleteTag
+  deleteTag,
+  closeResultDialog
 } from '../../store/git'
 import styles from './main-page-git.module.css'
 import { LoadingModal } from '../../../../shared/components/LoadingModal'
@@ -79,6 +81,7 @@ export const MainPageGit = () => {
   const fileStatus = useSelector((state) => state.git.fileStatus)
   const loadingMessage = useSelector((state) => state.git.loadingMessage)
   const loadingOverride = useSelector((state) => state.git.loadingOverride)
+  const resultDialog = useSelector((state) => state.git.resultDialog)
   // `loadingOverride` lets a long pipeline (e.g. create-tag → loadTags →
   // loadBranches → refresh expanded commits) keep the LoadingModal visible
   // across multiple thunks even when each thunk's fulfilled case clears
@@ -508,6 +511,13 @@ export const MainPageGit = () => {
       </div>
       <LoadingModal message={effectiveLoadingMessage} />
       <ErrorModal error={error} show={!!error} onClose={() => dispatch(clearError())} />
+      <ResultDialog
+        show={!!resultDialog}
+        variant={resultDialog?.variant}
+        title={resultDialog?.title}
+        content={resultDialog?.content}
+        onClose={() => dispatch(closeResultDialog())}
+      />
 
       {/* Global ConfirmDialog for tag and branch deletion */}
       <ConfirmDialog
