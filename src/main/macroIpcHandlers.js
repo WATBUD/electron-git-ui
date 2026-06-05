@@ -1,6 +1,5 @@
 const { ipcMain, BrowserWindow } = require('electron')
 const { execSync } = require('child_process')
-const robot = require('robotjs')
 const { uIOhook, UiohookKey } = require('uiohook-napi')
 
 let isRecording = false
