@@ -109,6 +109,9 @@ const initialState = {
   localOnlyTags: [],
   remoteOnlyTags: [],
   divergentTags: [],
+  // Array of { name, localHash, remoteHash } for every divergent tag. Lets
+  // the UI list local-vs-remote commit hashes without a second IPC.
+  divergentTagDetails: [],
   tagsLoading: false,
   userConfig: { name: '', email: '' },
   // Imperative result dialog (success/info/warning/error). Driven by thunks
@@ -266,6 +269,7 @@ const gitSlice = createSlice({
         state.localOnlyTags = data?.localOnlyTags || []
         state.remoteOnlyTags = data?.remoteOnlyTags || []
         state.divergentTags = data?.divergentTags || []
+        state.divergentTagDetails = data?.divergentTagDetails || []
       })
       .addCase(loadTags.rejected, (state, action) => {
         // Silent — failure shouldn't reset loadingMessage (it wasn't set).
@@ -278,6 +282,7 @@ const gitSlice = createSlice({
         if (!data) return
         state.remoteOnlyTags = data.remoteOnlyTags || []
         state.divergentTags = data.divergentTags || []
+        state.divergentTagDetails = data.divergentTagDetails || []
       })
       .addCase(deleteTag.pending, (state) => {
         state.loadingMessage = 'Deleting tag...'

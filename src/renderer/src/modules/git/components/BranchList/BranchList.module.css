@@ -229,6 +229,59 @@
   padding: 1px 6px;
 }
 
+/* --- Per-divergent-tag SHA table --- */
+.divergentHashTable {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 177, 77, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.divergentHashRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  flex-wrap: wrap;
+}
+
+.divergentHashTagName {
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline dotted rgba(255, 255, 255, 0.25);
+  text-underline-offset: 2px;
+}
+
+.divergentHashTagName:hover {
+  color: #ffb14d;
+  text-decoration-color: rgba(255, 177, 77, 0.6);
+}
+
+.divergentHashCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.divergentHashLabel {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.divergentHash {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* --- Loading hint --- */
 .loadingHint {
   display: flex;

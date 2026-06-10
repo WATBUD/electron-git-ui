@@ -393,9 +393,20 @@ ${fileContent
         }
       })
 
+      // Include per-tag hashes for divergent tags so the UI can list them
+      // without re-running ls-remote. Caller pattern: `divergentTagDetails`
+      // is an array of `{ name, localHash, remoteHash }` for each divergent
+      // tag — local/remote SHAs straight out of show-ref / ls-remote.
+      const divergentTagDetails = Array.from(divergentTagNames).map((name) => ({
+        name,
+        localHash: localTagRef[name],
+        remoteHash: remoteTagRef[name]
+      }))
+
       return success({
         remoteOnlyTags: Array.from(remoteOnlyTagNames),
-        divergentTags: Array.from(divergentTagNames)
+        divergentTags: Array.from(divergentTagNames),
+        divergentTagDetails
       })
     } catch (error) {
       return fail(error.message)
@@ -649,12 +660,19 @@ ${fileContent
         if (!localTagNames.has(tagName)) remoteOnlyTags.push(tagName)
       })
 
+      const divergentTagDetails = divergentTags.map((name) => ({
+        name,
+        localHash: localTagRef[name],
+        remoteHash: remoteTagRef[name]
+      }))
+
       return success({
         localTags: [...commonTags, ...divergentTags, ...localOnlyTags],
         remoteTags: remoteOnlyTags,
         localOnlyTags,
         remoteOnlyTags,
         divergentTags,
+        divergentTagDetails,
         commonTags
       })
     } catch (error) {

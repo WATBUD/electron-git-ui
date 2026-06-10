@@ -56,6 +56,7 @@ const BranchList = ({
   localOnlyTags = [],
   remoteOnlyTags = [],
   divergentTags = [],
+  divergentTagDetails = [],
   onDeleteTag,
   onRequestDeleteTag,
   onRequestDeleteBranch,
@@ -579,6 +580,35 @@ const BranchList = ({
                 </span>
               )}
             </div>
+            {/* Per-tag local vs remote SHAs straight from
+                `git show-ref --tags -d` and `git ls-remote --tags origin`. */}
+            {divergentTagDetails.length > 0 && (
+              <div className={styles.divergentHashTable}>
+                {divergentTagDetails.map((d) => (
+                  <div key={d.name} className={styles.divergentHashRow}>
+                    <span
+                      className={styles.divergentHashTagName}
+                      onClick={() => setTagSearchTerm(d.name)}
+                      title="Search this tag"
+                    >
+                      {d.name}
+                    </span>
+                    <span className={styles.divergentHashCell}>
+                      <span className={styles.divergentHashLabel}>local</span>
+                      <code className={styles.divergentHash}>
+                        {d.localHash ? d.localHash.slice(0, 8) : '—'}
+                      </code>
+                    </span>
+                    <span className={styles.divergentHashCell}>
+                      <span className={styles.divergentHashLabel}>remote</span>
+                      <code className={styles.divergentHash}>
+                        {d.remoteHash ? d.remoteHash.slice(0, 8) : '—'}
+                      </code>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

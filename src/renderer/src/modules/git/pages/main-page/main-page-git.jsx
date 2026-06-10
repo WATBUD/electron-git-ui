@@ -103,6 +103,7 @@ export const MainPageGit = () => {
   const localOnlyTags = useSelector((state) => state.git.localOnlyTags || [])
   const remoteOnlyTags = useSelector((state) => state.git.remoteOnlyTags || [])
   const divergentTags = useSelector((state) => state.git.divergentTags || [])
+  const divergentTagDetails = useSelector((state) => state.git.divergentTagDetails || [])
   const hasMergeInProgress = useSelector((state) => state.git.hasMergeInProgress)
   const dispatch = useDispatch()
   const refreshTab = useActiveTabHook()
@@ -361,6 +362,7 @@ export const MainPageGit = () => {
                     localOnlyTags={localOnlyTags}
                     remoteOnlyTags={remoteOnlyTags}
                     divergentTags={divergentTags}
+                    divergentTagDetails={divergentTagDetails}
                     onCheckout={async (branchName) => {
                       await dispatch(checkoutBranch(branchName))
                     }}
