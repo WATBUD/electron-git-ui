@@ -53,7 +53,14 @@ contextBridge.exposeInMainWorld('git', {
   getStashDiff: (stashIndex) => ipcRenderer.invoke('git:getStashDiff', stashIndex),
   graphLog: (options) => ipcRenderer.invoke('git:graphLog', options),
   getCommitBranchMap: (options) => ipcRenderer.invoke('git:getCommitBranchMap', options),
-  resetToCommit: (args) => ipcRenderer.invoke('git:resetToCommit', args)
+  resetToCommit: (args) => ipcRenderer.invoke('git:resetToCommit', args),
+  // Subscribe to native BrowserWindow focus events. Returns an unsubscribe fn.
+  // More reliable than DOM `window` focus on macOS.
+  onWindowFocus: (callback) => {
+    const listener = () => callback()
+    ipcRenderer.on('app:window-focus', listener)
+    return () => ipcRenderer.removeListener('app:window-focus', listener)
+  }
 })
 
 // Debug log to verify git object is exposed

@@ -209,9 +209,9 @@ export const FileStatus = ({
   useEffect(() => {
     let lastRefresh = 0
     const refresh = () => {
-      // Debounce: focus + visibilitychange can both fire on the same return-
-      // from-background. 300ms is short enough to feel instant, long enough
-      // to dedupe the pair.
+      // Debounce: focus / visibilitychange / Electron IPC can all fire on the
+      // same return-from-background. 300ms is short enough to feel instant,
+      // long enough to dedupe.
       const now = Date.now()
       if (now - lastRefresh < 300) return
       lastRefresh = now
@@ -227,9 +227,14 @@ export const FileStatus = ({
     }
     window.addEventListener('focus', refresh)
     document.addEventListener('visibilitychange', handleVisibility)
+    // Primary signal on macOS — the BrowserWindow 'focus' event from the
+    // main process. DOM focus is unreliable when the user returns via dock
+    // click / mission control / cmd-tab; the IPC version is authoritative.
+    const unsubscribeIpc = window.git?.onWindowFocus?.(refresh)
     return () => {
       window.removeEventListener('focus', refresh)
       document.removeEventListener('visibilitychange', handleVisibility)
+      unsubscribeIpc?.()
     }
   }, [])
 

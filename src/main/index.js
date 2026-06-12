@@ -64,6 +64,15 @@ function createWindow() {
     }
   })
 
+  // Forward native focus events to the renderer. The DOM `window` focus event
+  // is unreliable on macOS when the user returns via mission control / dock
+  // clicks; the BrowserWindow event is authoritative.
+  mainWindow.on('focus', () => {
+    if (!mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('app:window-focus')
+    }
+  })
+
   // Filter out Autofill-related console errors
   mainWindow.webContents.on('console-message', (event) => {
     const { message, sourceId } = event
