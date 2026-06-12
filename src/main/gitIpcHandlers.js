@@ -1237,6 +1237,25 @@ ${fileContent
     }
   })
 
+  // Finish an in-progress merge after the user has resolved conflicts.
+  // Equivalent to running `git commit` to conclude the merge. `core.editor=true`
+  // points git at the `true` shell command so it doesn't try to launch an
+  // interactive editor — git uses the prepared `.git/MERGE_MSG` as-is.
+  ipcMain.handle('git:mergeContinue', async () => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = 'git -c core.editor=true merge --continue'
+      commandHistory.push(command)
+      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      return success({ output: stdout || stderr })
+    } catch (error) {
+      console.error('Error continuing merge:', error)
+      return fail(error.stderr || error.message)
+    }
+  })
+
   ipcMain.handle('git:mergeAbort', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')

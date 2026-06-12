@@ -3,7 +3,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   toggleFooter,
   abortMerge,
+  continueMerge,
   checkMergeInProgress,
+  loadFileStatus,
+  loadBranches,
+  loadCommitHistory,
   getCachedDiff,
   clearCachedDiff,
   addPrefix,
@@ -114,6 +118,19 @@ export const AppToolbar = () => {
     }
   }
 
+  const handleMergeContinue = () => {
+    if (!hasMergeInProgress) return
+    dispatch(continueMerge()).then((action) => {
+      // continueMerge.fulfilled → merge committed; refresh status/branches/log.
+      if (continueMerge.fulfilled.match(action)) {
+        dispatch(checkMergeInProgress())
+        dispatch(loadFileStatus())
+        dispatch(loadBranches())
+        dispatch(loadCommitHistory())
+      }
+    })
+  }
+
   const handleShowDiff = () => {
     dispatch(getCachedDiff())
     setShowDiffModal(true)
@@ -187,6 +204,25 @@ export const AppToolbar = () => {
           Merge
         </span>
         <div className={styles.menuContent}>
+          <CustomTooltip
+            title={
+              hasMergeInProgress
+                ? 'Conclude the merge (runs `git merge --continue`)'
+                : 'No merge in progress'
+            }
+          >
+            <button
+              className={`${styles.menuItem} ${hasMergeInProgress ? styles.active : styles.disabled}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleMergeContinue()
+                setActiveMenu(null)
+              }}
+              disabled={!hasMergeInProgress}
+            >
+              Continue Merge
+            </button>
+          </CustomTooltip>
           <CustomTooltip
             title={
               hasMergeInProgress ? 'Abort the current merge operation' : 'No merge in progress'

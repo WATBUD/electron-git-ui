@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('git', {
   checkMergeInProgress: () => ipcRenderer.invoke('git:checkMergeInProgress'),
   mergeBranch: (sourceBranch) => ipcRenderer.invoke('git:mergeBranch', sourceBranch),
   mergeAbort: () => ipcRenderer.invoke('git:mergeAbort'),
+  mergeContinue: () => ipcRenderer.invoke('git:mergeContinue'),
   refreshTags: () => ipcRenderer.invoke('git:refreshTags'),
   loadTags: () => ipcRenderer.invoke('git:loadTags'),
   loadRemoteTagInfo: () => ipcRenderer.invoke('git:loadRemoteTagInfo'),

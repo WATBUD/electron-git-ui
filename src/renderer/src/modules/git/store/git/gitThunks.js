@@ -129,6 +129,19 @@ export const abortMerge = createAsyncThunk('git/abortMerge', async (_, { rejectW
   return result
 })
 
+export const continueMerge = createAsyncThunk('git/continueMerge', async (_, { rejectWithValue }) => {
+  const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+  if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+  const result = await callGit(
+    () => window.git.mergeContinue(),
+    rejectWithValue,
+    'Failed to continue merge',
+    'continueMerge'
+  )
+  return result
+})
+
 export const checkMergeInProgress = createAsyncThunk(
   'git/checkMergeInProgress',
   async (_, { rejectWithValue }) => {
