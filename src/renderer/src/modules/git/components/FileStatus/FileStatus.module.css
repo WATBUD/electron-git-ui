@@ -193,6 +193,17 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+.pathToggleBtnActive {
+  background: rgba(79, 70, 229, 0.25);
+  border-color: rgba(79, 70, 229, 0.55);
+  color: #fff;
+}
+
+.pathToggleBtnActive:hover {
+  background: rgba(79, 70, 229, 0.35);
+  border-color: rgba(79, 70, 229, 0.7);
+}
+
 .sectionHeader h3 {
   margin: 0;
   color: var(--text-muted);

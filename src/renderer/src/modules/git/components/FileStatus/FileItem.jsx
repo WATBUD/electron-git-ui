@@ -5,6 +5,20 @@ import {
   Plus
 } from 'lucide-react'
 import styles from './FileStatus.module.css'
+import { PathMode } from './pathMode'
+
+// 'short' returns the last two segments — parent dir + filename — so users
+// see just enough context to disambiguate without the full tree. Files at
+// the top level (≤1 segment) fall back to the filename.
+const formatPath = (file, mode) => {
+  if (mode === PathMode.FULL) return file
+  if (mode === PathMode.SHORT) {
+    const parts = file.split('/')
+    if (parts.length <= 2) return file
+    return parts.slice(-2).join('/')
+  }
+  return file.split('/').pop()
+}
 
 export const FileItem = React.memo(({
   file,
@@ -16,7 +30,7 @@ export const FileItem = React.memo(({
   onUnstageFile,
   getStatusIcon,
   isStaged,
-  showFullPath = false
+  pathMode = PathMode.NAME
 }) => {
   const handleClick = (e) => {
     if (e.target.closest('input') || e.target.closest('button')) return
@@ -44,8 +58,8 @@ export const FileItem = React.memo(({
       </div>
       <span className={styles.fileIcon}>{getStatusIcon(file)}</span>
       <div className={styles.fileInfo}>
-        <span className={styles.fileName}>
-          {showFullPath ? file.file : file.file.split('/').pop()}
+        <span className={styles.fileName} title={file.file}>
+          {formatPath(file.file, pathMode)}
         </span>
       </div>
       <div className={styles.fileActions}>
@@ -86,6 +100,6 @@ export const FileItem = React.memo(({
     prevProps.isActive === nextProps.isActive &&
     prevProps.isSelected === nextProps.isSelected &&
     prevProps.isStaged === nextProps.isStaged &&
-    prevProps.showFullPath === nextProps.showFullPath
+    prevProps.pathMode === nextProps.pathMode
   )
 })
