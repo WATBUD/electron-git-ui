@@ -238,36 +238,6 @@ export const FileStatus = ({
     }
   }, [])
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault()
-        
-        const currentIndex = _fileStatus.findIndex(
-          (file) => file.file === activeFile?.file && file.isStaged === activeFile?.isStaged
-        )
-        
-        let nextIndex
-        if (e.key === 'ArrowUp') {
-          nextIndex = currentIndex > 0 ? currentIndex - 1 : _fileStatus.length - 1
-        } else {
-          nextIndex = currentIndex < _fileStatus.length - 1 ? currentIndex + 1 : 0
-        }
-        
-        if (nextIndex >= 0 && nextIndex < _fileStatus.length) {
-          const nextFile = _fileStatus[nextIndex]
-          handleFileClick(nextFile.file, nextFile.isStaged, null)
-        }
-      } else if (e.key === 'Escape') {
-        clearSelection()
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [_fileStatus, activeFile])
-
   // Separate files by staging status and apply search filter
   const filteredFiles = React.useMemo(() => {
     const filtered = _fileStatus.filter(file =>
@@ -281,6 +251,40 @@ export const FileStatus = ({
 
   const stagedFiles = filteredFiles.staged
   const unstagedFiles = filteredFiles.unstaged
+
+  // Keyboard navigation — scoped to the active file's section so up/down stays
+  // within either the staging area or the working directory. Walking the same
+  // rendered lists (rather than the flat _fileStatus) keeps each section's
+  // navigation independent and unaffected by same-named files in the other.
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault()
+
+        const sectionFiles = activeFile?.isStaged ? stagedFiles : unstagedFiles
+        if (sectionFiles.length === 0) return
+
+        const currentIndex = sectionFiles.findIndex(
+          (file) => file.file === activeFile?.file
+        )
+
+        let nextIndex
+        if (e.key === 'ArrowUp') {
+          nextIndex = currentIndex > 0 ? currentIndex - 1 : sectionFiles.length - 1
+        } else {
+          nextIndex = currentIndex < sectionFiles.length - 1 ? currentIndex + 1 : 0
+        }
+
+        const nextFile = sectionFiles[nextIndex]
+        handleFileClick(nextFile.file, nextFile.isStaged, null)
+      } else if (e.key === 'Escape') {
+        clearSelection()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [stagedFiles, unstagedFiles, activeFile])
 
   // After staging/unstaging the active file, advance to the next file in the
   // same section so the user can keep reviewing without re-clicking.

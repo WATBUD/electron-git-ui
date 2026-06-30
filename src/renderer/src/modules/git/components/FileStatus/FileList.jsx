@@ -52,6 +52,24 @@ const VirtualFileList = ({
     return () => window.removeEventListener('resize', updateHeight)
   }, [])
 
+  // Keep the active item visible. The target row may be outside the rendered
+  // window, so scroll by its computed offset (index * itemHeight) rather than
+  // by a DOM element, then only adjust if it's actually off-screen.
+  useEffect(() => {
+    if (!activeFile || activeFile.isStaged !== isStaged) return
+    const idx = files.findIndex((f) => f.file === activeFile.file)
+    const container = containerRef.current
+    if (idx === -1 || !container) return
+
+    const itemTop = idx * itemHeight
+    const itemBottom = itemTop + itemHeight
+    if (itemTop < container.scrollTop) {
+      container.scrollTop = itemTop
+    } else if (itemBottom > container.scrollTop + container.clientHeight) {
+      container.scrollTop = itemBottom - container.clientHeight
+    }
+  }, [activeFile, files, isStaged])
+
   return (
     <div
       ref={containerRef}
@@ -112,9 +130,31 @@ export const FileList = ({
   // can pick either short or full without cycling through the other.
   const [pathMode, setPathMode] = useState(PathMode.NAME)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const listRef = useRef(null)
 
   // Use virtual scrolling for large lists
   const useVirtualScrolling = files.length > 100
+
+  // Keep the active item visible when navigating with the keyboard. The
+  // non-virtual list renders every row, so scroll the matching child element
+  // into view (only when it's off-screen) without disturbing the page.
+  useEffect(() => {
+    if (useVirtualScrolling) return
+    if (!activeFile || activeFile.isStaged !== isStaged) return
+    const idx = files.findIndex((f) => f.file === activeFile.file)
+    const container = listRef.current
+    if (idx === -1 || !container) return
+    const el = container.children[idx]
+    if (!el) return
+
+    const cRect = container.getBoundingClientRect()
+    const eRect = el.getBoundingClientRect()
+    if (eRect.top < cRect.top) {
+      container.scrollTop -= cRect.top - eRect.top
+    } else if (eRect.bottom > cRect.bottom) {
+      container.scrollTop += eRect.bottom - cRect.bottom
+    }
+  }, [activeFile, files, isStaged, useVirtualScrolling])
 
   const handleHeaderClick = () => {
     if (hasFiles) {
@@ -204,7 +244,7 @@ export const FileList = ({
             pathMode={pathMode}
           />
         ) : (
-          <div className={styles.fileList}>
+          <div className={styles.fileList} ref={listRef}>
             {files.map((file, index) => {
               const isActive = activeFile?.file === file.file && activeFile?.isStaged === isStaged
               const isSelected = selectedFiles.has(`${file.file}-${isStaged}`)
