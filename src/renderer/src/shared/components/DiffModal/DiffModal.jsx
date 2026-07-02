@@ -52,6 +52,22 @@ export const DiffModal = ({ diff, onClose, show }) => {
     })
   }
 
+  // Prefix the generated message with the current branch, e.g. "[feature/x] feat: ...".
+  // Best-effort: if the branch can't be resolved (detached HEAD, exec failure)
+  // we return the message unchanged rather than blocking the result. Guards
+  // against double-prefixing so re-runs stay clean.
+  const prependBranchName = async (message) => {
+    try {
+      const res = await window.git?.exec?.('git branch --show-current')
+      const branch = res?.success ? res.data.trim() : ''
+      if (!branch || message.startsWith(`[${branch}]`)) return message
+      return `[${branch}] ${message}`
+    } catch (err) {
+      console.warn('Skipping branch prefix:', err?.message || err)
+      return message
+    }
+  }
+
   const generateCommitMessage = async () => {
     // Use flushSync to immediately hide the generated message area
     flushSync(() => {
@@ -73,12 +89,15 @@ export const DiffModal = ({ diff, onClose, show }) => {
         return
       }
 
-      // AI Router with multi-model fallback
+      // AI Router with multi-model fallback. Ordered by preference: try the
+      // cheapest/fastest first, then fall through to alternates so a single
+      // model returning 503 (temporarily overloaded) no longer fails the whole
+      // request.
       const MODELS = [
-        // 'models/gemini-2.5-flash',
-        'models/gemini-2.5-flash-lite'
-        // 'models/gemini-2.0-flash',
-        // 'models/gemini-2.0-flash-lite'
+        'models/gemini-2.5-flash-lite',
+        'models/gemini-2.5-flash',
+        'models/gemini-2.0-flash',
+        'models/gemini-2.0-flash-lite'
       ]
 
       const callModelWithRetry = async (model, payload, retries = 2) => {
@@ -173,9 +192,10 @@ Diff:\n${truncatedDiff}\n\nCommit message:`
       // Call AI Router
       const data = await generateWithFallback(payload)
       console.log('AI Router Response data:', data)
-      const message = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+      const rawMessage = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
 
-      if (message) {
+      if (rawMessage) {
+        const message = await prependBranchName(rawMessage)
         setGeneratedMessage(message)
         setViewMode('message')
         console.log('Generated message:', message)
