@@ -145,8 +145,9 @@ export const MainPageGit = () => {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '5') {
-        const index = parseInt(e.key) - 1
+      if ((e.ctrlKey || e.metaKey) && e.key >= '0' && e.key <= '9') {
+        // Number-row mapping: CTRL+1..9 → projects 1-9, CTRL+0 → project 10.
+        const index = e.key === '0' ? 9 : parseInt(e.key) - 1
         if (projects[index]) {
           e.preventDefault()
           if (projects[index] !== repoPath) {
@@ -206,15 +207,20 @@ export const MainPageGit = () => {
     refreshTab(tab)
   }
 
-  // Handle delete tag confirmation request from BranchContextMenu
-  const handleRequestDeleteTag = (tagName, refreshCallback) => {
+  // Handle delete tag confirmation request from BranchContextMenu.
+  // `mode` ('local' | 'remote' | 'both') comes from the tag submenu and must be
+  // forwarded both to requestConfirm (so the message matches) and to deleteTag
+  // (so the action matches). Defaults to 'local' — the least destructive choice
+  // — if a caller ever omits it.
+  const handleRequestDeleteTag = (tagName, refreshCallback, mode = 'local') => {
     requestConfirm({
       type: 'tag',
       name: tagName,
+      mode,
       refreshCallback,
       onConfirm: async () => {
         try {
-          await dispatch(deleteTag({ tagName, isRemote: false }))
+          await dispatch(deleteTag({ tagName, mode }))
           // Wait for both to complete before UI updates
           await dispatch(loadTags())
           await dispatch(loadBranches())
@@ -374,16 +380,6 @@ export const MainPageGit = () => {
                     }}
                     onDeleteRemote={async (branchName) => {
                       const result = await dispatch(deleteRemoteBranch(branchName))
-                    }}
-                    onDeleteTag={async (tagName, isRemote) => {
-                      try {
-                        await dispatch(deleteTag({ tagName, isRemote }))
-                        // Wait for both to complete before UI updates
-                        await dispatch(loadTags())
-                        await dispatch(loadBranches())
-                      } catch (error) {
-                        console.error('Error deleting tag:', error)
-                      }
                     }}
                     onRequestDeleteTag={handleRequestDeleteTag}
                     onRequestDeleteBranch={handleRequestDeleteBranch}

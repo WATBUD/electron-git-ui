@@ -116,7 +116,9 @@ const ProjectList = ({ onProjectSelect }) => {
                   <div className={styles.projectInfo}>
                     <div className={styles.projectName}>
                       <span className={styles.nameText}>{name}</span>
-                      {index < 5 && <span className={styles.shortcutHint}>CTRL+{index + 1}</span>}
+                      {index < 10 && (
+                        <span className={styles.shortcutHint}>CTRL+{index === 9 ? 0 : index + 1}</span>
+                      )}
                       {isActive && <span className={styles.currentBadge}>Active</span>}
                     </div>
                     <div className={styles.projectPath}>{path}</div>

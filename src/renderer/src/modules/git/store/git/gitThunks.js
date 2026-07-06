@@ -82,16 +82,14 @@ export const loadRemoteTagInfo = createAsyncThunk(
 
 export const deleteTag = createAsyncThunk(
   'git/deleteTag',
-  async ({ tagName, mode, isRemote }, { rejectWithValue }) => {
+  async ({ tagName, mode = 'local' }, { rejectWithValue }) => {
     const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
     if (rejectIfNotInitialized) return rejectIfNotInitialized
 
-    // Back-compat: callers passing isRemote (boolean) → translate to mode
-    const resolvedMode =
-      mode || (typeof isRemote === 'boolean' ? (isRemote ? 'remote' : 'both') : 'both')
-
+    // mode: 'local' | 'remote' | 'both'. Defaults to the least destructive
+    // ('local') if a caller ever omits it.
     const result = await callGit(
-      () => window.git.deleteTag(tagName, resolvedMode),
+      () => window.git.deleteTag(tagName, mode),
       rejectWithValue,
       'Failed to delete tag',
       'deleteTag'

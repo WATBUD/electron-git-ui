@@ -57,7 +57,6 @@ const BranchList = ({
   remoteOnlyTags = [],
   divergentTags = [],
   divergentTagDetails = [],
-  onDeleteTag,
   onRequestDeleteTag,
   onRequestDeleteBranch,
   onRequestResetToCommit,
@@ -1107,7 +1106,6 @@ const BranchList = ({
         onCheckoutCommit={onCheckoutCommit}
         onRename={handleRenameBranch}
         onCreateTag={handleCreateTag}
-        onDeleteTag={onDeleteTag}
         onRequestDeleteTag={onRequestDeleteTag}
         onRequestDeleteBranch={onRequestDeleteBranch}
         onRequestResetToCommit={onRequestResetToCommit}
