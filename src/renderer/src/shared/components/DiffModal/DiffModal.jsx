@@ -52,14 +52,17 @@ export const DiffModal = ({ diff, onClose, show }) => {
     })
   }
 
-  // Prefix the generated message with the current branch, e.g. "[feature/x] feat: ...".
-  // Best-effort: if the branch can't be resolved (detached HEAD, exec failure)
-  // we return the message unchanged rather than blocking the result. Guards
-  // against double-prefixing so re-runs stay clean.
+  // Prefix the generated message with the current branch's last path segment,
+  // e.g. "feature/foo/PROJ-123" → "[PROJ-123] feat: ...". Best-effort: if the
+  // branch can't be resolved (detached HEAD, exec failure) we return the message
+  // unchanged rather than blocking the result. Guards against double-prefixing
+  // so re-runs stay clean.
   const prependBranchName = async (message) => {
     try {
       const res = await window.git?.exec?.('git branch --show-current')
-      const branch = res?.success ? res.data.trim() : ''
+      const fullBranch = res?.success ? res.data.trim() : ''
+      // Take everything after the last slash (falls back to the whole name).
+      const branch = fullBranch.split('/').pop()
       if (!branch || message.startsWith(`[${branch}]`)) return message
       return `[${branch}] ${message}`
     } catch (err) {
