@@ -12,7 +12,8 @@ import {
   clearCachedDiff,
   addPrefix,
   removePrefix,
-  toggleSelectedPrefix
+  toggleSelectedPrefix,
+  setActivePrefixSet
 } from '../../store/git'
 import { DiffModal } from '../../../../shared/components/DiffModal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
@@ -52,6 +53,30 @@ const PrefixItem = React.memo(({ prefix, onRemove }) => {
           <Trash2 size={12} />
         </button>
       </div>
+    </div>
+  )
+})
+
+const PrefixSetTabs = React.memo(() => {
+  const prefixSets = useSelector((state) => state.git.prefixSets || [])
+  const activePrefixSet = useSelector((state) => state.git.activePrefixSet ?? 0)
+  const dispatch = useDispatch()
+
+  return (
+    <div className={styles.prefixSetTabs}>
+      {prefixSets.map((set, idx) => (
+        <button
+          key={idx}
+          className={`${styles.prefixSetTab} ${activePrefixSet === idx ? styles.prefixSetTabActive : ''}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            dispatch(setActivePrefixSet(idx))
+          }}
+          title={`Switch to ${set.name}`}
+        >
+          {set.name}
+        </button>
+      ))}
     </div>
   )
 })
@@ -252,6 +277,7 @@ export const AppToolbar = () => {
           Prefixes
         </span>
         <div className={styles.menuContent}>
+          <PrefixSetTabs />
           <div className={styles.prefixInputContainer}>
             <input
               type="text"

@@ -179,6 +179,40 @@
 }
 
 /* Prefix Management UI */
+.prefixSetTabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 4px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.prefixSetTab {
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.prefixSetTab:hover:not(.prefixSetTabActive) {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.prefixSetTabActive {
+  background-color: #007aff;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
 .prefixInputContainer {
   display: flex;
   gap: 8px;

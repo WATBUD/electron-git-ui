@@ -43,8 +43,12 @@ import {
 } from './gitThunks'
 
 const STORAGE_KEYS = {
+  // Legacy flat keys — kept only so we can migrate old installs into the first
+  // prefix set. New writes go to PREFIX_SETS / ACTIVE_PREFIX_SET.
   PREFIXES: 'git_prefixes',
   SELECTED_PREFIXES: 'git_selected_prefixes',
+  PREFIX_SETS: 'git_prefix_sets',
+  ACTIVE_PREFIX_SET: 'git_active_prefix_set',
   PROJECTS: 'git_projects'
 }
 
@@ -77,6 +81,44 @@ const initialGraphState = {
 
 const DEFAULT_PREFIXES = ['feature/PT-', 'promote-prod/PT-', 'promote-stg2602/PT-']
 
+// Prefix sets let users keep several named combinations of prefixes and switch
+// between them from the toolbar. Set 1 seeds from any legacy flat prefixes so
+// existing installs keep their data after upgrading.
+const loadPrefixSets = () => {
+  const saved = loadFromStorage(STORAGE_KEYS.PREFIX_SETS, null)
+  if (Array.isArray(saved) && saved.length > 0) {
+    return saved.map((set, i) => ({
+      name: set?.name || `Set ${i + 1}`,
+      prefixes: Array.isArray(set?.prefixes) ? set.prefixes : [],
+      selectedPrefixes: Array.isArray(set?.selectedPrefixes) ? set.selectedPrefixes : []
+    }))
+  }
+  return [
+    {
+      name: 'Set 1',
+      prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
+      selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, [])
+    },
+    { name: 'Set 2', prefixes: [], selectedPrefixes: [] }
+  ]
+}
+
+const INITIAL_PREFIX_SETS = loadPrefixSets()
+const INITIAL_ACTIVE_PREFIX_SET = Math.min(
+  Math.max(0, loadFromStorage(STORAGE_KEYS.ACTIVE_PREFIX_SET, 0)),
+  INITIAL_PREFIX_SETS.length - 1
+)
+
+// Persist the sets + active index, and mirror the active set onto the flat
+// `prefixes` / `selectedPrefixes` fields that the rest of the app reads.
+const syncPrefixSets = (state) => {
+  saveToStorage(STORAGE_KEYS.PREFIX_SETS, state.prefixSets)
+  saveToStorage(STORAGE_KEYS.ACTIVE_PREFIX_SET, state.activePrefixSet)
+  const active = state.prefixSets[state.activePrefixSet] || { prefixes: [], selectedPrefixes: [] }
+  state.prefixes = active.prefixes
+  state.selectedPrefixes = active.selectedPrefixes
+}
+
 const initialState = {
   ...initialGraphState,
   showFooter: false,
@@ -97,8 +139,12 @@ const initialState = {
   repoPath: null,
   mergeStatus: { isInProgress: false, message: '' },
   cachedDiff: null,
-  prefixes: loadFromStorage(STORAGE_KEYS.PREFIXES, DEFAULT_PREFIXES),
-  selectedPrefixes: loadFromStorage(STORAGE_KEYS.SELECTED_PREFIXES, []),
+  prefixSets: INITIAL_PREFIX_SETS,
+  activePrefixSet: INITIAL_ACTIVE_PREFIX_SET,
+  // Live mirror of the active set — kept in sync by the prefix reducers so
+  // consumers can keep reading state.git.prefixes / selectedPrefixes directly.
+  prefixes: INITIAL_PREFIX_SETS[INITIAL_ACTIVE_PREFIX_SET].prefixes,
+  selectedPrefixes: INITIAL_PREFIX_SETS[INITIAL_ACTIVE_PREFIX_SET].selectedPrefixes,
   projects: loadFromStorage(STORAGE_KEYS.PROJECTS, []),
   selectedFileDiff: null,
   stashes: [],
@@ -159,25 +205,36 @@ const gitSlice = createSlice({
     },
     addPrefix: (state, action) => {
       const prefix = action.payload
-      if (prefix && !state.prefixes.includes(prefix)) {
-        state.prefixes.push(prefix)
-        saveToStorage(STORAGE_KEYS.PREFIXES, state.prefixes)
+      const active = state.prefixSets[state.activePrefixSet]
+      if (active && prefix && !active.prefixes.includes(prefix)) {
+        active.prefixes.push(prefix)
+        syncPrefixSets(state)
       }
     },
     removePrefix: (state, action) => {
-      state.prefixes = state.prefixes.filter((p) => p !== action.payload)
-      state.selectedPrefixes = state.selectedPrefixes.filter((p) => p !== action.payload)
-      saveToStorage(STORAGE_KEYS.PREFIXES, state.prefixes)
-      saveToStorage(STORAGE_KEYS.SELECTED_PREFIXES, state.selectedPrefixes)
+      const active = state.prefixSets[state.activePrefixSet]
+      if (!active) return
+      active.prefixes = active.prefixes.filter((p) => p !== action.payload)
+      active.selectedPrefixes = active.selectedPrefixes.filter((p) => p !== action.payload)
+      syncPrefixSets(state)
     },
     toggleSelectedPrefix: (state, action) => {
+      const active = state.prefixSets[state.activePrefixSet]
+      if (!active) return
       const prefix = action.payload
-      if (state.selectedPrefixes.includes(prefix)) {
-        state.selectedPrefixes = state.selectedPrefixes.filter((p) => p !== prefix)
+      if (active.selectedPrefixes.includes(prefix)) {
+        active.selectedPrefixes = active.selectedPrefixes.filter((p) => p !== prefix)
       } else {
-        state.selectedPrefixes.push(prefix)
+        active.selectedPrefixes.push(prefix)
       }
-      saveToStorage(STORAGE_KEYS.SELECTED_PREFIXES, state.selectedPrefixes)
+      syncPrefixSets(state)
+    },
+    setActivePrefixSet: (state, action) => {
+      const idx = action.payload
+      if (idx >= 0 && idx < state.prefixSets.length) {
+        state.activePrefixSet = idx
+        syncPrefixSets(state)
+      }
     },
     addProject: (state, action) => {
       const path = action.payload
@@ -677,6 +734,7 @@ export const {
   addPrefix,
   removePrefix,
   toggleSelectedPrefix,
+  setActivePrefixSet,
   addProject,
   removeProject,
   reorderProjects,
