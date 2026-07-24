@@ -3,34 +3,66 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupGitHandlers } from './gitIpcHandlers'
 
+let mainWindow = null
+
+// 單一實例鎖定
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+      }
+
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+
 const iconPath = isDev
   ? join(__dirname, '../../assets/appIcon.png')
   : join(__dirname, '../../assets/appIcon.icns')
-const appIcon = nativeImage.createFromPath(iconPath);
+
+const appIcon = nativeImage.createFromPath(iconPath)
 
 // Disable Autofill features to prevent DevTools errors
 app.commandLine.appendSwitch('disable-features', 'Autofill')
 
-// Set application icon
+// macOS Dock Icon
 if (process.platform === 'darwin') {
-  app.dock.setIcon(nativeImage.createFromPath(iconPath))
+  app.dock.setIcon(appIcon)
 }
 
 function createWindow() {
   const isMac = process.platform === 'darwin'
   const isWin = process.platform === 'win32'
-  const mainWindow = new BrowserWindow({
+
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 960,
     minHeight: 640,
-    show: false,
+
+    // 直接顯示，避免 ready-to-show 卡住
+    show: true,
+
     autoHideMenuBar: true,
     backgroundColor: '#14141c',
     title: 'Tide Git',
-    icon: process.platform === 'win32' ? nativeImage.createFromPath(join(__dirname, '../../assets/appIcon.ico')) : appIcon,
+
+    icon:
+      process.platform === 'win32'
+        ? nativeImage.createFromPath(
+            join(__dirname, '../../assets/appIcon.ico')
+          )
+        : appIcon,
+
     ...(isMac
       ? {
           titleBarStyle: 'hiddenInset',
@@ -47,7 +79,8 @@ function createWindow() {
               height: 32
             }
           }
-        : { icon }),
+        : {}),
+
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -56,88 +89,112 @@ function createWindow() {
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-    // Open DevTools in development
+  console.log('BrowserWindow created')
+
+  // Renderer 開始載入
+  mainWindow.webContents.on('did-start-loading', () => {
+    console.log('did-start-loading')
+  })
+
+  // Renderer 載入完成
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('did-finish-load')
+
     if (is.dev) {
       mainWindow.webContents.openDevTools()
     }
   })
 
-  // Forward native focus events to the renderer. The DOM `window` focus event
-  // is unreliable on macOS when the user returns via mission control / dock
-  // clicks; the BrowserWindow event is authoritative.
+  // Renderer Crash
+  mainWindow.webContents.on('render-process-gone', (_, details) => {
+    console.error('render-process-gone', details)
+  })
+
+  // 載入失敗
+  mainWindow.webContents.on('did-fail-load', (_, code, desc) => {
+    console.error('did-fail-load', code, desc)
+  })
+
+  // Focus Event
   mainWindow.on('focus', () => {
-    if (!mainWindow.webContents.isDestroyed()) {
+    if (
+      mainWindow &&
+      !mainWindow.isDestroyed() &&
+      !mainWindow.webContents.isDestroyed()
+    ) {
       mainWindow.webContents.send('app:window-focus')
     }
   })
 
-  // Filter out Autofill-related console errors
+  // 關閉時清理 reference
+  mainWindow.on('closed', () => {
+    console.log('window closed')
+    mainWindow = null
+  })
+
+  // 過濾 DevTools Autofill 垃圾訊息
   mainWindow.webContents.on('console-message', (event) => {
     const { message, sourceId } = event
-    if (message.includes('Autofill.enable') || 
-        message.includes('Autofill.setAddresses') ||
-        (sourceId.includes('devtools_compatibility.js') && message.includes('length'))) {
+
+    if (
+      message.includes('Autofill.enable') ||
+      message.includes('Autofill.setAddresses') ||
+      (sourceId.includes('devtools_compatibility.js') &&
+        message.includes('length'))
+    ) {
       event.preventDefault()
     }
   })
 
+  // 外部連結
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    console.log('Loading development URL:', process.env['ELECTRON_RENDERER_URL'])
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  // Development
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    console.log(
+      'Loading development URL:',
+      process.env.ELECTRON_RENDERER_URL
+    )
+
+    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
     const htmlPath = join(__dirname, '../renderer/index.html')
+
     console.log('Loading production HTML:', htmlPath)
+
     mainWindow.loadFile(htmlPath)
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('ping', () => {
+    console.log('pong')
+  })
 
-  // Set up IPC handlers
   setupGitHandlers()
-
 
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow()
+    }
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  mainWindow = null
+
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
