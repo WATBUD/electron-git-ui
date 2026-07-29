@@ -889,7 +889,8 @@ ${fileContent
       return fail('No repository selected')
     }
     try {
-      const command = 'git status --porcelain'
+      // Return non-ASCII paths as UTF-8 instead of Git's quoted octal form.
+      const command = 'git -c core.quotepath=false status --porcelain'
       commandHistory.push(command)
       const { stdout } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
 
@@ -952,7 +953,7 @@ ${fileContent
         .flat() // 將嵌套數組展平
 
       // 添加未追蹤的檔案
-      const untrackedCommand = 'git ls-files --others --exclude-standard'
+      const untrackedCommand = 'git -c core.quotepath=false ls-files --others --exclude-standard'
       const { stdout: untrackedOutput } = await execAsync(untrackedCommand, {
         cwd: currentRepoPath,
         ...execOptions
