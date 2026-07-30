@@ -20,7 +20,7 @@ import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
 import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
-import { getBranchCommits, fastForwardAllBranches } from '../../store/git/gitThunks'
+import { getBranchCommits, fastForwardAllBranches, openRepository } from '../../store/git/gitThunks'
 import { setLoadingOverride, clearLoadingOverride } from '../../store/git/gitSlice'
 import {
   BRANCH_COMMITS_LIMIT,
@@ -62,7 +62,8 @@ const BranchList = ({
   onRequestDeleteTag,
   onRequestDeleteBranch,
   onRequestResetToCommit,
-  onPushTag
+  onPushTag,
+  onSwitchWorktree
 }) => {
   const contextMenuRef = useRef(null)
   const [renameBranchState, setRenameBranchState] = useState({
@@ -758,13 +759,20 @@ const BranchList = ({
                                   </span>
                                 )}
                                 {worktreePath && !isActive && (
-                                  <span
+                                  <button
+                                    type="button"
                                     className={styles.worktreeBadge}
-                                    title={`Checked out in another worktree — can't switch here:\n${worktreePath}`}
+                                    title={`Open this branch's worktree:\n${worktreePath}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      dispatch(openRepository(worktreePath)).then(() =>
+                                        onSwitchWorktree?.()
+                                      )
+                                    }}
                                   >
                                     <Link2 size={11} />
                                     <span>worktree</span>
-                                  </span>
+                                  </button>
                                 )}
                                 {isActive && (
                                   <CheckCircle2 size={12} className={styles.activeCheck} />

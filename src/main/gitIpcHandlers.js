@@ -368,6 +368,73 @@ ${fileContent
     }
   })
 
+  // List all worktrees attached to this repo so the UI can offer a switcher.
+  // Each worktree is a separate working directory checked out on its own
+  // branch; switching to one is just opening that folder as the repo path.
+  ipcMain.handle('git:listWorktrees', async () => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    try {
+      const command = 'git worktree list --porcelain'
+      commandHistory.push(command)
+      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+
+      // Porcelain output: blank-line-separated blocks. Keys we care about:
+      //   worktree <path>
+      //   HEAD <sha>
+      //   branch refs/heads/<name>   (absent when detached)
+      //   detached                   (flag line)
+      //   bare                       (flag line)
+      const worktrees = []
+      let current = null
+      const flush = () => {
+        if (current && current.path) worktrees.push(current)
+        current = null
+      }
+      stdout.split('\n').forEach((raw) => {
+        const line = raw.trim()
+        if (line === '') {
+          flush()
+          return
+        }
+        if (line.startsWith('worktree ')) {
+          flush()
+          current = {
+            path: line.slice('worktree '.length),
+            head: null,
+            branch: null,
+            isDetached: false,
+            isBare: false
+          }
+        } else if (!current) {
+          // ignore stray lines
+        } else if (line.startsWith('HEAD ')) {
+          current.head = line.slice('HEAD '.length)
+        } else if (line.startsWith('branch ')) {
+          current.branch = line.slice('branch '.length).replace('refs/heads/', '')
+        } else if (line === 'detached') {
+          current.isDetached = true
+        } else if (line === 'bare') {
+          current.isBare = true
+        }
+      })
+      flush()
+
+      // The first entry is always the main worktree. Mark which one the app is
+      // currently pointed at so the UI can highlight / disable it.
+      const enriched = worktrees.map((w, i) => ({
+        ...w,
+        isMain: i === 0,
+        isCurrent: w.path === currentRepoPath
+      }))
+
+      return success({ worktrees: enriched })
+    } catch (error) {
+      return fail('Error listing worktrees: ' + error.message)
+    }
+  })
+
   // Background-only handler used to enrich the UI with remote tag info
   // (remote-only tags and divergent tags) without blocking the initial
   // branch list render. Performs one network round-trip (`ls-remote`).

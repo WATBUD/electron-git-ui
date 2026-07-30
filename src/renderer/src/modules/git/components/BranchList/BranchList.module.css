@@ -622,12 +622,21 @@
   border-radius: 8px;
   font-size: 9px;
   font-weight: 600;
+  font-family: inherit;
   background-color: rgba(90, 160, 255, 0.15);
   color: #7db4ff;
   border: 1px solid rgba(90, 160, 255, 0.35);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  cursor: help;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.worktreeBadge:hover {
+  background-color: rgba(90, 160, 255, 0.3);
+  border-color: rgba(90, 160, 255, 0.6);
 }
 
 .activeCheck {

@@ -11,6 +11,7 @@ import { FooterArea } from '../../layout/FooterArea'
 import { AppToolbar } from '../../layout/AppToolbar'
 import LeftSideBar from '../../layout/LeftSideBar'
 import BranchList from '../../components/BranchList'
+import { WorktreeSwitcher } from '../../components/BranchList/WorktreeSwitcher'
 import ProjectList from '../../components/ProjectList'
 import { GitGraphContainer } from './GitGraphContainer'
 import { GitGraphTree } from '../../components/GitGraph'
@@ -18,6 +19,7 @@ import {
   checkMergeInProgress,
   deleteBranch,
   loadBranches,
+  listWorktrees,
   createBranch,
   mergeBranch,
   checkoutBranch,
@@ -128,6 +130,7 @@ export const MainPageGit = () => {
   useEffect(() => {
     if (repoPath) {
       dispatch(loadBranches())
+      dispatch(listWorktrees())
       dispatch(loadFileStatus())
       dispatch(checkMergeInProgress())
       dispatch(loadTags())
@@ -328,9 +331,7 @@ export const MainPageGit = () => {
                   //   git commit -m "__temp__" ; git stash ; git reset --soft HEAD~1
                   // This handles partially-staged files correctly (the staged
                   // hunks stay staged, only the unstaged hunks land in stash).
-                  const result = await dispatch(
-                    pushStash({ message, excludeStaged: true })
-                  )
+                  const result = await dispatch(pushStash({ message, excludeStaged: true }))
                   if (pushStash.fulfilled.match(result)) {
                     dispatch(loadFileStatus())
                   }
@@ -359,80 +360,86 @@ export const MainPageGit = () => {
             {repoPath && (
               <>
                 {activeTab === GIT_TABS.BRANCH_VIEW && (
-                  <BranchList
-                    branches={branches}
-                    remoteBranches={remoteBranches}
-                    currentBranch={currentBranch}
-                    repoPath={repoPath}
-                    loading={loading}
-                    localTags={localTags}
-                    localOnlyTags={localOnlyTags}
-                    remoteOnlyTags={remoteOnlyTags}
-                    divergentTags={divergentTags}
-                    divergentTagDetails={divergentTagDetails}
-                    onCheckout={async (branchName) => {
-                      await dispatch(checkoutBranch(branchName))
-                    }}
-                    onCheckoutCommit={async (commitHash) => {
-                      await dispatch(checkoutCommit(commitHash))
-                    }}
-                    onDelete={async (branchName) => {
-                      await dispatch(deleteBranch(branchName))
-                    }}
-                    onDeleteRemote={async (branchName) => {
-                      const result = await dispatch(deleteRemoteBranch(branchName))
-                    }}
-                    onRequestDeleteTag={handleRequestDeleteTag}
-                    onRequestDeleteBranch={handleRequestDeleteBranch}
-                    onRequestResetToCommit={handleRequestResetToCommit}
-                    onPushTag={async (tagName) => {
-                      try {
-                        await window.git.pushTag(tagName)
-                        // Wait for both to complete before UI updates
-                        await dispatch(loadTags())
-                        await dispatch(loadBranches())
-                      } catch (error) {
-                        console.error('Error pushing tag:', error)
-                        throw error
-                      }
-                    }}
-                    onRefresh={() => {
-                      dispatch(loadBranches())
-                    }}
-                    onMerge={async (branchName) => {
-                      await dispatch(mergeBranch(branchName))
-                    }}
-                    onRename={async (oldName, newName) => {
-                      await dispatch(renameBranch({ oldName, newName }))
-                    }}
-                    onCreateTag={async (tagName, branchName) => {
-                      const result = await dispatch(createTag({ tagName, branchName, message: '' }))
-                      // Only refresh on success; loadTags/loadBranches' pending reducer
-                      // clears state.error and would swallow the failure message.
-                      if (createTag.fulfilled.match(result)) {
-                        await dispatch(loadTags())
-                        await dispatch(loadBranches())
-                      }
-                    }}
-                    selectedPrefixes={selectedPrefixes}
-                    newBranchName={newBranchName}
-                    setNewBranchName={(e) => setNewBranchName(e.target.value)}
-                    createBranchByNewBranchName={async (fullName) => {
-                      const nameToCreate = typeof fullName === 'string' ? fullName : newBranchName
-                      if (!nameToCreate.trim()) return
+                  <>
+                    <WorktreeSwitcher onSwitched={() => refreshTab(activeTab)} />
+                    <BranchList
+                      branches={branches}
+                      remoteBranches={remoteBranches}
+                      currentBranch={currentBranch}
+                      repoPath={repoPath}
+                      onSwitchWorktree={() => refreshTab(activeTab)}
+                      loading={loading}
+                      localTags={localTags}
+                      localOnlyTags={localOnlyTags}
+                      remoteOnlyTags={remoteOnlyTags}
+                      divergentTags={divergentTags}
+                      divergentTagDetails={divergentTagDetails}
+                      onCheckout={async (branchName) => {
+                        await dispatch(checkoutBranch(branchName))
+                      }}
+                      onCheckoutCommit={async (commitHash) => {
+                        await dispatch(checkoutCommit(commitHash))
+                      }}
+                      onDelete={async (branchName) => {
+                        await dispatch(deleteBranch(branchName))
+                      }}
+                      onDeleteRemote={async (branchName) => {
+                        const result = await dispatch(deleteRemoteBranch(branchName))
+                      }}
+                      onRequestDeleteTag={handleRequestDeleteTag}
+                      onRequestDeleteBranch={handleRequestDeleteBranch}
+                      onRequestResetToCommit={handleRequestResetToCommit}
+                      onPushTag={async (tagName) => {
+                        try {
+                          await window.git.pushTag(tagName)
+                          // Wait for both to complete before UI updates
+                          await dispatch(loadTags())
+                          await dispatch(loadBranches())
+                        } catch (error) {
+                          console.error('Error pushing tag:', error)
+                          throw error
+                        }
+                      }}
+                      onRefresh={() => {
+                        dispatch(loadBranches())
+                      }}
+                      onMerge={async (branchName) => {
+                        await dispatch(mergeBranch(branchName))
+                      }}
+                      onRename={async (oldName, newName) => {
+                        await dispatch(renameBranch({ oldName, newName }))
+                      }}
+                      onCreateTag={async (tagName, branchName) => {
+                        const result = await dispatch(
+                          createTag({ tagName, branchName, message: '' })
+                        )
+                        // Only refresh on success; loadTags/loadBranches' pending reducer
+                        // clears state.error and would swallow the failure message.
+                        if (createTag.fulfilled.match(result)) {
+                          await dispatch(loadTags())
+                          await dispatch(loadBranches())
+                        }
+                      }}
+                      selectedPrefixes={selectedPrefixes}
+                      newBranchName={newBranchName}
+                      setNewBranchName={(e) => setNewBranchName(e.target.value)}
+                      createBranchByNewBranchName={async (fullName) => {
+                        const nameToCreate = typeof fullName === 'string' ? fullName : newBranchName
+                        if (!nameToCreate.trim()) return
 
-                      const names = nameToCreate
-                        .split(',')
-                        .map((name) => name.trim())
-                        .filter(Boolean)
+                        const names = nameToCreate
+                          .split(',')
+                          .map((name) => name.trim())
+                          .filter(Boolean)
 
-                      for (const name of names) {
-                        await dispatch(createBranch(name))
-                      }
-                      setNewBranchName('')
-                      dispatch(loadBranches())
-                    }}
-                  />
+                        for (const name of names) {
+                          await dispatch(createBranch(name))
+                        }
+                        setNewBranchName('')
+                        dispatch(loadBranches())
+                      }}
+                    />
+                  </>
                 )}
 
                 {activeTab === GIT_TABS.GRAPH && <GitGraphTree />}

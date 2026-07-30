@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('git', {
   openRepository: (path) => ipcRenderer.invoke('git:openRepository', path),
   openInExplorer: (path) => ipcRenderer.invoke('git:openInExplorer', path),
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),
+  listWorktrees: () => ipcRenderer.invoke('git:listWorktrees'),
   getUserConfig: () => ipcRenderer.invoke('git:getUserConfig'),
   setUserConfig: (config) => ipcRenderer.invoke('git:setUserConfig', config),
   createBranch: (branchName) => ipcRenderer.invoke('git:createBranch', branchName),
@@ -36,9 +37,11 @@ contextBridge.exposeInMainWorld('git', {
   loadTags: () => ipcRenderer.invoke('git:loadTags'),
   loadRemoteTagInfo: () => ipcRenderer.invoke('git:loadRemoteTagInfo'),
   deleteTag: (tagName, mode) => ipcRenderer.invoke('git:deleteTag', tagName, mode),
-  createTag: (tagName, branchName, message) => ipcRenderer.invoke('git:createTag', { tagName, branchName, message }),
+  createTag: (tagName, branchName, message) =>
+    ipcRenderer.invoke('git:createTag', { tagName, branchName, message }),
   pushTag: (tagName) => ipcRenderer.invoke('git:pushTag', tagName),
-  getBranchCommits: (branchName, limit) => ipcRenderer.invoke('git:getBranchCommits', branchName, limit),
+  getBranchCommits: (branchName, limit) =>
+    ipcRenderer.invoke('git:getBranchCommits', branchName, limit),
   getCommitDiff: (commitHash) => ipcRenderer.invoke('git:getCommitDiff', commitHash),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
@@ -50,7 +53,8 @@ contextBridge.exposeInMainWorld('git', {
   stashApply: (stashIndex) => ipcRenderer.invoke('git:stashApply', stashIndex),
   stashPop: (stashIndex) => ipcRenderer.invoke('git:stashPop', stashIndex),
   stashDrop: (stashIndex) => ipcRenderer.invoke('git:stashDrop', stashIndex),
-  renameStash: (stashIndex, newMessage) => ipcRenderer.invoke('git:renameStash', stashIndex, newMessage),
+  renameStash: (stashIndex, newMessage) =>
+    ipcRenderer.invoke('git:renameStash', stashIndex, newMessage),
   getStashDiff: (stashIndex) => ipcRenderer.invoke('git:getStashDiff', stashIndex),
   graphLog: (options) => ipcRenderer.invoke('git:graphLog', options),
   getCommitBranchMap: (options) => ipcRenderer.invoke('git:getCommitBranchMap', options),

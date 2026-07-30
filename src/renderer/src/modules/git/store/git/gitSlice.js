@@ -12,6 +12,7 @@ import {
   abortMerge,
   deleteBranch,
   loadBranches,
+  listWorktrees,
   createBranch,
   checkoutBranch,
   deleteRemoteBranch,
@@ -126,6 +127,7 @@ const initialState = {
   error: null,
   branches: [],
   remoteBranches: [],
+  worktrees: [],
   currentBranch: '',
   fileStatus: [],
   loading: false,
@@ -416,6 +418,11 @@ const gitSlice = createSlice({
       .addCase(loadBranches.rejected, (state, action) => {
         state.loadingMessage = ''
         state.error = action.payload
+      })
+      // listWorktrees (silent — never touches loadingMessage/error so it can
+      // run alongside loadBranches without flicker)
+      .addCase(listWorktrees.fulfilled, (state, action) => {
+        state.worktrees = action.payload?.data?.worktrees || []
       })
       // createBranch
       .addCase(createBranch.pending, (state, action) => {
