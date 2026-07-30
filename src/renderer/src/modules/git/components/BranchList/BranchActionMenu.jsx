@@ -15,6 +15,7 @@ export const BranchActionMenu = ({
   x,
   y,
   target: branchName,
+  isRemote = false,
   currentBranch,
   onMerge,
   onCheckout,
@@ -47,8 +48,12 @@ export const BranchActionMenu = ({
 
   if (!show) return null
 
-  const isRemoteBranch = branchName?.includes('origin/')
-  const isCurrentBranch = branchName === currentBranch
+  // Remote branch names are stored WITHOUT the `origin/` prefix (the main
+  // process strips it), so the name alone can't tell local from remote — a
+  // local and remote branch often share the same name. Rely on the explicit
+  // `isRemote` flag threaded from the row that opened this menu instead.
+  const isRemoteBranch = isRemote
+  const isCurrentBranch = !isRemote && branchName === currentBranch
 
   const handleTagHover = (e, tagName) => {
     const rect = e.currentTarget.getBoundingClientRect()

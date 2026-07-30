@@ -363,6 +363,7 @@ export const MainPageGit = () => {
                     branches={branches}
                     remoteBranches={remoteBranches}
                     currentBranch={currentBranch}
+                    repoPath={repoPath}
                     loading={loading}
                     localTags={localTags}
                     localOnlyTags={localOnlyTags}

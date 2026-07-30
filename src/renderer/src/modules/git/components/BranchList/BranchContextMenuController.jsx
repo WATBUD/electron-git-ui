@@ -39,6 +39,7 @@ export const BranchContextMenuController = forwardRef(
       x: state.x,
       y: state.y,
       target: state.target,
+      isRemote: state.isRemote,
       branchTags: state.tags,
       onClose: close
     }

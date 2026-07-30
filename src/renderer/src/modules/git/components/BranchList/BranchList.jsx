@@ -12,7 +12,8 @@ import {
   ArrowDown,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Link2
 } from 'lucide-react'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
@@ -44,6 +45,7 @@ const BranchList = ({
   branches = [],
   remoteBranches = [],
   currentBranch,
+  repoPath,
   loading,
   onCheckout,
   onCheckoutCommit,
@@ -165,6 +167,20 @@ const BranchList = ({
   const [branchCommits, setBranchCommits] = useState({})
   const [loadingCommits, setLoadingCommits] = useState(false)
   const [viewingCommit, setViewingCommit] = useState(null)
+
+  // Switching projects (e.g. via keyboard shortcut) swaps the `branches` prop
+  // but leaves this component mounted, so the cached per-branch commit lists and
+  // the expanded/collapsed state would otherwise still show the *previous*
+  // project's commits. Reset all repo-scoped transient state when repoPath
+  // changes so the Local branch commit lists refresh for the new project.
+  const prevRepoPathRef = useRef(repoPath)
+  React.useEffect(() => {
+    if (prevRepoPathRef.current === repoPath) return
+    prevRepoPathRef.current = repoPath
+    setBranchCommits({})
+    setExpandedBranches(new Set())
+    setViewingCommit(null)
+  }, [repoPath])
   const [dirtyWarning, setDirtyWarning] = useState(false)
   const dispatch = useDispatch()
   const fileStatus = useSelector((s) => s.git.fileStatus || [])
@@ -186,7 +202,7 @@ const BranchList = ({
   // when a menu opens. Re-rendering this tree is expensive when there are many
   // branches + expanded commit lists.
   const handleContextMenu = useCallback(
-    (e, type, target) => {
+    (e, type, target, isRemote = false) => {
       e.preventDefault()
 
       let tags = []
@@ -202,6 +218,7 @@ const BranchList = ({
         y: e.clientY,
         type,
         target,
+        isRemote,
         tags
       })
     },
@@ -716,7 +733,8 @@ const BranchList = ({
                           ahead = 0,
                           behind = 0,
                           isDetached = false,
-                          isCurrent = false
+                          isCurrent = false,
+                          worktreePath = null
                         } = (typeof branchObj === 'object' ? branchObj : {}) || {}
                         const isActive = isCurrent || branch === currentBranch
                         const isExpanded =
@@ -737,6 +755,15 @@ const BranchList = ({
                                 {isDetached && (
                                   <span className={styles.detachedBadge} title="Detached HEAD">
                                     Detached
+                                  </span>
+                                )}
+                                {worktreePath && !isActive && (
+                                  <span
+                                    className={styles.worktreeBadge}
+                                    title={`Checked out in another worktree — can't switch here:\n${worktreePath}`}
+                                  >
+                                    <Link2 size={11} />
+                                    <span>worktree</span>
                                   </span>
                                 )}
                                 {isActive && (
@@ -994,7 +1021,9 @@ const BranchList = ({
                                       right: 0,
                                       height: ROW_H
                                     }}
-                                    onContextMenu={(e) => handleContextMenu(e, 'branch', branch)}
+                                    onContextMenu={(e) =>
+                                      handleContextMenu(e, 'branch', branch, true)
+                                    }
                                   >
                                     <div
                                       className={styles.branchMain}
@@ -1059,7 +1088,14 @@ const BranchList = ({
           <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
             <h3>Uncommitted changes</h3>
             <div className={styles.modalBody}>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'rgba(255,255,255,0.85)' }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                  color: 'rgba(255,255,255,0.85)'
+                }}
+              >
                 You have <strong>{fileStatus.length}</strong> uncommitted file
                 {fileStatus.length === 1 ? '' : 's'}.
               </p>

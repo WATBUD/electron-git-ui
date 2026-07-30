@@ -246,6 +246,31 @@ ${fileContent
         // No local tags or error, continue
       }
 
+      // Map each branch to the worktree that currently has it checked out.
+      // A branch can only be checked out in one worktree at a time, so any
+      // branch occupied by a *different* worktree than the current repo cannot
+      // be checked out here — the UI marks these so users know why.
+      const worktreeByBranch = {}
+      try {
+        const worktreeCommand = 'git worktree list --porcelain'
+        commandHistory.push(worktreeCommand)
+        const { stdout: worktreeOutput } = await execAsync(worktreeCommand, {
+          cwd: currentRepoPath
+        })
+        let currentWtPath = null
+        worktreeOutput.split('\n').forEach((line) => {
+          if (line.startsWith('worktree ')) {
+            currentWtPath = line.slice('worktree '.length).trim()
+          } else if (line.startsWith('branch ')) {
+            const branchRef = line.slice('branch '.length).trim()
+            const branchName = branchRef.replace('refs/heads/', '')
+            if (branchName && currentWtPath) worktreeByBranch[branchName] = currentWtPath
+          }
+        })
+      } catch (err) {
+        // Older git without `worktree list`, or none configured — skip markers.
+      }
+
       const localBranches = localOutput
         .split('\n')
         .filter((line) => line.trim().length > 0)
@@ -300,13 +325,19 @@ ${fileContent
           // Get tags for this branch's commit
           const tags = commitHash && tagsByCommit[commitHash] ? tagsByCommit[commitHash] : []
 
+          // Flag branches checked out in *another* worktree (not this repo's own
+          // path) — those can't be checked out here.
+          const wtPath = worktreeByBranch[name]
+          const worktreePath = wtPath && wtPath !== currentRepoPath ? wtPath : null
+
           return {
             name,
             isCurrent,
             upstream,
             ahead,
             behind,
-            tags
+            tags,
+            worktreePath
           }
         })
 
