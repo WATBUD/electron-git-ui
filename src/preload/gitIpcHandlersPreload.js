@@ -45,6 +45,7 @@ contextBridge.exposeInMainWorld('git', {
   getCommitDiff: (commitHash) => ipcRenderer.invoke('git:getCommitDiff', commitHash),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
+  getImagePreview: (file, isStaged) => ipcRenderer.invoke('git:getImagePreview', file, isStaged),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),
   stashList: () => ipcRenderer.invoke('git:stashList'),
   stashPush: (message, files, keepIndex) =>

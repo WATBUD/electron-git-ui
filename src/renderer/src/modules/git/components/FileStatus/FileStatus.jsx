@@ -4,7 +4,7 @@ import { FileCode, FolderOpen, ExternalLink, FileX } from 'lucide-react'
 import { FileList } from './FileList'
 import { FileContextMenu } from './FileContextMenu'
 import { useFileSelection } from './useFileSelection'
-import { isBinaryFile } from './binaryFiles'
+import { isBinaryFile, isImageFile } from './binaryFiles'
 import styles from './FileStatus.module.css'
 
 export const FileStatus = ({
@@ -24,6 +24,8 @@ export const FileStatus = ({
   const [listWidth, setListWidth] = useState(350)
   const [isResizing, setIsResizing] = useState(false)
   const [activeFile, setActiveFile] = useState(null)
+  // Inline image preview for binary image files: { status, url }
+  const [imagePreview, setImagePreview] = useState({ status: 'idle', url: null })
   const [searchTerm, setSearchTerm] = useState('')
   const [contextMenu, setContextMenu] = useState({
     show: false,
@@ -47,12 +49,37 @@ export const FileStatus = ({
   // Clean up invalid selections when file list changes
   useEffect(() => {
     if (_fileStatus.length > 0) {
-      const validFileKeys = new Set(
-        _fileStatus.map(f => `${f.file}-${f.isStaged}`)
-      )
+      const validFileKeys = new Set(_fileStatus.map((f) => `${f.file}-${f.isStaged}`))
       cleanupInvalidSelections(validFileKeys)
     }
   }, [_fileStatus, cleanupInvalidSelections])
+
+  // Load an inline image preview when the selected file is a binary image.
+  // Ignores stale responses if the user clicks another file mid-flight.
+  useEffect(() => {
+    if (!activeFile || !isImageFile(activeFile.file) || !window.git?.getImagePreview) {
+      setImagePreview({ status: 'idle', url: null })
+      return
+    }
+    let cancelled = false
+    setImagePreview({ status: 'loading', url: null })
+    window.git
+      .getImagePreview(activeFile.file, activeFile.isStaged)
+      .then((res) => {
+        if (cancelled) return
+        if (res?.success && res.data?.dataUrl) {
+          setImagePreview({ status: 'ready', url: res.data.dataUrl })
+        } else {
+          setImagePreview({ status: 'error', url: null })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setImagePreview({ status: 'error', url: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeFile])
 
   // Resize handlers
   const handleMouseDown = (e) => {
@@ -89,14 +116,13 @@ export const FileStatus = ({
   const handleFileClick = (file, isStaged, e) => {
     // Pass ALL files with their staging status (not filtered by search)
     // This ensures shift-select can find the correct indices
-    const allFilesWithStatus = _fileStatus.map(f => ({ file: f.file, isStaged: f.isStaged }))
+    const allFilesWithStatus = _fileStatus.map((f) => ({ file: f.file, isStaged: f.isStaged }))
 
     // Perform selection logic
     handleSelectionClick(file, isStaged, e, allFilesWithStatus)
 
     const isShiftClick = e && e.shiftKey
-    const isSameActiveFile =
-      activeFile?.file === file && activeFile?.isStaged === isStaged
+    const isSameActiveFile = activeFile?.file === file && activeFile?.isStaged === isStaged
 
     // Only load diff for normal clicks (not shift multi-select)
     // Skip reload when the file is already the active/focused one
@@ -110,7 +136,7 @@ export const FileStatus = ({
   const handleContextMenu = (e, fileName, isStaged) => {
     e.preventDefault()
     const isMultiSelect = isMultipleSelection() && isFileSelected(fileName, isStaged)
-    
+
     setContextMenu({
       show: true,
       x: e.clientX,
@@ -126,7 +152,7 @@ export const FileStatus = ({
   }
 
   const isNewFile = (fileName) => {
-    const file = _fileStatus.find(f => f.file === fileName)
+    const file = _fileStatus.find((f) => f.file === fileName)
     if (!file) return false
     const { staged, working } = file.statusType
     return staged === 'A' || working === 'A' || staged === '?' || working === '?'
@@ -240,12 +266,12 @@ export const FileStatus = ({
 
   // Separate files by staging status and apply search filter
   const filteredFiles = React.useMemo(() => {
-    const filtered = _fileStatus.filter(file =>
+    const filtered = _fileStatus.filter((file) =>
       file.file.toLowerCase().includes(searchTerm.toLowerCase())
     )
     return {
-      staged: filtered.filter(file => file.isStaged),
-      unstaged: filtered.filter(file => !file.isStaged)
+      staged: filtered.filter((file) => file.isStaged),
+      unstaged: filtered.filter((file) => !file.isStaged)
     }
   }, [_fileStatus, searchTerm])
 
@@ -264,9 +290,7 @@ export const FileStatus = ({
         const sectionFiles = activeFile?.isStaged ? stagedFiles : unstagedFiles
         if (sectionFiles.length === 0) return
 
-        const currentIndex = sectionFiles.findIndex(
-          (file) => file.file === activeFile?.file
-        )
+        const currentIndex = sectionFiles.findIndex((file) => file.file === activeFile?.file)
 
         let nextIndex
         if (e.key === 'ArrowUp') {
@@ -292,7 +316,7 @@ export const FileStatus = ({
     if (typeof file !== 'string') return
     if (activeFile?.file !== file || activeFile?.isStaged !== fromStaged) return
     const list = fromStaged ? filteredFiles.staged : filteredFiles.unstaged
-    const idx = list.findIndex(f => f.file === file)
+    const idx = list.findIndex((f) => f.file === file)
     if (idx === -1) return
     const next = list[idx + 1] || list[idx - 1] || null
     if (next) {
@@ -349,7 +373,8 @@ export const FileStatus = ({
           <FileCode size={18} />
           <span>Changes</span>
           <span className={styles.totalCount}>
-            ({_fileStatus.length} {searchTerm && `/ ${stagedFiles.length + unstagedFiles.length} filtered`})
+            ({_fileStatus.length}{' '}
+            {searchTerm && `/ ${stagedFiles.length + unstagedFiles.length} filtered`})
           </span>
         </div>
         <div className={styles.headerActions}>
@@ -430,13 +455,27 @@ export const FileStatus = ({
               </div>
               <div className={styles.diffBody}>
                 {isBinaryFile(activeFile.file, selectedFileDiff) ? (
-                  <div className={styles.emptyDiff}>
-                    <FileX size={32} style={{ marginBottom: 8, opacity: 0.6 }} />
-                    <p>No preview available</p>
-                    <p style={{ fontSize: '0.85em', opacity: 0.7 }}>
-                      Binary file — diff cannot be displayed.
-                    </p>
-                  </div>
+                  isImageFile(activeFile.file) && imagePreview.status !== 'error' ? (
+                    <div className={styles.imagePreview}>
+                      {imagePreview.status === 'ready' ? (
+                        <img
+                          src={imagePreview.url}
+                          alt={activeFile.file}
+                          className={styles.imagePreviewImg}
+                        />
+                      ) : (
+                        <div className={styles.emptyDiff}>Loading image…</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className={styles.emptyDiff}>
+                      <FileX size={32} style={{ marginBottom: 8, opacity: 0.6 }} />
+                      <p>No preview available</p>
+                      <p style={{ fontSize: '0.85em', opacity: 0.7 }}>
+                        Binary file — diff cannot be displayed.
+                      </p>
+                    </div>
+                  )
                 ) : diffLines.length > 0 ? (
                   <div className={styles.diffLines}>
                     {diffLines.map((line, idx) => (

@@ -1,10 +1,23 @@
 /* eslint-disable no-unused-vars */
 import { ipcMain, dialog, shell } from 'electron'
-import { exec } from 'child_process'
+import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
 
 const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Extension → MIME type for inline image previews of binary blobs.
+const IMAGE_MIME_BY_EXT = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  bmp: 'image/bmp',
+  ico: 'image/x-icon',
+  webp: 'image/webp',
+  avif: 'image/avif'
+}
 
 // Increase maxBuffer to handle large git outputs (50MB)
 const execOptions = { maxBuffer: 50 * 1024 * 1024 }
@@ -139,6 +152,54 @@ ${fileContent
 
       return fail(err.message)
     }
+  })
+
+  // Return an image file's bytes as a data URL so the diff panel can render a
+  // real preview instead of the "binary — no diff" placeholder. Tries the
+  // working-tree copy first (covers newly added / modified images in the
+  // staging area), then falls back to the git object store (staged-only or
+  // deleted files) via `git show`.
+  ipcMain.handle('git:getImagePreview', async (_, file, isStaged) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+    const ext = cleanFile.split('.').pop()?.toLowerCase()
+    const mime = ext && IMAGE_MIME_BY_EXT[ext]
+    if (!mime) {
+      return fail('Not a previewable image')
+    }
+
+    const toDataUrl = (buf) => `data:${mime};base64,${buf.toString('base64')}`
+
+    // 1) Working-tree file on disk — the common case for the staging area.
+    try {
+      const fs = require('fs').promises
+      const buf = await fs.readFile(join(currentRepoPath, cleanFile))
+      return success({ dataUrl: toDataUrl(buf), source: 'worktree' })
+    } catch (diskErr) {
+      // fall through to git object store
+    }
+
+    // 2) Git object store: staged (`:path`) → HEAD (`HEAD:path`). Use execFile
+    //    with a buffer encoding so binary bytes survive intact (no shell, no
+    //    escaping issues with unusual paths).
+    for (const rev of isStaged ? [`:${cleanFile}`, `HEAD:${cleanFile}`] : [`HEAD:${cleanFile}`]) {
+      try {
+        const { stdout } = await execFileAsync('git', ['show', rev], {
+          cwd: currentRepoPath,
+          encoding: 'buffer',
+          maxBuffer: 50 * 1024 * 1024
+        })
+        if (stdout && stdout.length > 0) {
+          return success({ dataUrl: toDataUrl(stdout), source: rev })
+        }
+      } catch (showErr) {
+        // try next rev
+      }
+    }
+
+    return fail('Could not load image preview')
   })
 
   ipcMain.handle('git:openRepository', async (_, path) => {
