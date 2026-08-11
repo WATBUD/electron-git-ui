@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { ChevronDown, FileText, FolderOpen, Folder } from 'lucide-react'
+import { ChevronDown, FileText, FolderOpen, Folder, Scale } from 'lucide-react'
 import { FileItem } from './FileItem'
 import styles from './FileStatus.module.css'
 import { PathMode } from './pathMode'
@@ -16,7 +16,9 @@ const VirtualFileList = ({
   onStageFile,
   onUnstageFile,
   getStatusIcon,
-  pathMode
+  pathMode,
+  showSize,
+  sizeByFile
 }) => {
   const [scrollTop, setScrollTop] = useState(0)
   const [containerHeight, setContainerHeight] = useState(600)
@@ -101,6 +103,8 @@ const VirtualFileList = ({
                 onUnstageFile={onUnstageFile}
                 getStatusIcon={getStatusIcon}
                 pathMode={pathMode}
+                showSize={showSize}
+                size={sizeByFile?.[file.file]}
               />
             )
           })}
@@ -130,7 +134,28 @@ export const FileList = ({
   // can pick either short or full without cycling through the other.
   const [pathMode, setPathMode] = useState(PathMode.NAME)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  // Optional per-item file sizes, toggled by the scale icon. Fetched lazily
+  // (only while the toggle is on) so the common path pays no cost.
+  const [showSize, setShowSize] = useState(false)
+  const [sizeByFile, setSizeByFile] = useState({})
   const listRef = useRef(null)
+
+  useEffect(() => {
+    if (!showSize || !hasFiles || !window.git?.getFileSizes) return
+    let cancelled = false
+    const names = files.map((f) => f.file)
+    window.git
+      .getFileSizes(names)
+      .then((res) => {
+        if (!cancelled && res?.success && res.data?.sizes) {
+          setSizeByFile(res.data.sizes)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [showSize, files, hasFiles])
 
   // Use virtual scrolling for large lists
   const useVirtualScrolling = files.length > 100
@@ -182,9 +207,7 @@ export const FileList = ({
           <span className={styles.fileCount}>{files.length}</span>
           <CustomTooltip
             title={
-              pathMode === PathMode.SHORT
-                ? 'Show file names only'
-                : 'Show parent folder + filename'
+              pathMode === PathMode.SHORT ? 'Show file names only' : 'Show parent folder + filename'
             }
           >
             <button
@@ -212,6 +235,19 @@ export const FileList = ({
               style={{ opacity: hasFiles ? 1 : 0.3 }}
             >
               {pathMode === PathMode.FULL ? <FileText size={14} /> : <FolderOpen size={14} />}
+            </button>
+          </CustomTooltip>
+          <CustomTooltip title={showSize ? 'Hide file sizes' : 'Show file sizes'}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowSize((v) => !v)
+              }}
+              className={`${styles.pathToggleBtn} ${showSize ? styles.pathToggleBtnActive : ''}`}
+              disabled={!hasFiles}
+              style={{ opacity: hasFiles ? 1 : 0.3 }}
+            >
+              <Scale size={14} />
             </button>
           </CustomTooltip>
         </div>
@@ -242,6 +278,8 @@ export const FileList = ({
             onUnstageFile={onUnstageFile}
             getStatusIcon={getStatusIcon}
             pathMode={pathMode}
+            showSize={showSize}
+            sizeByFile={sizeByFile}
           />
         ) : (
           <div className={styles.fileList} ref={listRef}>
@@ -262,6 +300,8 @@ export const FileList = ({
                   onUnstageFile={onUnstageFile}
                   getStatusIcon={getStatusIcon}
                   pathMode={pathMode}
+                  showSize={showSize}
+                  size={sizeByFile[file.file]}
                 />
               )
             })}

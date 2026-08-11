@@ -6,10 +6,11 @@ import styles from './GitHistory.module.css'
 
 export const GitHistory = () => {
   const dispatch = useDispatch()
-  const { commandHistory, previousHistoryIndex } = useSelector((state) => ({
-    commandHistory: state.git.commandHistory,
-    previousHistoryIndex: state.git.previousHistoryIndex
-  }))
+  // Select each field individually — a single selector returning an object
+  // literal builds a new reference every call and trips react-redux's
+  // "selector returned a different result" warning / unnecessary rerenders.
+  const commandHistory = useSelector((state) => state.git.commandHistory)
+  const previousHistoryIndex = useSelector((state) => state.git.previousHistoryIndex)
   const [copiedIndex, setCopiedIndex] = useState(null)
 
   // Load history when component mounts

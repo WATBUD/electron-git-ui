@@ -202,6 +202,49 @@ ${fileContent
     return fail('Could not load image preview')
   })
 
+  // Return on-disk sizes (bytes) for a batch of files so the list can show
+  // per-item file sizes. Prefers the working-tree copy; falls back to the
+  // git object store (`cat-file -s`) for staged-only or deleted files.
+  ipcMain.handle('git:getFileSizes', async (_, files) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    if (!Array.isArray(files)) {
+      return fail('files must be an array')
+    }
+    const fs = require('fs').promises
+    const sizes = {}
+    await Promise.all(
+      files.map(async (raw) => {
+        const file = raw?.startsWith('"') && raw?.endsWith('"') ? raw.slice(1, -1) : raw
+        if (!file) return
+        try {
+          const st = await fs.stat(join(currentRepoPath, file))
+          sizes[raw] = st.size
+          return
+        } catch (diskErr) {
+          // fall through to git object store
+        }
+        for (const rev of [`:${file}`, `HEAD:${file}`]) {
+          try {
+            const { stdout } = await execFileAsync('git', ['cat-file', '-s', rev], {
+              cwd: currentRepoPath
+            })
+            const n = parseInt(stdout.trim(), 10)
+            if (!Number.isNaN(n)) {
+              sizes[raw] = n
+              return
+            }
+          } catch (catErr) {
+            // try next rev
+          }
+        }
+        sizes[raw] = null
+      })
+    )
+    return success({ sizes })
+  })
+
   ipcMain.handle('git:openRepository', async (_, path) => {
     try {
       currentRepoPath = path
