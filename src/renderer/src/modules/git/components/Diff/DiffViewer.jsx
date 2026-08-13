@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { FolderOpen } from 'lucide-react'
 import { diffLineKind } from './parseDiff'
 import styles from './Diff.module.css'
 
@@ -26,8 +28,39 @@ export const DiffViewer = ({
 }) => {
   const [listWidth, setListWidth] = useState(defaultListWidth)
   const [internalPath, setInternalPath] = useState(null)
+  // Right-click menu for a file row: { show, x, y, path }
+  const [fileMenu, setFileMenu] = useState({ show: false, x: 0, y: 0, path: null })
   const splitRef = useRef(null)
   const draggingRef = useRef(false)
+
+  const openFileMenu = useCallback((e, path) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setFileMenu({ show: true, x: e.clientX, y: e.clientY, path })
+  }, [])
+
+  const closeFileMenu = useCallback(() => {
+    setFileMenu((m) => (m.show ? { show: false, x: 0, y: 0, path: null } : m))
+  }, [])
+
+  const revealActiveFile = useCallback(() => {
+    const path = fileMenu.path
+    closeFileMenu()
+    if (path && window.git?.revealInFolder) {
+      window.git.revealInFolder(path).catch(() => {})
+    }
+  }, [fileMenu.path, closeFileMenu])
+
+  useEffect(() => {
+    if (!fileMenu.show) return
+    const onKey = (e) => e.key === 'Escape' && closeFileMenu()
+    window.addEventListener('click', closeFileMenu)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('click', closeFileMenu)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [fileMenu.show, closeFileMenu])
 
   const selectedPath = controlledPath !== undefined ? controlledPath : internalPath
   const setSelected = useCallback(
@@ -89,13 +122,12 @@ export const DiffViewer = ({
               type="button"
               className={`${styles.fileItem} ${isActive ? styles.fileItemActive : ''}`}
               onClick={() => setSelected(f.path)}
+              onContextMenu={(e) => openFileMenu(e, meta?.file || f.path)}
               title={displayName}
             >
               {status && (
                 <span
-                  className={`${styles.fileStatus} ${
-                    styles[`status_${status.charAt(0)}`] || ''
-                  }`}
+                  className={`${styles.fileStatus} ${styles[`status_${status.charAt(0)}`] || ''}`}
                 >
                   {status}
                 </span>
@@ -124,6 +156,24 @@ export const DiffViewer = ({
           <div className={styles.empty}>Select a file to view its diff</div>
         )}
       </div>
+
+      {/* Portal to <body> so the menu is never trapped in the flex layout or a
+          positioned/transformed ancestor — inline position:fixed keeps it
+          exactly at the cursor regardless of CSS-module load timing. */}
+      {fileMenu.show &&
+        createPortal(
+          <div
+            className={styles.fileContextMenu}
+            style={{ position: 'fixed', top: fileMenu.y, left: fileMenu.x, zIndex: 3000 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" className={styles.fileContextItem} onClick={revealActiveFile}>
+              <FolderOpen size={14} />
+              <span>Open containing folder</span>
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }

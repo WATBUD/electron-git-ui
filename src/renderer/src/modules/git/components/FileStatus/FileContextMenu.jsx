@@ -1,13 +1,6 @@
 import React, { useRef, useEffect, useLayoutEffect, useState } from 'react'
 import { message } from 'antd'
-import {
-  Copy,
-  ExternalLink,
-  Archive,
-  Trash2,
-  Plus,
-  ArrowLeft
-} from 'lucide-react'
+import { Copy, ExternalLink, Archive, Trash2, Plus, ArrowLeft, FolderOpen } from 'lucide-react'
 import styles from './FileStatus.module.css'
 
 const VIEWPORT_MARGIN = 8
@@ -71,7 +64,7 @@ export const FileContextMenu = ({
 
   const handleCopyFileName = () => {
     if (isMultipleSelection) {
-      const selectedFilesList = selectedFiles.map(file => file.split('/').pop())
+      const selectedFilesList = selectedFiles.map((file) => file.split('/').pop())
       navigator.clipboard.writeText(selectedFilesList.join('\n'))
       message.success(`${selectedFilesList.length} file names copied to clipboard`)
     } else {
@@ -93,6 +86,20 @@ export const FileContextMenu = ({
     onClose()
   }
 
+  // Reveal the file in the OS file manager (Finder / Explorer / Linux). Uses
+  // the main-process shell.showItemInFolder via IPC — cross-platform.
+  const handleOpenFolder = async () => {
+    if (window.git?.revealInFolder) {
+      try {
+        await window.git.revealInFolder(fileName)
+      } catch (error) {
+        message.error('Failed to open folder')
+        console.error('Reveal error:', error)
+      }
+    }
+    onClose()
+  }
+
   const handleStash = async (includeAllStaged) => {
     try {
       const files = isMultipleSelection ? selectedFiles : [fileName]
@@ -102,9 +109,7 @@ export const FileContextMenu = ({
       //   so they don't end up in the stash.
       const payload = includeAllStaged ? {} : { files, keepIndex: true }
       await onStashFile(payload)
-      message.success(
-        isMultipleSelection ? `${files.length} files stashed` : 'File stashed'
-      )
+      message.success(isMultipleSelection ? `${files.length} files stashed` : 'File stashed')
       onClose()
     } catch (error) {
       message.error('Failed to stash file(s)')
@@ -137,8 +142,8 @@ export const FileContextMenu = ({
   const handleDiscardOrRemove = async () => {
     try {
       if (isMultipleSelection) {
-        const hasNewFiles = selectedFiles.some(file => isNewFile(file))
-        
+        const hasNewFiles = selectedFiles.some((file) => isNewFile(file))
+
         if (hasNewFiles && onRemoveFile) {
           await onRemoveFile(selectedFiles)
           message.success(`${selectedFiles.length} files removed`)
@@ -206,6 +211,12 @@ export const FileContextMenu = ({
           <ExternalLink size={14} />
           <span>{isMultipleSelection ? 'Copy full paths' : 'Copy full path'}</span>
         </button>
+        {!isMultipleSelection && (
+          <button className={styles.contextMenuItem} onClick={handleOpenFolder}>
+            <FolderOpen size={14} />
+            <span>Open containing folder</span>
+          </button>
+        )}
         {!isStaged && (
           <>
             <button className={styles.contextMenuItem} onClick={() => handleStash(false)}>
@@ -219,13 +230,17 @@ export const FileContextMenu = ({
           </>
         )}
         <div className={styles.contextMenuDivider} />
-        <button className={`${styles.contextMenuItem} ${styles.danger}`} onClick={handleDiscardOrRemove}>
+        <button
+          className={`${styles.contextMenuItem} ${styles.danger}`}
+          onClick={handleDiscardOrRemove}
+        >
           <Trash2 size={14} />
           <span>
-            {isMultipleSelection 
-              ? 'Discard/Remove changes' 
-              : (isNewFile(fileName) ? 'Remove file' : 'Discard changes')
-            }
+            {isMultipleSelection
+              ? 'Discard/Remove changes'
+              : isNewFile(fileName)
+                ? 'Remove file'
+                : 'Discard changes'}
           </span>
         </button>
       </div>

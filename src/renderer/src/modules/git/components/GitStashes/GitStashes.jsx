@@ -1,14 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import styles from './GitStashes.module.css'
 import { StashContextMenu } from './StashContextMenu'
-import {
-  Archive,
-  Clock,
-  Code2,
-  FileCode,
-  Layout,
-  ChevronDown
-} from 'lucide-react'
+import { Archive, Clock, Code2, FileCode, Layout, ChevronDown } from 'lucide-react'
 
 export const GitStashes = ({
   stashes = [],
@@ -27,6 +20,9 @@ export const GitStashes = ({
   const [newStashMessage, setNewStashMessage] = useState('')
   const [showRenameModal, setShowRenameModal] = useState(false)
   const contextMenuRef = useRef(null)
+  // Tracks whether a mousedown began on the rename overlay itself, so a text
+  // selection dragged out of the input doesn't count as an outside click.
+  const overlayMouseDownRef = useRef(false)
 
   const handleSelectStash = (index) => {
     setSelectedStashIndex(index)
@@ -110,7 +106,7 @@ export const GitStashes = ({
   }, [])
 
   const toggleFileCollapse = (fileName) => {
-    setCollapsedFiles(prev => {
+    setCollapsedFiles((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(fileName)) {
         newSet.delete(fileName)
@@ -223,7 +219,6 @@ export const GitStashes = ({
       <div className={styles.container}>
         {/* Left Sidebar: Stash List */}
         <div className={styles.sidebar}>
-
           <div className={styles.listWrapper}>
             {stashes.length === 0 ? (
               <div className={styles.emptyState}>
@@ -290,14 +285,14 @@ export const GitStashes = ({
                 ) : fileGroups.length > 0 ? (
                   fileGroups.map((file, fidx) => (
                     <div key={fidx} className={styles.fileBlock}>
-                      <div 
+                      <div
                         className={styles.fileHeader}
                         onClick={() => toggleFileCollapse(file.fileName)}
                         style={{ cursor: 'pointer' }}
                       >
                         <div className={styles.fileName}>
-                          <ChevronDown 
-                            size={14} 
+                          <ChevronDown
+                            size={14}
                             className={`${styles.chevron} ${collapsedFiles.has(file.fileName) ? styles.chevronCollapsed : ''}`}
                           />
                           <FileCode size={14} className={styles.fileIcon} />
@@ -305,7 +300,9 @@ export const GitStashes = ({
                         </div>
                         <span className={styles.fileStatusBadge}>{file.status}</span>
                       </div>
-                      <div className={`${styles.diffBody} ${collapsedFiles.has(file.fileName) ? styles.collapsed : ''}`}>
+                      <div
+                        className={`${styles.diffBody} ${collapsedFiles.has(file.fileName) ? styles.collapsed : ''}`}
+                      >
                         <div className={styles.diffLines}>
                           {file.lines.map((line, lidx) => (
                             <div key={lidx} className={`${styles.diffLine} ${styles[line.type]}`}>
@@ -344,7 +341,21 @@ export const GitStashes = ({
       />
 
       {showRenameModal && (
-        <div className={styles.modalOverlay} onClick={handleCancelRename}>
+        <div
+          className={styles.modalOverlay}
+          // Only dismiss when the press STARTED on the overlay itself. Without
+          // this, selecting text in the input and releasing the mouse over the
+          // overlay fires a click on it and closes the dialog mid-selection.
+          onMouseDown={(e) => {
+            overlayMouseDownRef.current = e.target === e.currentTarget
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && overlayMouseDownRef.current) {
+              handleCancelRename()
+            }
+            overlayMouseDownRef.current = false
+          }}
+        >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3>Rename Stash</h3>
             <div className={styles.modalContent}>

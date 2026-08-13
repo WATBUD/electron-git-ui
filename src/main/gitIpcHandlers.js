@@ -273,6 +273,37 @@ ${fileContent
     }
   })
 
+  // Reveal a repo-relative file in the OS file manager (Finder / Explorer /
+  // Linux file manager). Uses shell.showItemInFolder — which opens the
+  // containing folder AND selects the file — so it's inherently cross-platform.
+  // If the file no longer exists on disk (historical commit, deleted file),
+  // falls back to opening the nearest existing parent directory.
+  ipcMain.handle('git:revealInFolder', async (_, file) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    if (!file) return fail('No file provided')
+    const nodePath = require('path')
+    const fs = require('fs')
+    const clean = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+    const absPath = nodePath.join(currentRepoPath, clean)
+    try {
+      if (fs.existsSync(absPath)) {
+        shell.showItemInFolder(absPath)
+        return success({ revealed: absPath })
+      }
+      // File gone — open the nearest existing ancestor directory instead.
+      let dir = nodePath.dirname(absPath)
+      while (dir.startsWith(currentRepoPath) && !fs.existsSync(dir)) {
+        dir = nodePath.dirname(dir)
+      }
+      const target = fs.existsSync(dir) ? dir : currentRepoPath
+      const err = await shell.openPath(target)
+      if (err) return fail(err)
+      return success({ opened: target })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
   ipcMain.handle('git:selectRepository', async () => {
     try {
       const result = await dialog.showOpenDialog({
@@ -1029,8 +1060,13 @@ ${fileContent
       return fail('Commit hash required')
     }
     try {
-      // Files changed in this commit (M/A/D/R/C status + path)
-      const nameStatusCmd = `git show --name-status --pretty=format: ${commitHash}`
+      // Files changed in this commit (M/A/D/R/C status + path).
+      // `--first-parent -m` makes merge commits show the changes they brought
+      // in relative to the target branch (the first parent). Without it, git's
+      // default combined (--cc) diff for a merge lists almost nothing, so the
+      // UI showed an empty file list for merge commits. Harmless for normal
+      // (single-parent) commits.
+      const nameStatusCmd = `git show --first-parent -m --name-status --pretty=format: ${commitHash}`
       commandHistory.push(nameStatusCmd)
       const { stdout: nameStatusOut } = await execAsync(nameStatusCmd, {
         cwd: currentRepoPath,
@@ -1049,8 +1085,9 @@ ${fileContent
           return { status, file, oldFile }
         })
 
-      // Full diff output for display
-      const diffCmd = `git show --format=fuller ${commitHash}`
+      // Full diff output for display. Same --first-parent -m so a merge shows
+      // its actual introduced changes instead of an empty combined diff.
+      const diffCmd = `git show --first-parent -m --format=fuller ${commitHash}`
       commandHistory.push(diffCmd)
       const { stdout: diffOut } = await execAsync(diffCmd, {
         cwd: currentRepoPath,

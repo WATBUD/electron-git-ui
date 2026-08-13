@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('git', {
   selectRepository: () => ipcRenderer.invoke('git:selectRepository'),
   openRepository: (path) => ipcRenderer.invoke('git:openRepository', path),
   openInExplorer: (path) => ipcRenderer.invoke('git:openInExplorer', path),
+  revealInFolder: (file) => ipcRenderer.invoke('git:revealInFolder', file),
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),
   listWorktrees: () => ipcRenderer.invoke('git:listWorktrees'),
   getUserConfig: () => ipcRenderer.invoke('git:getUserConfig'),
