@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import styles from './GitStashes.module.css'
 import { StashContextMenu } from './StashContextMenu'
+import { useOverlayDismiss } from '../../../../shared/hooks/useOverlayDismiss'
 import { Archive, Clock, Code2, FileCode, Layout, ChevronDown } from 'lucide-react'
 
 export const GitStashes = ({
@@ -20,9 +21,6 @@ export const GitStashes = ({
   const [newStashMessage, setNewStashMessage] = useState('')
   const [showRenameModal, setShowRenameModal] = useState(false)
   const contextMenuRef = useRef(null)
-  // Tracks whether a mousedown began on the rename overlay itself, so a text
-  // selection dragged out of the input doesn't count as an outside click.
-  const overlayMouseDownRef = useRef(false)
 
   const handleSelectStash = (index) => {
     setSelectedStashIndex(index)
@@ -42,6 +40,10 @@ export const GitStashes = ({
     setRenamingStash(null)
     setNewStashMessage('')
   }
+
+  // Dismiss the rename dialog only on a genuine outside click (press+release
+  // on the overlay) — text selection dragged out of the input won't close it.
+  const renameOverlayProps = useOverlayDismiss(handleCancelRename)
 
   const handleRenameKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -341,21 +343,7 @@ export const GitStashes = ({
       />
 
       {showRenameModal && (
-        <div
-          className={styles.modalOverlay}
-          // Only dismiss when the press STARTED on the overlay itself. Without
-          // this, selecting text in the input and releasing the mouse over the
-          // overlay fires a click on it and closes the dialog mid-selection.
-          onMouseDown={(e) => {
-            overlayMouseDownRef.current = e.target === e.currentTarget
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && overlayMouseDownRef.current) {
-              handleCancelRename()
-            }
-            overlayMouseDownRef.current = false
-          }}
-        >
+        <div className={styles.modalOverlay} {...renameOverlayProps}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3>Rename Stash</h3>
             <div className={styles.modalContent}>

@@ -1,11 +1,13 @@
 import React from 'react'
 import styles from './BranchList.module.css'
+import { useOverlayDismiss } from '../../../../shared/hooks/useOverlayDismiss'
 
 export const RenameBranchModal = ({ state, setState, onSubmit }) => {
-  if (!state.show) return null
   const close = () => setState({ show: false, oldName: '', newName: '' })
+  const overlayProps = useOverlayDismiss(close)
+  if (!state.show) return null
   return (
-    <div className={styles.modalOverlay} onClick={close}>
+    <div className={styles.modalOverlay} {...overlayProps}>
       <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
         <h3>Rename Branch</h3>
         <div className={styles.modalBody}>
@@ -15,9 +17,7 @@ export const RenameBranchModal = ({ state, setState, onSubmit }) => {
           </div>
           <input
             value={state.newName}
-            onChange={(e) =>
-              setState((prev) => ({ ...prev, newName: e.target.value }))
-            }
+            onChange={(e) => setState((prev) => ({ ...prev, newName: e.target.value }))}
             placeholder="New branch name"
             className={styles.modalInput}
             autoFocus

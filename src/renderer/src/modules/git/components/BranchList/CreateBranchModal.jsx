@@ -1,11 +1,13 @@
 /* eslint-disable react/prop-types */
 import styles from './BranchList.module.css'
+import { useOverlayDismiss } from '../../../../shared/hooks/useOverlayDismiss'
 
 export const CreateBranchModal = ({ state, setState, onSubmit, branchPrefix }) => {
-  if (!state.show) return null
   const close = () => setState({ show: false, branchName: '' })
+  const overlayProps = useOverlayDismiss(close)
+  if (!state.show) return null
   return (
-    <div className={styles.modalOverlay} onClick={close}>
+    <div className={styles.modalOverlay} {...overlayProps}>
       <div className={styles.macModal} onClick={(e) => e.stopPropagation()}>
         <h3>Create Branch</h3>
         <div className={styles.modalBody}>
