@@ -356,6 +356,26 @@ export const getCommitDiff = createAsyncThunk(
   }
 )
 
+export const getRangeDiff = createAsyncThunk(
+  'git/getRangeDiff',
+  async ({ fromRef, toRef }, { rejectWithValue, dispatch, getState }) => {
+    const rejectIfNotInitialized = checkGitApiInitialization(rejectWithValue)
+    if (rejectIfNotInitialized) return rejectIfNotInitialized
+
+    markOperationStart(dispatch, getState)
+
+    const result = await callGit(
+      () => window.git.getRangeDiff(fromRef, toRef),
+      rejectWithValue,
+      'Failed to load range diff',
+      'getRangeDiff'
+    )
+
+    await dispatch(fetchCommandHistory())
+    return result
+  }
+)
+
 export const checkoutCommit = createAsyncThunk(
   'git/checkoutCommit',
   async (commitHash, { rejectWithValue, dispatch }) => {

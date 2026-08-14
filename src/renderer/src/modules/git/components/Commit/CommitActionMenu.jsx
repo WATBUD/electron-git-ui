@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types, no-unused-vars */
 import React, { useRef, useState } from 'react'
-import { Tag, GitBranch, Copy, ChevronRight, RotateCcw } from 'lucide-react'
+import { Tag, GitBranch, Copy, ChevronRight, RotateCcw, GitCompare } from 'lucide-react'
 import { TagSubmenu } from '../Tag/TagSubmenu'
 import { ResetSubmenu } from './ResetSubmenu'
 import { useClickOutsideMenu, copyToClipboard } from '../BranchList/menuShared'
@@ -19,6 +19,8 @@ export const CommitActionMenu = ({
   onCheckoutCommit,
   onCreateTag,
   onClose,
+  onCompareToCommit,
+  currentBranch,
   localOnlyTags = [],
   remoteOnlyTags = [],
   divergentTags = [],
@@ -109,6 +111,23 @@ export const CommitActionMenu = ({
             <Copy size={14} />
             <span>Copy Hash</span>
           </button>
+
+          {onCompareToCommit && (
+            <button
+              className={branchStyles.contextMenuItem}
+              onClick={() => {
+                onCompareToCommit?.(commit)
+                onClose?.()
+              }}
+              onMouseEnter={() => {
+                setHoveredTag(null)
+                setShowReset(false)
+              }}
+            >
+              <GitCompare size={14} />
+              <span>Compare {currentBranch || 'HEAD'} → this commit</span>
+            </button>
+          )}
 
           {onRequestResetToCommit && (
             <button

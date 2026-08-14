@@ -168,6 +168,9 @@ const BranchList = ({
   const [branchCommits, setBranchCommits] = useState({})
   const [loadingCommits, setLoadingCommits] = useState(false)
   const [viewingCommit, setViewingCommit] = useState(null)
+  // When set, the diff modal shows the cumulative range diff from this ref to
+  // the viewed commit instead of that commit's own diff. { ref, label }
+  const [compareFrom, setCompareFrom] = useState(null)
 
   // Switching projects (e.g. via keyboard shortcut) swaps the `branches` prop
   // but leaves this component mounted, so the cached per-branch commit lists and
@@ -181,6 +184,7 @@ const BranchList = ({
     setBranchCommits({})
     setExpandedBranches(new Set())
     setViewingCommit(null)
+    setCompareFrom(null)
   }, [repoPath])
   const [dirtyWarning, setDirtyWarning] = useState(false)
   const dispatch = useDispatch()
@@ -189,11 +193,24 @@ const BranchList = ({
   const { options: commitDisplay, toggle: toggleCommitDisplay } = useCommitDisplayOptions()
 
   const handleViewCommit = useCallback((commit) => {
+    setCompareFrom(null)
     setViewingCommit(commit)
   }, [])
 
+  // Open the diff modal comparing the current branch tip (HEAD) → this commit,
+  // i.e. every change accumulated between where we are now and that commit.
+  const handleCompareToCommit = useCallback(
+    (commit) => {
+      if (!commit) return
+      setCompareFrom({ ref: 'HEAD', label: currentBranch || 'HEAD' })
+      setViewingCommit(commit)
+    },
+    [currentBranch]
+  )
+
   const closeCommitDiffModal = useCallback(() => {
     setViewingCommit(null)
+    setCompareFrom(null)
   }, [])
 
   // Memoized branch prefix
@@ -1137,7 +1154,13 @@ const BranchList = ({
         onSubmit={submitCreateTag}
       />
 
-      <CommitDiffModal commit={viewingCommit} onClose={closeCommitDiffModal} />
+      <CommitDiffModal
+        commit={viewingCommit}
+        compare={
+          compareFrom ? { fromRef: compareFrom.ref, fromLabel: compareFrom.label } : undefined
+        }
+        onClose={closeCommitDiffModal}
+      />
 
       <BranchContextMenuController
         ref={contextMenuRef}
@@ -1155,6 +1178,7 @@ const BranchList = ({
         onRequestResetToCommit={onRequestResetToCommit}
         onPushTag={onPushTag}
         onRefreshCommits={handleRefreshCommits}
+        onCompareToCommit={handleCompareToCommit}
       />
     </div>
   )

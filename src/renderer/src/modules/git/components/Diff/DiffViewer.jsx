@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FolderOpen } from 'lucide-react'
 import { diffLineKind } from './parseDiff'
+import { isImageFile } from '../FileStatus/binaryFiles'
 import styles from './Diff.module.css'
 
 const MIN_LIST_WIDTH = 160
@@ -24,7 +25,10 @@ export const DiffViewer = ({
   fileMeta = [],
   selectedPath: controlledPath,
   onSelectPath,
-  defaultListWidth = DEFAULT_LIST_WIDTH
+  defaultListWidth = DEFAULT_LIST_WIDTH,
+  // git ref to load image previews from (e.g. a commit hash or HEAD). When set,
+  // selecting an image file renders the picture instead of "Binary files differ".
+  previewRef
 }) => {
   const [listWidth, setListWidth] = useState(defaultListWidth)
   const [internalPath, setInternalPath] = useState(null)
@@ -108,6 +112,33 @@ export const DiffViewer = ({
 
   const selectedFile = parsedFiles.find((f) => f.path === selectedPath) || null
 
+  // Lazily load the selected image's preview from `previewRef` (one at a time,
+  // only when an image row is selected — the file list itself loads nothing).
+  const [imgPreview, setImgPreview] = useState({ status: 'idle', url: null })
+  const isSelImage = !!selectedPath && isImageFile(selectedPath)
+  useEffect(() => {
+    if (!isSelImage || !previewRef || !window.git?.getBlobImage) {
+      setImgPreview({ status: 'idle', url: null })
+      return
+    }
+    let cancelled = false
+    setImgPreview({ status: 'loading', url: null })
+    window.git
+      .getBlobImage(previewRef, selectedPath)
+      .then((res) => {
+        if (cancelled) return
+        if (res?.success && res.data?.dataUrl) {
+          setImgPreview({ status: 'ready', url: res.data.dataUrl })
+        } else {
+          setImgPreview({ status: 'error', url: null })
+        }
+      })
+      .catch(() => !cancelled && setImgPreview({ status: 'error', url: null }))
+    return () => {
+      cancelled = true
+    }
+  }, [isSelImage, previewRef, selectedPath])
+
   return (
     <div className={styles.split} ref={splitRef}>
       <div className={styles.fileList} style={{ width: `${listWidth}px` }}>
@@ -144,7 +175,15 @@ export const DiffViewer = ({
         aria-orientation="vertical"
       />
       <div className={styles.detail}>
-        {selectedFile ? (
+        {isSelImage && previewRef && imgPreview.status !== 'error' ? (
+          <div className={styles.imagePreview}>
+            {imgPreview.status === 'ready' ? (
+              <img src={imgPreview.url} alt={selectedPath} className={styles.imagePreviewImg} />
+            ) : (
+              <div className={styles.empty}>Loading image…</div>
+            )}
+          </div>
+        ) : selectedFile ? (
           <pre className={styles.content}>
             {selectedFile.lines.map((line, idx) => (
               <div key={idx} className={styles[diffLineKind(line)]}>

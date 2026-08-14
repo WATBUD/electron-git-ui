@@ -202,6 +202,29 @@ ${fileContent
     return fail('Could not load image preview')
   })
 
+  // Return an image blob AT a specific git ref (commit/branch/HEAD) as a data
+  // URL, for previewing images inside a commit/range diff. Loads lazily — the
+  // diff view only calls this for the one file the user has selected.
+  ipcMain.handle('git:getBlobImage', async (_, ref, file) => {
+    if (!currentRepoPath) return fail('No repository selected')
+    if (!ref || !file) return fail('ref and file are required')
+    const clean = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+    const ext = clean.split('.').pop()?.toLowerCase()
+    const mime = ext && IMAGE_MIME_BY_EXT[ext]
+    if (!mime) return fail('Not a previewable image')
+    try {
+      const { stdout } = await execFileAsync('git', ['show', `${ref}:${clean}`], {
+        cwd: currentRepoPath,
+        encoding: 'buffer',
+        maxBuffer: 50 * 1024 * 1024
+      })
+      if (!stdout || stdout.length === 0) return fail('Empty blob')
+      return success({ dataUrl: `data:${mime};base64,${stdout.toString('base64')}` })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
   // Return on-disk sizes (bytes) for a batch of files so the list can show
   // per-item file sizes. Prefers the working-tree copy; falls back to the
   // git object store (`cat-file -s`) for staged-only or deleted files.
@@ -1097,6 +1120,50 @@ ${fileContent
       return success({ files, diff: diffOut })
     } catch (error) {
       console.error('Error getting commit diff:', error)
+      return fail(error.message)
+    }
+  })
+
+  // Cumulative diff between two refs — e.g. the current branch tip (HEAD) and a
+  // commit the user clicked. `git diff <from> <to>` shows everything needed to
+  // go from `from` to `to`, i.e. all changes accumulated across the commits in
+  // between.
+  ipcMain.handle('git:getRangeDiff', async (_, fromRef, toRef) => {
+    if (!currentRepoPath) {
+      return fail('No repository selected')
+    }
+    if (!fromRef || !toRef) {
+      return fail('Both refs are required')
+    }
+    try {
+      const nameStatusCmd = `git diff --name-status ${fromRef} ${toRef}`
+      commandHistory.push(nameStatusCmd)
+      const { stdout: nameStatusOut } = await execAsync(nameStatusCmd, {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
+      const files = nameStatusOut
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split('\t')
+          const status = parts[0]
+          const file = parts[parts.length - 1]
+          const oldFile = status?.startsWith('R') || status?.startsWith('C') ? parts[1] : null
+          return { status, file, oldFile }
+        })
+
+      const diffCmd = `git diff ${fromRef} ${toRef}`
+      commandHistory.push(diffCmd)
+      const { stdout: diffOut } = await execAsync(diffCmd, {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
+
+      return success({ files, diff: diffOut })
+    } catch (error) {
+      console.error('Error getting range diff:', error)
       return fail(error.message)
     }
   })

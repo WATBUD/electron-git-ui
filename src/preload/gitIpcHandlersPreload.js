@@ -44,10 +44,12 @@ contextBridge.exposeInMainWorld('git', {
   getBranchCommits: (branchName, limit) =>
     ipcRenderer.invoke('git:getBranchCommits', branchName, limit),
   getCommitDiff: (commitHash) => ipcRenderer.invoke('git:getCommitDiff', commitHash),
+  getRangeDiff: (fromRef, toRef) => ipcRenderer.invoke('git:getRangeDiff', fromRef, toRef),
   getCachedDiff: () => ipcRenderer.invoke('git:getCachedDiff'),
   getFileDiff: (file, isStaged) => ipcRenderer.invoke('git:getFileDiff', file, isStaged),
   getImagePreview: (file, isStaged) => ipcRenderer.invoke('git:getImagePreview', file, isStaged),
   getFileSizes: (files) => ipcRenderer.invoke('git:getFileSizes', files),
+  getBlobImage: (ref, file) => ipcRenderer.invoke('git:getBlobImage', ref, file),
   exec: (rawCommand) => ipcRenderer.invoke('git:exec', rawCommand),
   stashList: () => ipcRenderer.invoke('git:stashList'),
   stashPush: (message, files, keepIndex) =>
