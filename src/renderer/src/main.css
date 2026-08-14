@@ -3,9 +3,12 @@
   --bg-secondary: #16162a;
   --text-color: #e2e8f0;
   --text-hover: #ffffff;
+  --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: #a0aec0;
   --text-muted: #718096;
   --border-color: #2d3748;
+  --border-color-light: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(255, 255, 255, 0.08);
   --primary-color: #4f46e5;
   --primary-hover: #4338ca;
   --success-color: #48bb78;

@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { Copy } from 'lucide-react'
+import { Copy, ExternalLink, X } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { clearCommandHistory, fetchCommandHistory } from '../../store/git/gitThunks'
 import styles from './GitHistory.module.css'
+
+// True when this component is rendered inside the popped-out history window.
+const IS_POPOUT =
+  typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('view') === 'history'
 
 export const GitHistory = () => {
   const dispatch = useDispatch()
@@ -13,10 +18,21 @@ export const GitHistory = () => {
   const previousHistoryIndex = useSelector((state) => state.git.previousHistoryIndex)
   const [copiedIndex, setCopiedIndex] = useState(null)
 
-  // Load history when component mounts
+  // Load history on mount, and keep in sync when the other window changes it
+  // (e.g. main window runs a command while this is a popped-out window).
   useEffect(() => {
     dispatch(fetchCommandHistory())
+    const unsub = window.git?.onCommandHistoryChanged?.(() => dispatch(fetchCommandHistory()))
+    return unsub
   }, [dispatch])
+
+  const handlePopOut = () => {
+    window.git?.openHistoryWindow?.()
+  }
+
+  const handleClosePopout = () => {
+    window.git?.closeHistoryWindow?.()
+  }
 
   const copyToClipboard = (command, index) => {
     navigator.clipboard.writeText(command).then(() => {
@@ -31,13 +47,37 @@ export const GitHistory = () => {
 
   return (
     <div className={styles.historyContainer}>
-      <div className={styles.historyHeader}>
+      <div
+        className={styles.historyHeader}
+        // In the frameless popout, the header doubles as the drag region.
+        style={IS_POPOUT ? { WebkitAppRegion: 'drag' } : undefined}
+      >
         <button
           onClick={handleClearHistory}
           className={styles.clearHistoryBtn}
+          style={IS_POPOUT ? { WebkitAppRegion: 'no-drag' } : undefined}
         >
           Clear History
         </button>
+        {!IS_POPOUT && window.git?.openHistoryWindow && (
+          <button
+            onClick={handlePopOut}
+            className={styles.popoutBtn}
+            title="Open in separate window"
+          >
+            <ExternalLink size={14} />
+          </button>
+        )}
+        {IS_POPOUT && (
+          <button
+            onClick={handleClosePopout}
+            className={styles.closePopoutBtn}
+            style={{ WebkitAppRegion: 'no-drag' }}
+            title="Close and dock back to main window"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
       <div className={styles.commandList}>
         {commandHistory.length === 0 ? (

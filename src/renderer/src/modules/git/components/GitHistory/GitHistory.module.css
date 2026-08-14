@@ -7,12 +7,55 @@
 
 .historyHeader {
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 6px 12px;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
   background-color: rgba(0, 0, 0, 0.2);
+}
+
+.popoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.popoutBtn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.closePopoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closePopoutBtn:hover {
+  background-color: rgba(245, 101, 101, 0.15);
+  border-color: rgba(245, 101, 101, 0.6);
+  color: #f56565;
 }
 
 .clearHistoryBtn {

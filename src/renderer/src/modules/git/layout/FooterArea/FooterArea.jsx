@@ -8,6 +8,21 @@ export const FooterArea = () => {
   const [activeCommandTab, setActiveCommandTab] = useState('history')
   const [height, setHeight] = useState(200)
   const [isResizing, setIsResizing] = useState(false)
+  // While the command history is popped out into its own window, this bottom
+  // panel disappears; it returns when that window is closed (its X).
+  const [historyPoppedOut, setHistoryPoppedOut] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    window.git?.isHistoryPopoutOpen?.().then((r) => {
+      if (mounted) setHistoryPoppedOut(!!r?.open)
+    })
+    const unsub = window.git?.onHistoryPopoutChanged?.((open) => setHistoryPoppedOut(!!open))
+    return () => {
+      mounted = false
+      unsub?.()
+    }
+  }, [])
   const footerRef = useRef(null)
   const startYRef = useRef(0)
   const startHeightRef = useRef(0)
@@ -63,6 +78,9 @@ export const FooterArea = () => {
       }
     }
   }, [isResizing, updateHeight])
+
+  // Command history is undocked into its own window — hide the whole panel.
+  if (historyPoppedOut) return null
 
   return (
     <div className={styles.footerArea} ref={footerRef} style={{ height: `${height}px` }}>

@@ -4,6 +4,66 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { setupGitHandlers } from './gitIpcHandlers'
 
 let mainWindow = null
+let historyWindow = null
+
+// Tell the docked (non-popout) windows whether the history popout is open, so
+// the main window can hide its bottom history panel while it's undocked.
+function notifyPopoutState(open) {
+  BrowserWindow.getAllWindows().forEach((w) => {
+    if (!w.isHistoryPopout && !w.isDestroyed() && !w.webContents.isDestroyed()) {
+      w.webContents.send('history:popoutState', open)
+    }
+  })
+}
+
+// Separate, always-on-top-optional window that renders ONLY the command history
+// view (renderer detects `?view=history`). Mirrors DevTools' "open in separate
+// window". Reuses the existing window if already open.
+function createHistoryWindow() {
+  if (historyWindow && !historyWindow.isDestroyed()) {
+    historyWindow.show()
+    historyWindow.focus()
+    notifyPopoutState(true)
+    return
+  }
+  historyWindow = new BrowserWindow({
+    width: 640,
+    height: 760,
+    minWidth: 360,
+    minHeight: 300,
+    show: true,
+    autoHideMenuBar: true,
+    backgroundColor: '#14141c',
+    title: 'Command History',
+    icon: appIcon,
+    // Fully frameless — no native title bar, no traffic lights, no spacer.
+    frame: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false
+    }
+  })
+  // Flag used by the command-history broadcast to target only popout windows.
+  historyWindow.isHistoryPopout = true
+
+  if (is.dev && process.env.ELECTRON_RENDERER_URL) {
+    historyWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}?view=history`)
+  } else {
+    historyWindow.loadFile(join(__dirname, '../renderer/index.html'), { search: 'view=history' })
+  }
+
+  historyWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+    return { action: 'deny' }
+  })
+  historyWindow.webContents.on('did-finish-load', () => notifyPopoutState(true))
+  historyWindow.on('closed', () => {
+    historyWindow = null
+    notifyPopoutState(false)
+  })
+}
 
 // 單一實例鎖定
 const gotTheLock = app.requestSingleInstanceLock()
@@ -58,9 +118,7 @@ function createWindow() {
 
     icon:
       process.platform === 'win32'
-        ? nativeImage.createFromPath(
-            join(__dirname, '../../assets/appIcon.ico')
-          )
+        ? nativeImage.createFromPath(join(__dirname, '../../assets/appIcon.ico'))
         : appIcon,
 
     ...(isMac
@@ -117,11 +175,7 @@ function createWindow() {
 
   // Focus Event
   mainWindow.on('focus', () => {
-    if (
-      mainWindow &&
-      !mainWindow.isDestroyed() &&
-      !mainWindow.webContents.isDestroyed()
-    ) {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
       mainWindow.webContents.send('app:window-focus')
     }
   })
@@ -139,8 +193,7 @@ function createWindow() {
     if (
       message.includes('Autofill.enable') ||
       message.includes('Autofill.setAddresses') ||
-      (sourceId.includes('devtools_compatibility.js') &&
-        message.includes('length'))
+      (sourceId.includes('devtools_compatibility.js') && message.includes('length'))
     ) {
       event.preventDefault()
     }
@@ -154,10 +207,7 @@ function createWindow() {
 
   // Development
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
-    console.log(
-      'Loading development URL:',
-      process.env.ELECTRON_RENDERER_URL
-    )
+    console.log('Loading development URL:', process.env.ELECTRON_RENDERER_URL)
 
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {
@@ -178,6 +228,24 @@ app.whenReady().then(() => {
 
   ipcMain.on('ping', () => {
     console.log('pong')
+  })
+
+  ipcMain.handle('window:openHistory', () => {
+    createHistoryWindow()
+    return { success: true }
+  })
+
+  // Lets a (re)loaded main window learn the current popout state, so its footer
+  // stays hidden if the popout is already open.
+  ipcMain.handle('window:isHistoryPopoutOpen', () => {
+    return { open: !!(historyWindow && !historyWindow.isDestroyed()) }
+  })
+
+  // Custom ✕ button inside the frameless popout closes it (which docks the
+  // history back into the main window via the 'closed' handler).
+  ipcMain.handle('window:closeHistory', () => {
+    if (historyWindow && !historyWindow.isDestroyed()) historyWindow.close()
+    return { success: true }
   })
 
   setupGitHandlers()

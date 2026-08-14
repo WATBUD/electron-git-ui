@@ -20,6 +20,26 @@ contextBridge.exposeInMainWorld('git', {
   deleteRemoteBranch: (branchName) => ipcRenderer.invoke('git:deleteRemoteBranch', branchName),
   getCommandHistory: () => ipcRenderer.invoke('git:getCommandHistory'),
   clearCommandHistory: () => ipcRenderer.invoke('git:clearCommandHistory'),
+  // Open the command-history view in its own window (DevTools-style undock).
+  openHistoryWindow: () => ipcRenderer.invoke('window:openHistory'),
+  // Whether the popout window is currently open (for initial footer state).
+  isHistoryPopoutOpen: () => ipcRenderer.invoke('window:isHistoryPopoutOpen'),
+  // Close the popout window (from its custom ✕ button).
+  closeHistoryWindow: () => ipcRenderer.invoke('window:closeHistory'),
+  // Subscribe to popout open/close so the main window can hide/show its footer.
+  // Callback receives a boolean `open`. Returns an unsubscribe fn.
+  onHistoryPopoutChanged: (callback) => {
+    const listener = (_e, open) => callback(open)
+    ipcRenderer.on('history:popoutState', listener)
+    return () => ipcRenderer.removeListener('history:popoutState', listener)
+  },
+  // Subscribe to history-changed pushes (for a popped-out history window).
+  // Returns an unsubscribe fn.
+  onCommandHistoryChanged: (callback) => {
+    const listener = () => callback()
+    ipcRenderer.on('git:commandHistoryChanged', listener)
+    return () => ipcRenderer.removeListener('git:commandHistoryChanged', listener)
+  },
   fetch: (prune) => ipcRenderer.invoke('git:fetch', prune),
   branchPull: () => ipcRenderer.invoke('git:branchPull'),
   branchPush: (force) => ipcRenderer.invoke('git:branchPush', force),

@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { ipcMain, dialog, shell } from 'electron'
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
@@ -766,12 +766,32 @@ ${fileContent
     }
   })
 
-  ipcMain.handle('git:getCommandHistory', () => {
+  // Notify pop-out history windows (only) that the history changed, so they
+  // re-fetch. Targeting only popouts — never the main window — avoids a
+  // fetch → broadcast → fetch feedback loop between windows.
+  const notifyHistoryPopouts = (excludeSenderId) => {
+    BrowserWindow.getAllWindows().forEach((w) => {
+      if (
+        w.isHistoryPopout &&
+        !w.isDestroyed() &&
+        !w.webContents.isDestroyed() &&
+        w.webContents.id !== excludeSenderId
+      ) {
+        w.webContents.send('git:commandHistoryChanged')
+      }
+    })
+  }
+
+  ipcMain.handle('git:getCommandHistory', (event) => {
+    // The main window refreshes history after every op — piggyback on that to
+    // keep any open popout in sync.
+    notifyHistoryPopouts(event.sender.id)
     return success(commandHistory)
   })
 
-  ipcMain.handle('git:clearCommandHistory', () => {
+  ipcMain.handle('git:clearCommandHistory', (event) => {
     commandHistory = []
+    notifyHistoryPopouts(event.sender.id)
     return success()
   })
 

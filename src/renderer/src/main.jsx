@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './modules/git/store'
 import { MainPageGit } from './modules/git/pages/main-page/main-page-git'
+import { GitHistory } from './modules/git/components/GitHistory/GitHistory'
 
 import { App as AntdApp } from 'antd'
 import 'antd/dist/reset.css'
@@ -65,10 +66,20 @@ const App = () => {
   )
 }
 
+// A separate BrowserWindow loads this same bundle with `?view=history` to show
+// only the command-history panel (DevTools-style undock).
+const isHistoryPopout = new URLSearchParams(window.location.search).get('view') === 'history'
+
+const HistoryPopout = () => (
+  <div style={{ height: '100vh', overflow: 'auto' }}>
+    <GitHistory />
+  </div>
+)
+
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <App />
+      <AntdApp>{isHistoryPopout ? <HistoryPopout /> : <App />}</AntdApp>
     </Provider>
   </React.StrictMode>
 )
