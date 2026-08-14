@@ -351,7 +351,9 @@ export const getCommitDiff = createAsyncThunk(
       'getCommitDiff'
     )
 
-    await dispatch(fetchCommandHistory())
+    // Refresh command history in the background — don't block the diff from
+    // rendering on this extra IPC round-trip.
+    dispatch(fetchCommandHistory())
     return result
   }
 )
@@ -371,7 +373,7 @@ export const getRangeDiff = createAsyncThunk(
       'getRangeDiff'
     )
 
-    await dispatch(fetchCommandHistory())
+    dispatch(fetchCommandHistory())
     return result
   }
 )

@@ -1090,11 +1090,19 @@ ${fileContent
       // UI showed an empty file list for merge commits. Harmless for normal
       // (single-parent) commits.
       const nameStatusCmd = `git show --first-parent -m --name-status --pretty=format: ${commitHash}`
+      // Full diff output for display. Same --first-parent -m so a merge shows
+      // its actual introduced changes instead of an empty combined diff.
+      const diffCmd = `git show --first-parent -m --format=fuller ${commitHash}`
       commandHistory.push(nameStatusCmd)
-      const { stdout: nameStatusOut } = await execAsync(nameStatusCmd, {
-        cwd: currentRepoPath,
-        ...execOptions
-      })
+      commandHistory.push(diffCmd)
+
+      // Run both git invocations concurrently — they're independent, so this
+      // roughly halves the time to open the diff.
+      const [{ stdout: nameStatusOut }, { stdout: diffOut }] = await Promise.all([
+        execAsync(nameStatusCmd, { cwd: currentRepoPath, ...execOptions }),
+        execAsync(diffCmd, { cwd: currentRepoPath, ...execOptions })
+      ])
+
       const files = nameStatusOut
         .split('\n')
         .map((line) => line.trim())
@@ -1107,15 +1115,6 @@ ${fileContent
           const oldFile = status?.startsWith('R') || status?.startsWith('C') ? parts[1] : null
           return { status, file, oldFile }
         })
-
-      // Full diff output for display. Same --first-parent -m so a merge shows
-      // its actual introduced changes instead of an empty combined diff.
-      const diffCmd = `git show --first-parent -m --format=fuller ${commitHash}`
-      commandHistory.push(diffCmd)
-      const { stdout: diffOut } = await execAsync(diffCmd, {
-        cwd: currentRepoPath,
-        ...execOptions
-      })
 
       return success({ files, diff: diffOut })
     } catch (error) {
@@ -1137,11 +1136,15 @@ ${fileContent
     }
     try {
       const nameStatusCmd = `git diff --name-status ${fromRef} ${toRef}`
+      const diffCmd = `git diff ${fromRef} ${toRef}`
       commandHistory.push(nameStatusCmd)
-      const { stdout: nameStatusOut } = await execAsync(nameStatusCmd, {
-        cwd: currentRepoPath,
-        ...execOptions
-      })
+      commandHistory.push(diffCmd)
+
+      const [{ stdout: nameStatusOut }, { stdout: diffOut }] = await Promise.all([
+        execAsync(nameStatusCmd, { cwd: currentRepoPath, ...execOptions }),
+        execAsync(diffCmd, { cwd: currentRepoPath, ...execOptions })
+      ])
+
       const files = nameStatusOut
         .split('\n')
         .map((line) => line.trim())
@@ -1153,13 +1156,6 @@ ${fileContent
           const oldFile = status?.startsWith('R') || status?.startsWith('C') ? parts[1] : null
           return { status, file, oldFile }
         })
-
-      const diffCmd = `git diff ${fromRef} ${toRef}`
-      commandHistory.push(diffCmd)
-      const { stdout: diffOut } = await execAsync(diffCmd, {
-        cwd: currentRepoPath,
-        ...execOptions
-      })
 
       return success({ files, diff: diffOut })
     } catch (error) {
