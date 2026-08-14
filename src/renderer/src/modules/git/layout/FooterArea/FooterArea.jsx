@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import styles from './FooterArea.module.css'
 import { GitHistory } from '../../components/GitHistory/GitHistory'
 
 export const FooterArea = () => {
   const gitState = useSelector((state) => state.git)
+  const showFooter = useSelector((state) => state.git.showFooter)
   const [activeCommandTab, setActiveCommandTab] = useState('history')
   const [height, setHeight] = useState(200)
   const [isResizing, setIsResizing] = useState(false)
   // While the command history is popped out into its own window, this bottom
   // panel disappears; it returns when that window is closed (its X).
   const [historyPoppedOut, setHistoryPoppedOut] = useState(false)
+  const prevShowFooterRef = useRef(showFooter)
 
   useEffect(() => {
     let mounted = true
@@ -23,6 +25,18 @@ export const FooterArea = () => {
       unsub?.()
     }
   }, [])
+
+  // The "History" toggle stays ON while popped out (history is active, just in
+  // its own window). Turning it OFF from the toolbar closes the popout and
+  // hides history entirely. Closing the popout via its ✕ leaves the toggle ON,
+  // so the panel simply docks back into the footer.
+  useEffect(() => {
+    const was = prevShowFooterRef.current
+    prevShowFooterRef.current = showFooter
+    if (was && !showFooter && historyPoppedOut) {
+      window.git?.closeHistoryWindow?.()
+    }
+  }, [showFooter, historyPoppedOut])
   const footerRef = useRef(null)
   const startYRef = useRef(0)
   const startHeightRef = useRef(0)
