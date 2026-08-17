@@ -417,6 +417,15 @@ const gitSlice = createSlice({
       })
       .addCase(loadBranches.rejected, (state, action) => {
         state.loadingMessage = ''
+        // Repo folder is gone — drop the active repo so the branch view hides
+        // and the app falls back to project selection instead of erroring on it.
+        if (typeof action.payload === 'string' && action.payload.includes('folder not found')) {
+          state.repoPath = null
+          state.branches = []
+          state.remoteBranches = []
+          state.currentBranch = ''
+          state.worktrees = []
+        }
         state.error = action.payload
       })
       // listWorktrees (silent — never touches loadingMessage/error so it can
@@ -607,6 +616,14 @@ const gitSlice = createSlice({
       })
       .addCase(openRepository.rejected, (state, action) => {
         state.loadingMessage = ''
+        // Missing folder — never switch into it; keep the branch view hidden.
+        if (typeof action.payload === 'string' && action.payload.includes('folder not found')) {
+          state.repoPath = null
+          state.branches = []
+          state.remoteBranches = []
+          state.currentBranch = ''
+          state.worktrees = []
+        }
         state.error = action.payload
       })
       .addCase(getCachedDiff.pending, (state) => {

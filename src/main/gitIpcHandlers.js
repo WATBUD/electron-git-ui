@@ -3,6 +3,7 @@ import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
+import { existsSync } from 'fs'
 
 const execAsync = promisify(exec)
 const execFileAsync = promisify(execFile)
@@ -48,6 +49,19 @@ let currentRepoPath = null
 let commandHistory = []
 const success = (data, message = 'ok') => ({ success: true, data, message })
 const fail = (message) => ({ success: false, data: null, message })
+
+// Returns a user-facing error string when there's no usable repo — none
+// selected, or the folder was deleted/moved after opening — else null. Clears a
+// stale path so git never runs in a missing cwd (which throws the cryptic
+// "spawn /bin/sh ENOENT"). Use at the top of repo-scoped handlers.
+const repoUnavailable = () => {
+  if (!currentRepoPath) return 'No repository selected'
+  if (!existsSync(currentRepoPath)) {
+    currentRepoPath = null
+    return 'Repository folder not found'
+  }
+  return null
+}
 export function setupGitHandlers() {
   ipcMain.handle('git:exec', async (_, rawCommand) => {
     if (!currentRepoPath) {
@@ -269,6 +283,12 @@ ${fileContent
   })
 
   ipcMain.handle('git:openRepository', async (_, path) => {
+    // Guard first: running git in a non-existent cwd fails with a cryptic
+    // "spawn /bin/sh ENOENT" instead of a useful message.
+    if (!path || !existsSync(path)) {
+      currentRepoPath = null
+      return fail('Repository folder not found: ' + (path || '(none)'))
+    }
     try {
       currentRepoPath = path
       // Verify if it's a git repository
@@ -361,6 +381,14 @@ ${fileContent
   ipcMain.handle('git:loadBranches', async () => {
     if (!currentRepoPath) {
       return fail('No repository selected')
+    }
+    // The repo folder may have been deleted/moved after it was opened; running
+    // git there yields a cryptic "spawn /bin/sh ENOENT". Detect it and clear
+    // the stale path so the UI can fall back to repo selection.
+    if (!existsSync(currentRepoPath)) {
+      const missing = currentRepoPath
+      currentRepoPath = null
+      return fail('Repository folder not found: ' + missing)
     }
     try {
       const command = 'git branch -vv'
@@ -530,9 +558,8 @@ ${fileContent
   // Each worktree is a separate working directory checked out on its own
   // branch; switching to one is just opening that folder as the repo path.
   ipcMain.handle('git:listWorktrees', async () => {
-    if (!currentRepoPath) {
-      return fail('No repository selected')
-    }
+    const repoErr = repoUnavailable()
+    if (repoErr) return fail(repoErr)
     try {
       const command = 'git worktree list --porcelain'
       commandHistory.push(command)
@@ -861,9 +888,8 @@ ${fileContent
   })
 
   ipcMain.handle('git:loadTags', async () => {
-    if (!currentRepoPath) {
-      return fail('No repository selected')
-    }
+    const repoErr = repoUnavailable()
+    if (repoErr) return fail(repoErr)
     try {
       // For divergence detection we compare the actual REF VALUE (what the
       // tag points to directly) — that's what `git fetch` checks when it
@@ -1207,9 +1233,8 @@ ${fileContent
   })
 
   ipcMain.handle('git:getStatus', async () => {
-    if (!currentRepoPath) {
-      return fail('No repository selected')
-    }
+    const repoErr = repoUnavailable()
+    if (repoErr) return fail(repoErr)
     try {
       // Return non-ASCII paths as UTF-8 instead of Git's quoted octal form.
       const command = 'git -c core.quotepath=false status --porcelain'
@@ -1648,9 +1673,8 @@ ${fileContent
   })
 
   ipcMain.handle('git:checkMergeInProgress', async () => {
-    if (!currentRepoPath) {
-      return fail('No repository selected')
-    }
+    const repoErr = repoUnavailable()
+    if (repoErr) return fail(repoErr)
     try {
       // Check for .git/MERGE_HEAD file
       const { stdout = '', stderr } = await execAsync('git rev-parse -q --verify MERGE_HEAD', {

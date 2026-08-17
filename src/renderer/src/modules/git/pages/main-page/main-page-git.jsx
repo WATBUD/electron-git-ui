@@ -119,6 +119,14 @@ export const MainPageGit = () => {
     }
   }, [hasMergeInProgress, dispatch])
 
+  // A missing repo folder can't show branches/files/etc — always fall back to
+  // the Projects tab so the user can pick another repo.
+  useEffect(() => {
+    if (typeof error === 'string' && error.includes('folder not found')) {
+      setActiveTab(GIT_TABS.PROJECTS)
+    }
+  }, [error])
+
   useEffect(() => {
     // Debug: Check if window.git is available
     console.log('window.git available:', !!window.git)

@@ -16,8 +16,12 @@ const ProjectList = ({ onProjectSelect }) => {
       onProjectSelect?.()
       return
     }
-    dispatch(openRepository(path)).then(() => {
-      onProjectSelect?.()
+    dispatch(openRepository(path)).then((result) => {
+      // Only switch into the Branches tab when the repo actually opened — a
+      // missing/invalid folder rejects, and we should stay on the project list.
+      if (openRepository.fulfilled.match(result)) {
+        onProjectSelect?.()
+      }
     })
   }
 
