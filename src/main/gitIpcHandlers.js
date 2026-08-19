@@ -1,12 +1,75 @@
 /* eslint-disable no-unused-vars */
-import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
+import { app, ipcMain, dialog, shell, BrowserWindow, safeStorage } from 'electron'
 import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { basename, isAbsolute, join } from 'path'
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 
 const execAsync = promisify(exec)
 const execFileAsync = promisify(execFile)
+let pendingGithubDevice = null
+const GITHUB_OAUTH_CLIENT_ID = 'Ov23liKL5YCgq2hUwvIA'
+
+const githubTokenPath = () => join(app.getPath('userData'), 'github-auth.bin')
+const readGithubToken = () => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return null
+    return safeStorage.decryptString(readFileSync(githubTokenPath()))
+  } catch {
+    return null
+  }
+}
+const saveGithubToken = (token) => {
+  if (!safeStorage.isEncryptionAvailable()) throw new Error('系統安全儲存空間無法使用。')
+  writeFileSync(githubTokenPath(), safeStorage.encryptString(token))
+}
+const githubRequest = async (url, token, options = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'git-ui',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers
+    }
+  })
+  return response
+}
+
+const ensureGitAuthorFromGithub = async (token) => {
+  const readGlobal = async (key) => {
+    try {
+      const { stdout } = await execFileAsync('git', ['config', '--global', '--get', key])
+      return stdout.trim()
+    } catch {
+      return ''
+    }
+  }
+  const [existingName, existingEmail] = await Promise.all([
+    readGlobal('user.name'),
+    readGlobal('user.email')
+  ])
+  if (existingName && existingEmail) return { name: existingName, email: existingEmail, created: false }
+
+  const profileResponse = await githubRequest('https://api.github.com/user', token)
+  if (!profileResponse.ok) throw new Error('無法讀取 GitHub 使用者資料。')
+  const profile = await profileResponse.json()
+  let email = profile.email || ''
+  try {
+    const emailsResponse = await githubRequest('https://api.github.com/user/emails', token)
+    if (emailsResponse.ok) {
+      const emails = await emailsResponse.json()
+      email = emails.find((item) => item.primary && item.verified)?.email || email
+    }
+  } catch {
+    // A private email is normal; use GitHub's account-specific noreply address.
+  }
+  const name = existingName || profile.name || profile.login
+  email = existingEmail || email || `${profile.id}+${profile.login}@users.noreply.github.com`
+  if (!existingName) await execFileAsync('git', ['config', '--global', 'user.name', name])
+  if (!existingEmail) await execFileAsync('git', ['config', '--global', 'user.email', email])
+  return { name, email, created: true }
+}
 
 // Extension → MIME type for inline image previews of binary blobs.
 const IMAGE_MIME_BY_EXT = {
@@ -22,6 +85,26 @@ const IMAGE_MIME_BY_EXT = {
 
 // Increase maxBuffer to handle large git outputs (50MB)
 const execOptions = { maxBuffer: 50 * 1024 * 1024 }
+
+// Repository validation does not need a shell. On Windows, running it through
+// cmd.exe can produce Big5/legacy-code-page diagnostics which Node decodes as
+// UTF-8, resulting in mojibake when Git is missing from PATH.
+const verifyGitRepository = async (cwd) => {
+  try {
+    const { stdout } = await execFileAsync('git', ['rev-parse', '--is-inside-work-tree'], {
+      cwd,
+      ...execOptions
+    })
+    if (stdout.trim() !== 'true') {
+      throw new Error('所選資料夾不是 Git 儲存庫。')
+    }
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      throw new Error('找不到 Git。請先安裝 Git，並確認 git 已加入系統 PATH。')
+    }
+    throw error
+  }
+}
 
 // Helper function to execute git commands with proper options
 const execGit = async (command, cwd = currentRepoPath) => {
@@ -294,14 +377,14 @@ ${fileContent
       // Verify if it's a git repository
       const command = 'git rev-parse --is-inside-work-tree'
       commandHistory.push(command)
-      await execAsync(command, { cwd: currentRepoPath })
+      await verifyGitRepository(currentRepoPath)
       return success({
         repoPath: currentRepoPath,
         command: command
       })
     } catch (error) {
       currentRepoPath = null
-      return fail('Not a valid git repository: ' + error.message)
+      return fail(error.message || '無法開啟 Git 儲存庫。')
     }
   })
 
@@ -358,7 +441,7 @@ ${fileContent
         // Verify if it's a git repository
         const command = 'git rev-parse --is-inside-work-tree'
         commandHistory.push(command)
-        await execAsync(command, { cwd: currentRepoPath })
+        await verifyGitRepository(currentRepoPath)
         return success({
           repoPath: currentRepoPath,
           command: command
@@ -374,6 +457,170 @@ ${fileContent
       }
     } catch (error) {
       currentRepoPath = null
+      return fail(error.message || '無法開啟 Git 儲存庫。')
+    }
+  })
+
+  ipcMain.handle('git:cloneRepository', async (_, remoteUrl, parentPath) => {
+    const url = remoteUrl?.trim()
+    const parent = parentPath?.trim()
+    if (!url) return fail('請輸入 Remote Git URL。')
+    if (!parent || !isAbsolute(parent) || !existsSync(parent)) {
+      return fail('Clone 目的資料夾不存在。')
+    }
+
+    // Let git handle HTTPS/SSH authentication through the user's configured
+    // credential helper. Tokens and passwords are never sent to the renderer.
+    const projectName = basename(url.replace(/[\\/]$/, '')).replace(/\.git$/i, '')
+    if (!projectName || projectName === '.' || projectName === '..') {
+      return fail('無法從 Remote URL 判斷專案名稱。')
+    }
+    const destination = join(parent, projectName)
+    if (existsSync(destination)) {
+      try {
+        const { stdout } = await execFileAsync('git', ['remote', 'get-url', 'origin'], {
+          cwd: destination,
+          ...execOptions
+        })
+        const normalizeRemote = (value) => {
+          const clean = value.trim().replace(/\.git$/i, '').replace(/[\\/]$/, '')
+          const githubMatch = clean.match(
+            /^(?:https?:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([^/]+)\/(.+)$/i
+          )
+          return githubMatch
+            ? `github.com/${githubMatch[1]}/${githubMatch[2]}`.toLowerCase()
+            : clean.toLowerCase()
+        }
+        if (normalizeRemote(stdout) === normalizeRemote(url)) {
+          currentRepoPath = destination
+          return success({ repoPath: destination, projectName, reused: true })
+        }
+        return fail(`目的路徑已存在，但屬於不同的 Remote：${destination}`)
+      } catch {
+        return fail(`目的路徑已存在，且不是可重新加入的 Git 專案：${destination}`)
+      }
+    }
+
+    const command = `git clone ${url} ${destination}`
+    commandHistory.push(command)
+    try {
+      const token = readGithubToken()
+      const authEnv = token && /^https:\/\/github\.com\//i.test(url)
+        ? {
+            GIT_CONFIG_COUNT: '1',
+            GIT_CONFIG_KEY_0: 'http.extraHeader',
+            GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`
+          }
+        : {}
+      await execFileAsync('git', ['clone', url, destination], {
+        cwd: parent,
+        ...execOptions,
+        env: { ...process.env, ...authEnv }
+      })
+      currentRepoPath = destination
+      return success({ repoPath: destination, projectName })
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        return fail('找不到 Git。請先安裝 Git，並確認 git 已加入系統 PATH。')
+      }
+      return fail(error.stderr?.trim() || error.message || 'Clone 失敗。')
+    }
+  })
+
+  ipcMain.handle('git:selectCloneDirectory', async () => {
+    const result = await dialog.showOpenDialog({
+      title: 'Select Clone Destination',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || !result.filePaths[0]) return success({ canceled: true })
+    return success({ canceled: false, path: result.filePaths[0] })
+  })
+
+  ipcMain.handle('git:listRemoteRepositories', async (_, account, cloneParent) => {
+    const token = readGithubToken()
+    try {
+      if (!token) return fail('請先連接 GitHub 帳號。')
+      const response = await githubRequest(
+        'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner',
+        token
+      )
+      if (!response.ok) throw new Error(response.status === 401 ? 'GitHub 授權已失效，請重新連接。' : `GitHub API ${response.status}`)
+      const repositories = (await response.json()).map((repo) => ({
+        name: repo.name,
+        description: repo.description,
+        url: repo.clone_url,
+        webUrl: repo.html_url,
+        isPrivate: repo.private,
+        localExists: Boolean(cloneParent && existsSync(join(cloneParent, repo.name))),
+        updatedAt: repo.updated_at
+      }))
+      return success({ repositories, authenticated: true })
+    } catch (error) {
+      return fail(error.message || '無法載入 Remote 專案。')
+    }
+  })
+
+  ipcMain.handle('git:githubAuthStatus', async () => {
+    const token = readGithubToken()
+    if (!token) return success({ connected: false })
+    try {
+      const response = await githubRequest('https://api.github.com/user', token)
+      if (!response.ok) return success({ connected: false })
+      const user = await response.json()
+      return success({ connected: true, login: user.login, avatarUrl: user.avatar_url })
+    } catch {
+      return success({ connected: false })
+    }
+  })
+
+  ipcMain.handle('git:githubAuthStart', async (_, clientId) => {
+    const oauthClientId = clientId?.trim() || GITHUB_OAUTH_CLIENT_ID
+    try {
+      const response = await githubRequest('https://github.com/login/device/code', null, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: oauthClientId, scope: 'repo read:user user:email' })
+      })
+      const data = await response.json()
+      if (!response.ok || !data.device_code) throw new Error(data.error_description || '無法啟動 GitHub 授權。')
+      pendingGithubDevice = { deviceCode: data.device_code, clientId: oauthClientId }
+      await shell.openExternal(data.verification_uri)
+      return success({ userCode: data.user_code, verificationUri: data.verification_uri, interval: data.interval || 5 })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  ipcMain.handle('git:githubAuthPoll', async () => {
+    if (!pendingGithubDevice) return fail('沒有進行中的 GitHub 授權。')
+    const response = await githubRequest('https://github.com/login/oauth/access_token', null, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: pendingGithubDevice.clientId,
+        device_code: pendingGithubDevice.deviceCode,
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+      })
+    })
+    const data = await response.json()
+    if (data.access_token) {
+      saveGithubToken(data.access_token)
+      const author = await ensureGitAuthorFromGithub(data.access_token)
+      pendingGithubDevice = null
+      return success({ connected: true, author })
+    }
+    if (data.error === 'authorization_pending' || data.error === 'slow_down') {
+      return success({ connected: false, pending: true })
+    }
+    pendingGithubDevice = null
+    return fail(data.error_description || 'GitHub 授權失敗。')
+  })
+
+  ipcMain.handle('git:githubLogout', () => {
+    try {
+      if (existsSync(githubTokenPath())) unlinkSync(githubTokenPath())
+      return success()
+    } catch (error) {
       return fail(error.message)
     }
   })
@@ -1435,13 +1682,13 @@ ${fileContent
       return fail('No repository selected')
     }
     try {
-      // Use a temporary file or properly escape for shell
-      // Given the current architecture, escaping is the quickest fix.
-      // But a better way is to use execFile/spawn to avoid shell parsing.
-      const escapedMessage = message.replace(/"/g, '\\"').replace(/`/g, '\\`').replace(/\$/g, '\\$')
-      const command = `git commit -m "${escapedMessage}"`
-      commandHistory.push(command)
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
+      // Pass the AI-generated multi-line message as one argument. Avoiding the
+      // shell prevents quotes, backticks and dollar signs from being altered.
+      commandHistory.push('git commit -m <message>')
+      const { stdout, stderr } = await execFileAsync('git', ['commit', '-m', message], {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
       return success({ output: stdout || stderr })
     } catch (error) {
       console.error('Error committing:', error)

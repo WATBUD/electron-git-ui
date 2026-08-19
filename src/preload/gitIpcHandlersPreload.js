@@ -7,6 +7,15 @@ console.log('Preload script is running')
 contextBridge.exposeInMainWorld('git', {
   selectRepository: () => ipcRenderer.invoke('git:selectRepository'),
   openRepository: (path) => ipcRenderer.invoke('git:openRepository', path),
+  cloneRepository: (remoteUrl, parentPath) =>
+    ipcRenderer.invoke('git:cloneRepository', remoteUrl, parentPath),
+  selectCloneDirectory: () => ipcRenderer.invoke('git:selectCloneDirectory'),
+  listRemoteRepositories: (account, cloneParent) =>
+    ipcRenderer.invoke('git:listRemoteRepositories', account, cloneParent),
+  githubAuthStatus: () => ipcRenderer.invoke('git:githubAuthStatus'),
+  githubAuthStart: (clientId) => ipcRenderer.invoke('git:githubAuthStart', clientId),
+  githubAuthPoll: () => ipcRenderer.invoke('git:githubAuthPoll'),
+  githubLogout: () => ipcRenderer.invoke('git:githubLogout'),
   openInExplorer: (path) => ipcRenderer.invoke('git:openInExplorer', path),
   revealInFolder: (file) => ipcRenderer.invoke('git:revealInFolder', file),
   loadBranches: () => ipcRenderer.invoke('git:loadBranches'),

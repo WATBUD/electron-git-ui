@@ -108,11 +108,17 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     if (!commitMessage.trim()) return
     const message = commitMessage
     const shouldPush = commitAndPush
-    setCommitMessage('')
-    setShowCommitDialog(false)
-    await onCommit(message)
-    if (shouldPush) {
-      await onPush(false)
+    try {
+      // Do not continue to push when commit was rejected. Keeping the dialog
+      // open also preserves the AI message so the user can fix the real error.
+      await onCommit(message)
+      if (shouldPush) {
+        await onPush(false)
+      }
+      setCommitMessage('')
+      setShowCommitDialog(false)
+    } catch (error) {
+      console.error('Commit & Push failed:', error)
     }
   }
 

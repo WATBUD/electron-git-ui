@@ -316,10 +316,10 @@ export const MainPageGit = () => {
               dispatch(loadTags())
             }}
             onPush={async (forcePush) => {
-              await dispatch(pushToRemote(forcePush))
+              await dispatch(pushToRemote(forcePush)).unwrap()
             }}
             onCommit={async (commitMessage) => {
-              await dispatch(commitChanges(commitMessage))
+              await dispatch(commitChanges(commitMessage)).unwrap()
             }}
             onStash={async (includeStaged, customMessage) => {
               try {

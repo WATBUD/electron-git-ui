@@ -18,6 +18,7 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
 }
 
 .projectListHeader {
@@ -86,6 +87,60 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.headerActions { display: flex; gap: 8px; }
+.cloneProjectBtn { composes: addProjectBtn; background: rgba(255, 255, 255, 0.1); }
+.cloneProjectBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); }
+.scopeTabs { display: flex; padding: 2px; border-radius: 6px; background: rgba(0,0,0,.25); }
+.scopeTabs button { border: 0; background: transparent; color: rgba(255,255,255,.45); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 700; }
+.scopeTabs .activeTab { background: #007aff; color: white; }
+.accountInput { width: 150px; padding: 6px 9px; border-radius: 6px; border: 1px solid rgba(255,255,255,.14); color: white; background: rgba(0,0,0,.2); outline: none; }
+.remoteHint { padding: 8px 10px 12px; font-size: 11px; color: rgba(255,255,255,.45); }
+.remoteTools { display: flex; align-items: center; gap: 8px; padding: 6px 10px 12px; }
+.searchBox { flex: 1; display: flex; align-items: center; gap: 7px; padding: 0 9px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: rgba(0,0,0,.2); color: rgba(255,255,255,.4); }
+.searchBox input { width: 100%; padding: 8px 0; border: 0; outline: 0; background: transparent; color: white; }
+.remoteTools select { padding: 8px 10px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: #292936; color: white; font-size: 11px; font-weight: 700; outline: none; }
+.resultCount { min-width: 25px; text-align: center; color: rgba(255,255,255,.4); font-size: 11px; }
+.cloneProgress { color: #34c759; font-size: 11px; }
+.cloneLoadingOverlay { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: rgba(20,20,30,.72); backdrop-filter: blur(4px); color: white; font-size: 13px; }
+.cloneSpinner { animation: cloneSpin .85s linear infinite; color: #007aff; }
+@keyframes cloneSpin { to { transform: rotate(360deg); } }
+.destinationBtn { display: flex; align-items: center; gap: 6px; max-width: 150px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.75); cursor: pointer; }
+.destinationBtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.remoteProjectDisabled { opacity: .38; cursor: default; filter: grayscale(.8); }
+.remoteProjectDisabled:hover { background-color: transparent; }
+.localBadge { font-size: 9px; color: rgba(255,255,255,.65); background: rgba(255,255,255,.1); padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.githubUser { align-self: center; color: #34c759; font-size: 12px; font-weight: 600; }
+.deviceCode { margin: 4px 10px 12px; padding: 12px; border-radius: 7px; background: rgba(0,122,255,.12); color: #b8d9ff; font-size: 13px; }
+.deviceCode strong { margin-left: 6px; color: white; letter-spacing: 2px; font-size: 16px; }
+
+.modalBackdrop {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(6px);
+}
+.cloneModal {
+  width: min(520px, calc(100vw - 40px)); padding: 20px; border-radius: 12px;
+  background: #20202c; border: 1px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55); display: flex; flex-direction: column; gap: 16px;
+}
+.modalHeader { display: flex; justify-content: space-between; gap: 16px; }
+.modalHeader h3 { margin: 0 0 5px; font-size: 16px; }
+.modalHeader p { margin: 0; color: rgba(255, 255, 255, 0.5); font-size: 12px; }
+.modalHeader button { background: transparent; border: 0; color: #aaa; cursor: pointer; }
+.cloneModal label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; color: #bbb; }
+.cloneModal input {
+  padding: 10px 11px; border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.22); color: white; outline: none;
+}
+.cloneModal input:focus { border-color: #007aff; }
+.cloneError { color: #ff6961; font-size: 12px; white-space: pre-wrap; }
+.modalActions { display: flex; justify-content: flex-end; gap: 8px; }
+.modalActions button {
+  padding: 8px 13px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08); color: white; cursor: pointer;
+}
+.modalActions button[type='submit'] { background: #007aff; border-color: #007aff; }
+.modalActions button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .projectListContainer {
   overflow-y: auto;
@@ -241,6 +296,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 600;
+  text-transform: uppercase;
 }
 
 .projectPath {
