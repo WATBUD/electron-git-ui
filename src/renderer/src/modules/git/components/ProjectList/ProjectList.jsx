@@ -7,7 +7,18 @@ import {
   removeProject,
   reorderProjects
 } from '../../store/git'
-import { Folder, Plus, Trash2, GripVertical, Folders, GitFork, RefreshCw, Search, FolderOpen } from 'lucide-react'
+import {
+  Folder,
+  Plus,
+  Trash2,
+  GripVertical,
+  Folders,
+  GitFork,
+  RefreshCw,
+  Search,
+  FolderOpen,
+  ArrowDownUp
+} from 'lucide-react'
 import styles from './ProjectList.module.css'
 
 // The project still uses plain JavaScript and does not ship the prop-types
@@ -27,19 +38,35 @@ const ProjectList = ({ onProjectSelect }) => {
   const [authenticated, setAuthenticated] = React.useState(false)
   const [cloneBusy, setCloneBusy] = React.useState(false)
   const [cloneError, setCloneError] = React.useState('')
-  const [cloneParent, setCloneParent] = React.useState(() => localStorage.getItem('git_clone_parent') || '')
+  const [cloneParent, setCloneParent] = React.useState(
+    () => localStorage.getItem('git_clone_parent') || ''
+  )
   const [remoteSearch, setRemoteSearch] = React.useState('')
   const [visibility, setVisibility] = React.useState('all')
+  // Sort by whether the repo is already cloned locally. Cycles on one button:
+  // 'none' → 'local' (already-cloned first) → 'remote' (remote-only first).
+  const [sortMode, setSortMode] = React.useState('none')
 
   const visibleRemoteProjects = React.useMemo(() => {
     const query = remoteSearch.trim().toLowerCase()
-    return remoteProjects.filter((project) => {
+    // A repo counts as "local" when a local project shares its name.
+    const isRepoLocal = (project) =>
+      projects.some(
+        (path) => (path.split(/[/\\]/).pop() || path).toLowerCase() === project.name.toLowerCase()
+      )
+    const filtered = remoteProjects.filter((project) => {
       if (visibility === 'private' && !project.isPrivate) return false
       if (visibility === 'public' && project.isPrivate) return false
       if (!query) return true
       return `${project.name} ${project.description || ''}`.toLowerCase().includes(query)
     })
-  }, [remoteProjects, remoteSearch, visibility])
+    if (sortMode === 'none') return filtered
+    return [...filtered].sort((a, b) => {
+      const la = isRepoLocal(a) ? 1 : 0
+      const lb = isRepoLocal(b) ? 1 : 0
+      return sortMode === 'local' ? lb - la : la - lb
+    })
+  }, [remoteProjects, remoteSearch, visibility, sortMode, projects])
 
   const handleProjectDoubleClick = (path) => {
     if (path === currentRepoPath) {
@@ -197,20 +224,54 @@ const ProjectList = ({ onProjectSelect }) => {
             <Folders size={18} className={styles.headerIcon} />
             <h3>All Projects</h3>
             <div className={styles.scopeTabs}>
-              <button className={scope === 'local' ? styles.activeTab : ''} onClick={() => setScope('local')}>LOCAL</button>
-              <button className={scope === 'remote' ? styles.activeTab : ''} onClick={() => setScope('remote')}>REMOTE</button>
+              <button
+                className={scope === 'local' ? styles.activeTab : ''}
+                onClick={() => setScope('local')}
+              >
+                LOCAL
+              </button>
+              <button
+                className={scope === 'remote' ? styles.activeTab : ''}
+                onClick={() => setScope('remote')}
+              >
+                REMOTE
+              </button>
             </div>
-            <span className={styles.projectCount}>{scope === 'local' ? projects.length : remoteProjects.length}</span>
+            <span className={styles.projectCount}>
+              {scope === 'local' ? projects.length : remoteProjects.length}
+            </span>
           </div>
           <div className={styles.headerActions}>
             {scope === 'local' ? (
-              <button className={styles.addProjectBtn} onClick={handleAddProject} disabled={loading}><Plus size={16} /><span>Add Project</span></button>
-            ) : (
-              authenticated ? <>
+              <button
+                className={styles.addProjectBtn}
+                onClick={handleAddProject}
+                disabled={loading}
+              >
+                <Plus size={16} />
+                <span>Add Project</span>
+              </button>
+            ) : authenticated ? (
+              <>
                 <span className={styles.githubUser}>{githubUser}</span>
-                <button className={styles.cloneProjectBtn} onClick={loadRemoteProjects} disabled={remoteLoading}><RefreshCw size={16} /><span>Refresh</span></button>
-              </> : <>
-                <button className={styles.addProjectBtn} onClick={connectGithub} disabled={remoteLoading}>Connect GitHub</button>
+                <button
+                  className={styles.cloneProjectBtn}
+                  onClick={loadRemoteProjects}
+                  disabled={remoteLoading}
+                >
+                  <RefreshCw size={16} />
+                  <span>Refresh</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className={styles.addProjectBtn}
+                  onClick={connectGithub}
+                  disabled={remoteLoading}
+                >
+                  Connect GitHub
+                </button>
               </>
             )}
           </div>
@@ -223,14 +284,45 @@ const ProjectList = ({ onProjectSelect }) => {
                 <div className={styles.remoteTools}>
                   <div className={styles.searchBox}>
                     <Search size={14} />
-                    <input value={remoteSearch} onChange={(e) => setRemoteSearch(e.target.value)} placeholder="Search repositories…" />
+                    <input
+                      value={remoteSearch}
+                      onChange={(e) => setRemoteSearch(e.target.value)}
+                      placeholder="Search repositories…"
+                    />
                   </div>
-                  <select value={visibility} onChange={(e) => setVisibility(e.target.value)} aria-label="Repository visibility">
+                  <select
+                    value={visibility}
+                    onChange={(e) => setVisibility(e.target.value)}
+                    aria-label="Repository visibility"
+                  >
                     <option value="all">ALL</option>
                     <option value="private">PRIVATE</option>
                     <option value="public">PUBLIC</option>
                   </select>
-                  <button className={styles.destinationBtn} onClick={selectCloneDirectory} title={cloneParent || 'Select clone destination'}>
+                  <button
+                    className={`${styles.sortBtn} ${sortMode !== 'none' ? styles.sortBtnActive : ''}`}
+                    onClick={() =>
+                      setSortMode((m) =>
+                        m === 'none' ? 'local' : m === 'local' ? 'remote' : 'none'
+                      )
+                    }
+                    title="Sort by clone status — click to cycle: off → local first → remote first"
+                    aria-label="Sort by local/remote"
+                  >
+                    <ArrowDownUp size={14} />
+                    <span>
+                      {sortMode === 'none'
+                        ? 'SORT'
+                        : sortMode === 'local'
+                          ? 'LOCAL FIRST'
+                          : 'REMOTE FIRST'}
+                    </span>
+                  </button>
+                  <button
+                    className={styles.destinationBtn}
+                    onClick={selectCloneDirectory}
+                    title={cloneParent || 'Select clone destination'}
+                  >
                     <FolderOpen size={14} />
                     <span>{cloneParent ? getProjectName(cloneParent) : 'Choose folder'}</span>
                   </button>
@@ -238,25 +330,52 @@ const ProjectList = ({ onProjectSelect }) => {
                   {cloneBusy && <span className={styles.cloneProgress}>Cloning…</span>}
                 </div>
               )}
-              {userCode && <div className={styles.deviceCode}>GitHub 授權碼：<strong>{userCode}</strong>（瀏覽器已開啟）</div>}
+              {userCode && (
+                <div className={styles.deviceCode}>
+                  GitHub 授權碼：<strong>{userCode}</strong>（瀏覽器已開啟）
+                </div>
+              )}
               {cloneError && <div className={styles.cloneError}>{cloneError}</div>}
-              {remoteLoading ? <div className={styles.emptyState}>Loading remote projects…</div> : visibleRemoteProjects.map((project) => {
-                const isLocal = projects.some(
-                  (path) => getProjectName(path).toLowerCase() === project.name.toLowerCase()
-                )
-                return (
-                  <div
-                    key={project.url}
-                    className={`${styles.projectItem} ${isLocal ? styles.remoteProjectDisabled : ''}`}
-                    onDoubleClick={isLocal ? undefined : () => handleClone(project)}
-                    title={isLocal ? 'Already available locally' : cloneParent ? `Double click to clone into ${cloneParent}` : 'Double click and choose a clone destination'}
-                    aria-disabled={isLocal}
-                  >
-                    <div className={styles.projectIcon}><GitFork size={18} /></div>
-                    <div className={styles.projectInfo}><div className={styles.projectName}><span className={styles.nameText}>{project.name}</span>{project.isPrivate && <span className={styles.currentBadge}>PRIVATE</span>}{isLocal && <span className={styles.localBadge}>LOCAL</span>}</div><div className={styles.projectPath}>{project.description || project.url}</div></div>
-                  </div>
-                )
-              })}
+              {remoteLoading ? (
+                <div className={styles.emptyState}>Loading remote projects…</div>
+              ) : (
+                visibleRemoteProjects.map((project) => {
+                  const isLocal = projects.some(
+                    (path) => getProjectName(path).toLowerCase() === project.name.toLowerCase()
+                  )
+                  return (
+                    <div
+                      key={project.url}
+                      className={`${styles.projectItem} ${isLocal ? styles.remoteProjectDisabled : ''}`}
+                      onDoubleClick={isLocal ? undefined : () => handleClone(project)}
+                      title={
+                        isLocal
+                          ? 'Already available locally'
+                          : cloneParent
+                            ? `Double click to clone into ${cloneParent}`
+                            : 'Double click and choose a clone destination'
+                      }
+                      aria-disabled={isLocal}
+                    >
+                      <div className={styles.projectIcon}>
+                        <GitFork size={18} />
+                      </div>
+                      <div className={styles.projectInfo}>
+                        <div className={styles.projectName}>
+                          <span className={styles.nameText}>{project.name}</span>
+                          {project.isPrivate && (
+                            <span className={styles.currentBadge}>PRIVATE</span>
+                          )}
+                          {isLocal && <span className={styles.localBadge}>LOCAL</span>}
+                        </div>
+                        <div className={styles.projectPath}>
+                          {project.description || project.url}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
             </div>
           ) : projects.length === 0 ? (
             <div className={styles.emptyState}>
@@ -302,7 +421,9 @@ const ProjectList = ({ onProjectSelect }) => {
                     <div className={styles.projectName}>
                       <span className={styles.nameText}>{name}</span>
                       {index < 10 && (
-                        <span className={styles.shortcutHint}>CTRL+{index === 9 ? 0 : index + 1}</span>
+                        <span className={styles.shortcutHint}>
+                          CTRL+{index === 9 ? 0 : index + 1}
+                        </span>
                       )}
                       {isActive && <span className={styles.currentBadge}>Active</span>}
                     </div>
