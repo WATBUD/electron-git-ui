@@ -1,5 +1,3 @@
-<div align="center">
-
 <img src="assets/appIcon.png" width="88" alt="Tide Git" />
 
 # 🌊 Tide Git
@@ -13,29 +11,25 @@ Built with Electron · React · Redux Toolkit · Ant Design
 ![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?logo=redux&logoColor=white)
 ![Ant Design](https://img.shields.io/badge/Ant_Design-0170FE?logo=antdesign&logoColor=white)
 
-</div>
-
 ---
 
 ## 📸 Screenshots
 
-<div align="center">
+**Multi-project workspace** — register many repos and switch between them instantly with quick-switch shortcuts (Ctrl + 1…N).
 
 <img src="assets/screenshots/overview.png" alt="Multi-project workspace" width="100%" />
 
-<br/><br/>
+**Branch management** — local & remote branches with Local-only / Remote-only / Synced / Divergent status at a glance, plus one-click create and fast-forward.
 
-<img src="assets/screenshots/branches.png" alt="Branch & tag management" width="100%" />
+<img src="assets/screenshots/branches.png" alt="Branch management" width="100%" />
 
-<br/><br/>
+**Prefix-based branch creation** — save reusable prefix sets (e.g. `feature/`), then create consistently-named branches in one click instead of typing the prefix every time.
 
 <img src="assets/screenshots/prefixes.png" alt="Prefix-based branch creation" width="640" />
 
-<br/><br/>
+**Commit & diff viewer** — browse commit history and read changes line-by-line.
 
 <img src="assets/screenshots/diff.png" alt="Commit & diff viewer" width="100%" />
-
-</div>
 
 ---
 
@@ -87,6 +81,4 @@ src/renderer/src/
 
 </details>
 
-<div align="center">
 <sub>Built with ❤️ using Electron + React</sub>
-</div>
