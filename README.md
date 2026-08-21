@@ -38,7 +38,8 @@ Built with Electron · React · Redux Toolkit · Ant Design
 ## ✨ Features
 
 - 🗂️ **Multi-project workspace** — register many repos and jump between them instantly with quick-switch shortcuts (Ctrl + 1…N).
-- 🌿 **Branch management** — local & remote branches, create / fast-forward, branch prefixes, and Local-only / Remote-only / Synced / Divergent status at a glance.
+- 🌿 **Branch management** — local & remote branches, create / fast-forward, and Local-only / Remote-only / Synced / Divergent status at a glance.
+- 🌱 **Prefix-based branch creation** — save reusable prefix sets (e.g. `feature/`) and spin up consistently-named branches in one click.
 - 🔍 **Commit & diff viewer** — browse commit history and read changes line-by-line.
 - 📋 **File status** — inspect and stage your working tree.
 - 📦 **Stashes** — create and restore stashes without touching the terminal.
