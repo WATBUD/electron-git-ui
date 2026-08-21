@@ -184,16 +184,17 @@ export function setupGitHandlers() {
     }
 
     try {
-      const escapedFile = escapeFileName(file)
       const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
 
       // Use -- to separate options from file paths
-      const command = isStaged
-        ? `git diff --cached -- "${escapedFile}"`
-        : `git diff -- "${escapedFile}"`
+      const args = isStaged ? ['diff', '--cached', '--', cleanFile] : ['diff', '--', cleanFile]
+      const command = `git ${args.map((arg) => JSON.stringify(arg)).join(' ')}`
 
       commandHistory.push(command)
-      const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath, ...execOptions })
+      const { stdout, stderr } = await execFileAsync('git', args, {
+        cwd: currentRepoPath,
+        ...execOptions
+      })
 
       // If git diff returns content, use it
       if (stdout || stderr) {
@@ -1581,12 +1582,13 @@ ${fileContent
       const fileList = Array.isArray(files) ? files : [files]
       if (fileList.length === 0) return success()
 
-      // 为每个文件单独构建命令，避免空格问题
+      // Pass paths as argv entries so cmd.exe cannot expand names such as
+      // "%ProgramData%/..." into an absolute path outside the repository.
       for (const file of fileList) {
-        const escapedFile = escapeFileName(file)
-        const command = `git add -- "${escapedFile}"`
+        const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+        const command = `git add -- ${JSON.stringify(cleanFile)}`
         commandHistory.push(command)
-        await execAsync(command, { cwd: currentRepoPath })
+        await execFileAsync('git', ['add', '--', cleanFile], { cwd: currentRepoPath, ...execOptions })
       }
       return success()
     } catch (error) {
@@ -1603,12 +1605,16 @@ ${fileContent
       const fileList = Array.isArray(files) ? files : [files]
       if (fileList.length === 0) return success()
 
-      // 为每个文件单独构建命令，避免空格问题
+      // Keep file names out of the shell for %, $, quotes and other special
+      // characters on both Windows and macOS.
       for (const file of fileList) {
-        const escapedFile = escapeFileName(file)
-        const command = `git reset HEAD -- "${escapedFile}"`
+        const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
+        const command = `git reset HEAD -- ${JSON.stringify(cleanFile)}`
         commandHistory.push(command)
-        await execAsync(command, { cwd: currentRepoPath })
+        await execFileAsync('git', ['reset', 'HEAD', '--', cleanFile], {
+          cwd: currentRepoPath,
+          ...execOptions
+        })
       }
       return success()
     } catch (error) {
@@ -1629,18 +1635,20 @@ ${fileContent
     try {
       // Process each file individually to avoid path parsing issues
       for (const file of files) {
-        const escapedFile = escapeFileName(file)
         const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
-        const unstageCmd = `git reset HEAD -- "${escapedFile}"`
-        const discardCmd = `git checkout -- "${escapedFile}"`
+        const unstageCmd = `git reset HEAD -- ${JSON.stringify(cleanFile)}`
+        const discardCmd = `git checkout -- ${JSON.stringify(cleanFile)}`
 
         commandHistory.push(unstageCmd)
         commandHistory.push(discardCmd)
 
         try {
           // Check if file is untracked (new file)
-          const statusCmd = `git status --porcelain -- "${escapedFile}"`
-          const statusResult = await execAsync(statusCmd, { cwd: currentRepoPath })
+          const statusResult = await execFileAsync(
+            'git',
+            ['status', '--porcelain', '--', cleanFile],
+            { cwd: currentRepoPath, ...execOptions }
+          )
           const isUntracked = statusResult.stdout.startsWith('??')
 
           if (isUntracked) {
@@ -1657,8 +1665,14 @@ ${fileContent
             }
           } else {
             // For tracked files, use git commands
-            await execAsync(unstageCmd, { cwd: currentRepoPath })
-            await execAsync(discardCmd, { cwd: currentRepoPath })
+            await execFileAsync('git', ['reset', 'HEAD', '--', cleanFile], {
+              cwd: currentRepoPath,
+              ...execOptions
+            })
+            await execFileAsync('git', ['checkout', '--', cleanFile], {
+              cwd: currentRepoPath,
+              ...execOptions
+            })
           }
         } catch (error) {
           // If unstage fails, still try to discard changes
