@@ -29,6 +29,10 @@ Built with Electron · React · Redux Toolkit · Ant Design
 
 <br/><br/>
 
+<img src="assets/screenshots/prefixes.png" alt="Prefix-based branch creation" width="640" />
+
+<br/><br/>
+
 <img src="assets/screenshots/diff.png" alt="Commit & diff viewer" width="100%" />
 
 </div>
