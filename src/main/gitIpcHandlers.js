@@ -3,7 +3,7 @@ import { app, ipcMain, dialog, shell, BrowserWindow, safeStorage } from 'electro
 import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
 import { basename, isAbsolute, join } from 'path'
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs'
 
 const execAsync = promisify(exec)
 const execFileAsync = promisify(execFile)
@@ -49,7 +49,8 @@ const ensureGitAuthorFromGithub = async (token) => {
     readGlobal('user.name'),
     readGlobal('user.email')
   ])
-  if (existingName && existingEmail) return { name: existingName, email: existingEmail, created: false }
+  if (existingName && existingEmail)
+    return { name: existingName, email: existingEmail, created: false }
 
   const profileResponse = await githubRequest('https://api.github.com/user', token)
   if (!profileResponse.ok) throw new Error('無法讀取 GitHub 使用者資料。')
@@ -466,8 +467,17 @@ ${fileContent
     const url = remoteUrl?.trim()
     const parent = parentPath?.trim()
     if (!url) return fail('請輸入 Remote Git URL。')
-    if (!parent || !isAbsolute(parent) || !existsSync(parent)) {
-      return fail('Clone 目的資料夾不存在。')
+    if (!parent || !isAbsolute(parent)) {
+      return fail('Clone 目的資料夾路徑無效（請使用絕對路徑）。')
+    }
+    // Allow typing a brand-new destination folder — create it (and any missing
+    // parents) instead of forcing the user to make it in the native picker.
+    if (!existsSync(parent)) {
+      try {
+        mkdirSync(parent, { recursive: true })
+      } catch (err) {
+        return fail('無法建立目的資料夾：' + err.message)
+      }
     }
 
     // Let git handle HTTPS/SSH authentication through the user's configured
@@ -484,7 +494,10 @@ ${fileContent
           ...execOptions
         })
         const normalizeRemote = (value) => {
-          const clean = value.trim().replace(/\.git$/i, '').replace(/[\\/]$/, '')
+          const clean = value
+            .trim()
+            .replace(/\.git$/i, '')
+            .replace(/[\\/]$/, '')
           const githubMatch = clean.match(
             /^(?:https?:\/\/github\.com\/|ssh:\/\/git@github\.com\/|git@github\.com:)([^/]+)\/(.+)$/i
           )
@@ -506,13 +519,14 @@ ${fileContent
     commandHistory.push(command)
     try {
       const token = readGithubToken()
-      const authEnv = token && /^https:\/\/github\.com\//i.test(url)
-        ? {
-            GIT_CONFIG_COUNT: '1',
-            GIT_CONFIG_KEY_0: 'http.extraHeader',
-            GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`
-          }
-        : {}
+      const authEnv =
+        token && /^https:\/\/github\.com\//i.test(url)
+          ? {
+              GIT_CONFIG_COUNT: '1',
+              GIT_CONFIG_KEY_0: 'http.extraHeader',
+              GIT_CONFIG_VALUE_0: `Authorization: Basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`
+            }
+          : {}
       await execFileAsync('git', ['clone', url, destination], {
         cwd: parent,
         ...execOptions,
@@ -545,7 +559,12 @@ ${fileContent
         'https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner',
         token
       )
-      if (!response.ok) throw new Error(response.status === 401 ? 'GitHub 授權已失效，請重新連接。' : `GitHub API ${response.status}`)
+      if (!response.ok)
+        throw new Error(
+          response.status === 401
+            ? 'GitHub 授權已失效，請重新連接。'
+            : `GitHub API ${response.status}`
+        )
       const repositories = (await response.json()).map((repo) => ({
         name: repo.name,
         description: repo.description,
@@ -583,10 +602,15 @@ ${fileContent
         body: JSON.stringify({ client_id: oauthClientId, scope: 'repo read:user user:email' })
       })
       const data = await response.json()
-      if (!response.ok || !data.device_code) throw new Error(data.error_description || '無法啟動 GitHub 授權。')
+      if (!response.ok || !data.device_code)
+        throw new Error(data.error_description || '無法啟動 GitHub 授權。')
       pendingGithubDevice = { deviceCode: data.device_code, clientId: oauthClientId }
       await shell.openExternal(data.verification_uri)
-      return success({ userCode: data.user_code, verificationUri: data.verification_uri, interval: data.interval || 5 })
+      return success({
+        userCode: data.user_code,
+        verificationUri: data.verification_uri,
+        interval: data.interval || 5
+      })
     } catch (error) {
       return fail(error.message)
     }

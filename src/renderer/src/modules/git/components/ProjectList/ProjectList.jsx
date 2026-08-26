@@ -45,7 +45,8 @@ const ProjectList = ({ onProjectSelect }) => {
   const [visibility, setVisibility] = React.useState('all')
   // Sort by whether the repo is already cloned locally. Cycles on one button:
   // 'none' → 'local' (already-cloned first) → 'remote' (remote-only first).
-  const [sortMode, setSortMode] = React.useState('none')
+  // Defaults to 'remote' so uncloned repos surface first.
+  const [sortMode, setSortMode] = React.useState('remote')
 
   const visibleRemoteProjects = React.useMemo(() => {
     const query = remoteSearch.trim().toLowerCase()
@@ -104,13 +105,16 @@ const ProjectList = ({ onProjectSelect }) => {
     setRemoteLoading(false)
   }, [cloneParent])
 
+  const updateCloneParent = (path) => {
+    setCloneParent(path)
+    localStorage.setItem('git_clone_parent', path)
+  }
+
   const selectCloneDirectory = async () => {
     const result = await window.git.selectCloneDirectory()
     if (!result?.success || result.data.canceled) return ''
-    const path = result.data.path
-    setCloneParent(path)
-    localStorage.setItem('git_clone_parent', path)
-    return path
+    updateCloneParent(result.data.path)
+    return result.data.path
   }
 
   const refreshAuth = React.useCallback(async () => {
@@ -318,14 +322,23 @@ const ProjectList = ({ onProjectSelect }) => {
                           : 'REMOTE FIRST'}
                     </span>
                   </button>
-                  <button
-                    className={styles.destinationBtn}
-                    onClick={selectCloneDirectory}
-                    title={cloneParent || 'Select clone destination'}
-                  >
-                    <FolderOpen size={14} />
-                    <span>{cloneParent ? getProjectName(cloneParent) : 'Choose folder'}</span>
-                  </button>
+                  <div className={styles.destinationField}>
+                    <input
+                      className={styles.destinationInput}
+                      value={cloneParent}
+                      onChange={(e) => updateCloneParent(e.target.value)}
+                      placeholder="Clone destination folder…"
+                      spellCheck={false}
+                      title={cloneParent || 'Type or browse a destination folder'}
+                    />
+                    <button
+                      className={styles.destinationBrowse}
+                      onClick={selectCloneDirectory}
+                      title="Browse for a folder"
+                    >
+                      <FolderOpen size={14} />
+                    </button>
+                  </div>
                   <span className={styles.resultCount}>{visibleRemoteProjects.length}</span>
                   {cloneBusy && <span className={styles.cloneProgress}>Cloning…</span>}
                 </div>

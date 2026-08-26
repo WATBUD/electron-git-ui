@@ -107,6 +107,11 @@
 @keyframes cloneSpin { to { transform: rotate(360deg); } }
 .destinationBtn { display: flex; align-items: center; gap: 6px; max-width: 150px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.75); cursor: pointer; }
 .destinationBtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.destinationField { display: flex; align-items: stretch; min-width: 180px; max-width: 280px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: rgba(255,255,255,.07); overflow: hidden; }
+.destinationInput { flex: 1; min-width: 0; padding: 7px 9px; border: none; background: transparent; color: rgba(255,255,255,.85); font-size: 11px; outline: none; }
+.destinationInput::placeholder { color: rgba(255,255,255,.4); }
+.destinationBrowse { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 30px; border: none; border-left: 1px solid rgba(255,255,255,.13); background: rgba(255,255,255,.05); color: rgba(255,255,255,.7); cursor: pointer; }
+.destinationBrowse:hover { background: rgba(255,255,255,.12); color: #fff; }
 .sortBtn { display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 8px 10px; border: 1px solid rgba(255,255,255,.13); border-radius: 7px; background: #292936; color: rgba(255,255,255,.75); font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all .15s ease; }
 .sortBtn:hover { border-color: rgba(255,255,255,.3); color: #fff; }
 .sortBtnActive { background: rgba(79,70,229,.25); border-color: rgba(79,70,229,.55); color: #fff; }
