@@ -17,7 +17,8 @@ import {
   RefreshCw,
   Search,
   FolderOpen,
-  ArrowDownUp
+  ArrowDownUp,
+  X
 } from 'lucide-react'
 import styles from './ProjectList.module.css'
 
@@ -43,6 +44,13 @@ const ProjectList = ({ onProjectSelect }) => {
   )
   const [remoteSearch, setRemoteSearch] = React.useState('')
   const [visibility, setVisibility] = React.useState('all')
+  // Create-repository modal state.
+  const [showCreate, setShowCreate] = React.useState(false)
+  const [newRepoName, setNewRepoName] = React.useState('')
+  const [newRepoDesc, setNewRepoDesc] = React.useState('')
+  const [newRepoPrivate, setNewRepoPrivate] = React.useState(true)
+  const [createBusy, setCreateBusy] = React.useState(false)
+  const [createError, setCreateError] = React.useState('')
   // Sort by whether the repo is already cloned locally. Cycles on one button:
   // 'none' → 'local' (already-cloned first) → 'remote' (remote-only first).
   // Defaults to 'remote' so uncloned repos surface first.
@@ -105,6 +113,38 @@ const ProjectList = ({ onProjectSelect }) => {
     setRemoteLoading(false)
   }, [cloneParent])
 
+  const openCreateModal = () => {
+    setNewRepoName('')
+    setNewRepoDesc('')
+    setNewRepoPrivate(true)
+    setCreateError('')
+    setShowCreate(true)
+  }
+
+  const handleCreateRepo = async (e) => {
+    e?.preventDefault?.()
+    if (createBusy || !newRepoName.trim()) return
+    setCreateBusy(true)
+    setCreateError('')
+    try {
+      const result = await window.git.createRemoteRepository({
+        name: newRepoName.trim(),
+        description: newRepoDesc.trim(),
+        isPrivate: newRepoPrivate
+      })
+      if (!result?.success) {
+        setCreateError(result?.message || 'Failed to create repository')
+        return
+      }
+      setShowCreate(false)
+      await loadRemoteProjects()
+    } catch (error) {
+      setCreateError(error.message || 'Failed to create repository')
+    } finally {
+      setCreateBusy(false)
+    }
+  }
+
   const updateCloneParent = (path) => {
     setCloneParent(path)
     localStorage.setItem('git_clone_parent', path)
@@ -152,12 +192,23 @@ const ProjectList = ({ onProjectSelect }) => {
     window.setTimeout(poll, interval)
   }
 
+  // Load remote repos once when authenticated (regardless of the active tab) so
+  // the LOCAL list can also show a PRIVATE badge for repos that map to a private
+  // GitHub repository.
   React.useEffect(() => {
-    if (scope !== 'remote') return
     refreshAuth().then((connected) => {
       if (connected && remoteProjects.length === 0) loadRemoteProjects()
     })
-  }, [scope, remoteProjects.length, loadRemoteProjects, refreshAuth])
+  }, [remoteProjects.length, loadRemoteProjects, refreshAuth])
+
+  // repo name (lowercased) → whether the matching GitHub repo is private.
+  const privateByName = React.useMemo(() => {
+    const map = {}
+    remoteProjects.forEach((repo) => {
+      map[repo.name.toLowerCase()] = repo.isPrivate
+    })
+    return map
+  }, [remoteProjects])
 
   const handleClone = async (project) => {
     if (cloneBusy) return
@@ -258,6 +309,14 @@ const ProjectList = ({ onProjectSelect }) => {
             ) : authenticated ? (
               <>
                 <span className={styles.githubUser}>{githubUser}</span>
+                <button
+                  className={styles.addProjectBtn}
+                  onClick={openCreateModal}
+                  disabled={remoteLoading}
+                >
+                  <Plus size={16} />
+                  <span>Create</span>
+                </button>
                 <button
                   className={styles.cloneProjectBtn}
                   onClick={loadRemoteProjects}
@@ -433,6 +492,9 @@ const ProjectList = ({ onProjectSelect }) => {
                   <div className={styles.projectInfo}>
                     <div className={styles.projectName}>
                       <span className={styles.nameText}>{name}</span>
+                      {privateByName[name.toLowerCase()] && (
+                        <span className={styles.currentBadge}>PRIVATE</span>
+                      )}
                       {index < 10 && (
                         <span className={styles.shortcutHint}>
                           CTRL+{index === 9 ? 0 : index + 1}
@@ -461,6 +523,77 @@ const ProjectList = ({ onProjectSelect }) => {
           )}
         </div>
       </div>
+
+      {showCreate && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => {
+            if (!createBusy) setShowCreate(false)
+          }}
+        >
+          <form
+            className={styles.cloneModal}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleCreateRepo}
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h3>Create GitHub Repository</h3>
+                <p>建立一個新的 GitHub 遠端專案</p>
+              </div>
+              <button type="button" onClick={() => setShowCreate(false)} disabled={createBusy}>
+                <X size={18} />
+              </button>
+            </div>
+            <label>
+              Name
+              <input
+                value={newRepoName}
+                onChange={(e) => setNewRepoName(e.target.value)}
+                placeholder="my-new-repo"
+                autoFocus
+                spellCheck={false}
+              />
+            </label>
+            <label>
+              Description (optional)
+              <input
+                value={newRepoDesc}
+                onChange={(e) => setNewRepoDesc(e.target.value)}
+                placeholder="Short description"
+              />
+            </label>
+            <div className={styles.visibilityRow}>
+              <span>Visibility</span>
+              <div className={styles.visibilityToggle}>
+                <button
+                  type="button"
+                  className={newRepoPrivate ? styles.visActive : ''}
+                  onClick={() => setNewRepoPrivate(true)}
+                >
+                  PRIVATE
+                </button>
+                <button
+                  type="button"
+                  className={!newRepoPrivate ? styles.visActive : ''}
+                  onClick={() => setNewRepoPrivate(false)}
+                >
+                  PUBLIC
+                </button>
+              </div>
+            </div>
+            {createError && <div className={styles.cloneError}>{createError}</div>}
+            <div className={styles.modalActions}>
+              <button type="button" onClick={() => setShowCreate(false)} disabled={createBusy}>
+                Cancel
+              </button>
+              <button type="submit" disabled={createBusy || !newRepoName.trim()}>
+                {createBusy ? 'Creating…' : 'Create'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

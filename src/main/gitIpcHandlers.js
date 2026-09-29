@@ -580,6 +580,59 @@ ${fileContent
     }
   })
 
+  // Create a new repository on the authenticated user's GitHub account.
+  ipcMain.handle('git:createRemoteRepository', async (_, options = {}) => {
+    const token = readGithubToken()
+    if (!token) return fail('請先連接 GitHub 帳號。')
+    const name = options.name?.trim()
+    if (!name) return fail('請輸入專案名稱。')
+    // GitHub repo names allow letters, digits, hyphen, underscore and dot.
+    if (!/^[A-Za-z0-9._-]+$/.test(name)) {
+      return fail('專案名稱只能包含英數字與 . _ - 符號。')
+    }
+    try {
+      const response = await githubRequest('https://api.github.com/user/repos', token, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          description: options.description?.trim() || '',
+          private: Boolean(options.isPrivate),
+          // Seed an initial commit so the repo can be cloned/used immediately.
+          auto_init: options.autoInit !== false
+        })
+      })
+      if (!response.ok) {
+        let message = `GitHub API ${response.status}`
+        try {
+          const body = await response.json()
+          if (response.status === 422 && body.errors?.some((e) => e.message?.includes('exists'))) {
+            message = `專案「${name}」已存在。`
+          } else if (body.message) {
+            message = body.message
+          }
+        } catch {
+          // keep the generic message
+        }
+        if (response.status === 401) message = 'GitHub 授權已失效，請重新連接。'
+        return fail(message)
+      }
+      const repo = await response.json()
+      return success({
+        repository: {
+          name: repo.name,
+          description: repo.description,
+          url: repo.clone_url,
+          webUrl: repo.html_url,
+          isPrivate: repo.private,
+          updatedAt: repo.updated_at
+        }
+      })
+    } catch (error) {
+      return fail(error.message || '建立 Remote 專案失敗。')
+    }
+  })
+
   ipcMain.handle('git:githubAuthStatus', async () => {
     const token = readGithubToken()
     if (!token) return success({ connected: false })
@@ -1612,7 +1665,10 @@ ${fileContent
         const cleanFile = file.startsWith('"') && file.endsWith('"') ? file.slice(1, -1) : file
         const command = `git add -- ${JSON.stringify(cleanFile)}`
         commandHistory.push(command)
-        await execFileAsync('git', ['add', '--', cleanFile], { cwd: currentRepoPath, ...execOptions })
+        await execFileAsync('git', ['add', '--', cleanFile], {
+          cwd: currentRepoPath,
+          ...execOptions
+        })
       }
       return success()
     } catch (error) {

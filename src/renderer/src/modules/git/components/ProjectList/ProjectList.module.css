@@ -142,6 +142,10 @@
 }
 .cloneModal input:focus { border-color: #007aff; }
 .cloneError { color: #ff6961; font-size: 12px; white-space: pre-wrap; }
+.visibilityRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: #bbb; }
+.visibilityToggle { display: flex; padding: 2px; border-radius: 7px; background: rgba(0,0,0,.25); }
+.visibilityToggle button { border: 0; background: transparent; color: rgba(255,255,255,.5); padding: 6px 14px; border-radius: 5px; cursor: pointer; font-size: 11px; font-weight: 700; }
+.visibilityToggle .visActive { background: #007aff; color: white; }
 .modalActions { display: flex; justify-content: flex-end; gap: 8px; }
 .modalActions button {
   padding: 8px 13px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12);

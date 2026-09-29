@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('git', {
   selectCloneDirectory: () => ipcRenderer.invoke('git:selectCloneDirectory'),
   listRemoteRepositories: (account, cloneParent) =>
     ipcRenderer.invoke('git:listRemoteRepositories', account, cloneParent),
+  createRemoteRepository: (options) => ipcRenderer.invoke('git:createRemoteRepository', options),
   githubAuthStatus: () => ipcRenderer.invoke('git:githubAuthStatus'),
   githubAuthStart: (clientId) => ipcRenderer.invoke('git:githubAuthStart', clientId),
   githubAuthPoll: () => ipcRenderer.invoke('git:githubAuthPoll'),
