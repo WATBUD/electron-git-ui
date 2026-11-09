@@ -1162,18 +1162,47 @@ ${fileContent
     }
   })
 
-  ipcMain.handle('git:branchPull', async () => {
+  ipcMain.handle('git:branchPull', async (_, strategy) => {
     if (!currentRepoPath) {
       return fail('No repository selected')
     }
+    // Let the caller pick how divergent branches reconcile:
+    //   merge   → --no-rebase (merge commit; safest for shared branches)
+    //   rebase  → --rebase    (replay local commits for a linear history)
+    //   ff-only → --ff-only   (only fast-forward; abort if diverged)
+    const flagByStrategy = { merge: '--no-rebase', rebase: '--rebase', 'ff-only': '--ff-only' }
+    const flag = flagByStrategy[strategy] || '--no-rebase'
     try {
-      const command = 'git pull'
+      const command = `git pull ${flag}`
       commandHistory.push(command)
       const { stdout, stderr } = await execAsync(command, { cwd: currentRepoPath })
       return success({ output: stdout || stderr })
     } catch (error) {
+      const output = `${error.stdout || ''}\n${error.stderr || ''}`
+      // A merge/rebase conflict leaves the operation in progress — surface it
+      // clearly so the user resolves it in the Files tab.
+      if (/CONFLICT|Automatic merge failed|could not apply/i.test(output)) {
+        return fail(
+          strategy === 'rebase'
+            ? 'Rebase 產生衝突，請到 Files 分頁解決衝突,再於終端機執行 git rebase --continue。'
+            : 'Pull 合併產生衝突，請到 Files 分頁解決衝突後再 commit。'
+        )
+      }
+      // Uncommitted/staged changes overlap files the pull would touch, so git
+      // refuses before merging anything. Keep git's file list for context.
+      if (/would be overwritten by (merge|checkout)|cannot pull with rebase/i.test(output)) {
+        return fail(
+          'Pull 失敗：你有尚未 commit 的變更（含已 stage）與遠端更新的檔案重疊。\n' +
+            '請先 Commit 或 Stash 這些變更後再 Pull。\n\n' +
+            (error.stderr?.trim() || '')
+        )
+      }
+      // --ff-only refuses when the branch has diverged.
+      if (strategy === 'ff-only' && /not possible to fast-forward|diverg/i.test(output)) {
+        return fail('無法快轉：本地與遠端已分岔。請改用 Merge 或 Rebase。')
+      }
       console.error('Error pulling:', error)
-      return fail(error.message)
+      return fail(error.stderr?.trim() || error.message)
     }
   })
 

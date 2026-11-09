@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('git', {
     return () => ipcRenderer.removeListener('git:commandHistoryChanged', listener)
   },
   fetch: (prune) => ipcRenderer.invoke('git:fetch', prune),
-  branchPull: () => ipcRenderer.invoke('git:branchPull'),
+  branchPull: (strategy) => ipcRenderer.invoke('git:branchPull', strategy),
   branchPush: (force) => ipcRenderer.invoke('git:branchPush', force),
   getStatus: () => ipcRenderer.invoke('git:getStatus'),
   stageFile: (file) => ipcRenderer.invoke('git:stageFile', file),

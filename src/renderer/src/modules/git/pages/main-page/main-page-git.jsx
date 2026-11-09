@@ -307,9 +307,18 @@ export const MainPageGit = () => {
 
         {repoPath && (
           <Toolbar
-            onPull={async () => {
-              await dispatch(pullFromRemote())
-              dispatch(loadTags())
+            onPull={async (strategy) => {
+              const result = await dispatch(pullFromRemote(strategy))
+              if (pullFromRemote.fulfilled.match(result)) {
+                dispatch(loadTags())
+                dispatch(loadBranches())
+                dispatch(loadFileStatus())
+              }
+              // Failed pulls must NOT trigger loadBranches/loadFileStatus: their
+              // pending reducers clear state.error and would swallow the failure
+              // message. checkMergeInProgress leaves error alone, and a conflicted
+              // merge/rebase flips hasMergeInProgress → routes to the Files tab.
+              dispatch(checkMergeInProgress())
             }}
             onFetch={async (pruneBranches) => {
               await dispatch(fetchFromRemote(pruneBranches))

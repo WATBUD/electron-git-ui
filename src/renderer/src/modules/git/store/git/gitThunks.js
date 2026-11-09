@@ -480,13 +480,13 @@ export const fetchFromRemote = createAsyncThunk(
 
 export const pullFromRemote = createAsyncThunk(
   'git/pullFromRemote',
-  async (_, { rejectWithValue, dispatch }) => {
+  async (strategy, { rejectWithValue, dispatch }) => {
     if (!window.git) {
       return rejectWithValue('Git API not initialized')
     }
 
     const result = await callGit(
-      () => window.git.branchPull(),
+      () => window.git.branchPull(strategy),
       rejectWithValue,
       'Failed to pull from remote',
       'pullFromRemote'

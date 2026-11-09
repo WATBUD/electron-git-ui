@@ -14,8 +14,34 @@ import {
   AlertTriangle,
   Folder,
   Archive,
-  User
+  User,
+  ChevronDown,
+  GitMerge,
+  GitBranch,
+  FastForward
 } from 'lucide-react'
+
+// Pull reconcile strategies offered on the Pull dropdown.
+const PULL_STRATEGIES = [
+  {
+    key: 'merge',
+    label: 'Merge',
+    icon: GitMerge,
+    hint: '合併(--no-rebase)。分岔時產生 merge commit，最安全，適合共用分支。'
+  },
+  {
+    key: 'rebase',
+    label: 'Rebase',
+    icon: GitBranch,
+    hint: '衍合(--rebase)。把本地 commit 接到遠端最新之後，歷史呈直線。'
+  },
+  {
+    key: 'ff-only',
+    label: 'Fast-forward only',
+    icon: FastForward,
+    hint: '只允許快進(--ff-only)。分岔則直接報錯,適合本地沒有改動時單純同步。'
+  }
+]
 
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading }) => {
   const dispatch = useDispatch()
@@ -33,6 +59,12 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
   const [authorDraft, setAuthorDraft] = useState({ name: '', email: '' })
   const [authorSaving, setAuthorSaving] = useState(false)
   const authorRef = useRef(null)
+  const [showPullMenu, setShowPullMenu] = useState(false)
+  // Viewport coords for the pull menu. It renders in a body portal so it isn't
+  // clipped/covered by the sidebar's stacking context.
+  const [pullMenuPos, setPullMenuPos] = useState({ top: 0, left: 0 })
+  const pullRef = useRef(null)
+  const pullMenuRef = useRef(null)
 
   // Get Redux state
   const repoPath = useSelector((state) => state.git.repoPath)
@@ -51,6 +83,38 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     window.addEventListener('open-commit-dialog', handleOpenCommit)
     return () => window.removeEventListener('open-commit-dialog', handleOpenCommit)
   }, [])
+
+  useEffect(() => {
+    if (!showPullMenu) return
+    const onDown = (e) => {
+      const inButton = pullRef.current?.contains(e.target)
+      const inMenu = pullMenuRef.current?.contains(e.target)
+      if (!inButton && !inMenu) setShowPullMenu(false)
+    }
+    const onKey = (e) => e.key === 'Escape' && setShowPullMenu(false)
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('resize', () => setShowPullMenu(false), { once: true })
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [showPullMenu])
+
+  const togglePullMenu = () => {
+    if (!showPullMenu && pullRef.current) {
+      const rect = pullRef.current.getBoundingClientRect()
+      // Keep the 320px-wide menu inside the viewport horizontally.
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - 320 - 8))
+      setPullMenuPos({ top: rect.bottom + 6, left })
+    }
+    setShowPullMenu((v) => !v)
+  }
+
+  const handlePull = (strategy) => {
+    setShowPullMenu(false)
+    onPull?.(strategy)
+  }
 
   useEffect(() => {
     if (!showAuthorEditor) {
@@ -134,17 +198,65 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     <>
       <div className={styles.toolbar}>
         <div className={styles.toolbarGroup}>
-          <button
-            onClick={onPull}
-            className={styles.toolbarBtn}
-            disabled={loading}
-            title="Pull from remote"
-          >
-            <span className={styles.toolbarIcon}>
-              <Download size={14} />
-            </span>
-            <span className={styles.toolbarText}>Pull</span>
-          </button>
+          <div className={styles.pullWrap} ref={pullRef}>
+            <button
+              onClick={() => handlePull('merge')}
+              className={styles.toolbarBtn}
+              disabled={loading}
+              title="Pull from remote (Merge). Click the arrow to choose a strategy."
+            >
+              <span className={styles.toolbarIcon}>
+                <Download size={14} />
+              </span>
+              <span className={styles.toolbarText}>Pull</span>
+              <span
+                className={styles.pullCaret}
+                role="button"
+                tabIndex={0}
+                title="Choose pull strategy"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  togglePullMenu()
+                }}
+              >
+                <ChevronDown size={12} />
+              </span>
+            </button>
+            {showPullMenu && (
+              <ModalPortal>
+                <div
+                  ref={pullMenuRef}
+                  className={styles.pullMenu}
+                  // Inline fixed positioning + high z-index so the menu sits above
+                  // the sidebar regardless of CSS-module/stacking-context order.
+                  style={{
+                    position: 'fixed',
+                    top: pullMenuPos.top,
+                    left: pullMenuPos.left,
+                    zIndex: 5000
+                  }}
+                >
+                  {PULL_STRATEGIES.map((s) => {
+                    const Icon = s.icon
+                    return (
+                      <button
+                        key={s.key}
+                        className={styles.pullMenuItem}
+                        onClick={() => handlePull(s.key)}
+                        disabled={loading}
+                      >
+                        <Icon size={14} className={styles.pullMenuIcon} />
+                        <span className={styles.pullMenuText}>
+                          <span className={styles.pullMenuLabel}>{s.label}</span>
+                          <span className={styles.pullMenuHint}>{s.hint}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </ModalPortal>
+            )}
+          </div>
           <button
             onClick={() => setShowPushDialog(true)}
             className={styles.toolbarBtn}
