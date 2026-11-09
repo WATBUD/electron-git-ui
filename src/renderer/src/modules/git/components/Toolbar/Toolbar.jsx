@@ -18,7 +18,8 @@ import {
   ChevronDown,
   GitMerge,
   GitBranch,
-  FastForward
+  FastForward,
+  Check
 } from 'lucide-react'
 
 // Pull reconcile strategies offered on the Pull dropdown.
@@ -26,25 +27,43 @@ const PULL_STRATEGIES = [
   {
     key: 'merge',
     label: 'Merge',
+    short: 'Merge',
     icon: GitMerge,
     hint: '合併(--no-rebase)。分岔時產生 merge commit，最安全，適合共用分支。'
   },
   {
     key: 'rebase',
     label: 'Rebase',
+    short: 'Rebase',
     icon: GitBranch,
     hint: '衍合(--rebase)。把本地 commit 接到遠端最新之後，歷史呈直線。'
   },
   {
     key: 'ff-only',
     label: 'Fast-forward only',
+    short: 'FF',
     icon: FastForward,
     hint: '只允許快進(--ff-only)。分岔則直接報錯,適合本地沒有改動時單純同步。'
   }
 ]
 
+const PULL_STRATEGY_STORAGE_KEY = 'tide-git:pull-strategy'
+
+const loadPullStrategy = () => {
+  try {
+    const saved = localStorage.getItem(PULL_STRATEGY_STORAGE_KEY)
+    if (PULL_STRATEGIES.some((s) => s.key === saved)) return saved
+  } catch {
+    // localStorage unavailable — fall back to default
+  }
+  return 'merge'
+}
+
 export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading }) => {
   const dispatch = useDispatch()
+  // Last strategy the user picked; the main Pull button reuses it.
+  const [pullStrategy, setPullStrategy] = useState(loadPullStrategy)
+  const activeStrategy = PULL_STRATEGIES.find((s) => s.key === pullStrategy) || PULL_STRATEGIES[0]
   const [showFetchDialog, setShowFetchDialog] = useState(false)
   const [showPushDialog, setShowPushDialog] = useState(false)
   const [showCommitDialog, setShowCommitDialog] = useState(false)
@@ -113,6 +132,12 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
 
   const handlePull = (strategy) => {
     setShowPullMenu(false)
+    setPullStrategy(strategy)
+    try {
+      localStorage.setItem(PULL_STRATEGY_STORAGE_KEY, strategy)
+    } catch {
+      // ignore persistence failures
+    }
     onPull?.(strategy)
   }
 
@@ -200,15 +225,16 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
         <div className={styles.toolbarGroup}>
           <div className={styles.pullWrap} ref={pullRef}>
             <button
-              onClick={() => handlePull('merge')}
+              onClick={() => handlePull(pullStrategy)}
               className={styles.toolbarBtn}
               disabled={loading}
-              title="Pull from remote (Merge). Click the arrow to choose a strategy."
+              title={`Pull from remote (${activeStrategy.label}). Click the arrow to choose a strategy.`}
             >
               <span className={styles.toolbarIcon}>
                 <Download size={14} />
               </span>
               <span className={styles.toolbarText}>Pull</span>
+              <span className={styles.pullStrategyTag}>{activeStrategy.short}</span>
               <span
                 className={styles.pullCaret}
                 role="button"
@@ -241,13 +267,20 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
                     return (
                       <button
                         key={s.key}
-                        className={styles.pullMenuItem}
+                        className={`${styles.pullMenuItem} ${
+                          s.key === pullStrategy ? styles.pullMenuItemActive : ''
+                        }`}
                         onClick={() => handlePull(s.key)}
                         disabled={loading}
                       >
                         <Icon size={14} className={styles.pullMenuIcon} />
                         <span className={styles.pullMenuText}>
-                          <span className={styles.pullMenuLabel}>{s.label}</span>
+                          <span className={styles.pullMenuLabel}>
+                            {s.label}
+                            {s.key === pullStrategy && (
+                              <Check size={12} className={styles.pullMenuCheck} />
+                            )}
+                          </span>
                           <span className={styles.pullMenuHint}>{s.hint}</span>
                         </span>
                       </button>

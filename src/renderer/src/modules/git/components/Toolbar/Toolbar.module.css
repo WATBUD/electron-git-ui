@@ -111,6 +111,28 @@
   cursor: not-allowed;
 }
 
+.pullStrategyTag {
+  margin-left: 2px;
+  padding: 1px 6px;
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 999px;
+  color: #9cc6ff;
+  background-color: rgba(90, 160, 255, 0.18);
+  white-space: nowrap;
+}
+
+.pullMenuItemActive {
+  background-color: rgba(90, 160, 255, 0.1);
+}
+
+.pullMenuCheck {
+  margin-left: 6px;
+  vertical-align: -1px;
+  color: #7db4ff;
+}
+
 .pullMenuIcon {
   flex-shrink: 0;
   margin-top: 2px;
