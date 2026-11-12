@@ -851,7 +851,9 @@ const BranchList = ({
                                         }}
                                         title="Click to view changes"
                                       >
-                                        <div className={styles.commitDot} />
+                                        <div
+                                          className={`${styles.commitDot} ${commit.isHead || commit.branches?.local?.includes(branch) ? styles.commitDotHead : ''}`}
+                                        />
                                         <div className={styles.commitDetails}>
                                           <div className={styles.commitMeta}>
                                             {commitDisplay.hash && (

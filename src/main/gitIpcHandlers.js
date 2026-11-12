@@ -1418,7 +1418,31 @@ ${fileContent
     }
     try {
       // --decorate=full → refs come back as `refs/heads/<name>` / `refs/remotes/<r>/<n>` / `tag: refs/tags/<n>`
-      const command = `git log ${branchName} --decorate=full --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
+      // For a local branch that tracks a remote, also walk the upstream ref so
+      // commits that exist on the remote but haven't been pulled yet still show
+      // up in the list (like other Git UIs). Remote refs / branches without an
+      // upstream just log themselves.
+      let revs = JSON.stringify(branchName)
+      try {
+        const { stdout: upstreamOut } = await execAsync(
+          `git for-each-ref --format="%(upstream:short)" ${JSON.stringify(`refs/heads/${branchName}`)}`,
+          { cwd: currentRepoPath }
+        )
+        const upstream = upstreamOut.trim()
+        if (upstream) {
+          // Skip upstreams that no longer exist (deleted on the remote).
+          await execAsync(
+            `git rev-parse --verify --quiet ${JSON.stringify(`${upstream}^{commit}`)}`,
+            {
+              cwd: currentRepoPath
+            }
+          )
+          revs += ` ${JSON.stringify(upstream)}`
+        }
+      } catch {
+        // no upstream / upstream gone — fall back to the branch alone
+      }
+      const command = `git log ${revs} --decorate=full --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
       commandHistory.push(command)
       const { stdout } = await execAsync(command, { cwd: currentRepoPath })
 
@@ -1437,8 +1461,10 @@ ${fileContent
           const tags = []
           const localBranches = []
           const remoteBranches = []
+          let isHead = false
           for (const tok of tokens) {
             // strip leading "HEAD -> "
+            if (tok === 'HEAD' || tok.startsWith('HEAD -> ')) isHead = true
             const cleaned = tok.startsWith('HEAD -> ') ? tok.slice(8) : tok
             if (cleaned === 'HEAD') continue
             if (cleaned.startsWith('tag: ')) {
@@ -1464,6 +1490,7 @@ ${fileContent
             date,
             message,
             tags,
+            isHead,
             branches: { local: localBranches, remote: remoteBranches }
           }
         })

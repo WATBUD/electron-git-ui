@@ -802,6 +802,14 @@
     0 0 8px rgba(102, 179, 255, 0.4);
 }
 
+.commitDotHead,
+.commitItem:hover .commitDotHead {
+  background: radial-gradient(circle at 30% 30%, #fff3b0, #ffc400);
+  box-shadow:
+    0 0 0 1px rgba(255, 196, 0, 0.55),
+    0 0 8px rgba(255, 196, 0, 0.55);
+}
+
 .commitDetails {
   flex: 1;
   min-width: 0;
