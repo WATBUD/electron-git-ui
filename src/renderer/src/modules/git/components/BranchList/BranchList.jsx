@@ -11,7 +11,6 @@ import {
   ArrowUp,
   ArrowDown,
   CheckCircle2,
-  Clock,
   AlertTriangle,
   Link2
 } from 'lucide-react'
@@ -19,7 +18,6 @@ import { CopyButton } from '../../../../shared/components/CopyButton'
 import { SearchInput } from '../../../../shared/components/SearchInput'
 import { BranchContextMenuController } from './BranchContextMenuController'
 import { CommitDiffModal } from '../Commit'
-import { formatRelativeTime, formatAbsoluteTime } from '../../../../shared/utils/relativeTime'
 import { getBranchCommits, fastForwardAllBranches, openRepository } from '../../store/git/gitThunks'
 import { setLoadingOverride, clearLoadingOverride } from '../../store/git/gitSlice'
 import {
@@ -27,7 +25,6 @@ import {
   ROW_H,
   OVERSCAN_ROWS,
   indentStyle,
-  commitIndentStyle,
   buildBranchTree,
   countLeaves,
   flattenTree
@@ -39,31 +36,16 @@ import { RenameBranchModal } from './RenameBranchModal'
 import { CreateBranchModal } from './CreateBranchModal'
 import { useCommitDisplayOptions } from '../Commit/CommitDisplayOptions'
 import { CommitTagLegend } from '../Commit/CommitTagLegend'
+import { CommitList } from './CommitList'
 /* eslint-disable react/prop-types */
 import styles from './BranchList.module.css'
 
-// Dot border colour on a commit row (one colour only, first match wins):
-//   pink  = committed locally but not pushed yet
-//   gold  = where this branch's local tip / HEAD is
-//   blue  = the pushed point (upstream branch tip)
-const commitDotClass = (commit, branch) => {
-  if (commit.unpushed) return styles.commitDotUnpushed
-  if (commit.isHead || commit.branches?.local?.includes(branch)) return styles.commitDotHead
-  if (commit.isUpstreamTip) return styles.commitDotPushed
-  return ''
-}
+// Shared fallback for optional array props: a fresh `[]` default per render would
+// defeat React.memo on child rows.
+const EMPTY_LIST = []
 
-// Tooltip explaining what the dot on a commit row means.
-const commitDotTitle = (commit, branch) => {
-  if (commit.unpushed) return '尚未 push：這個 commit 只存在本地，還沒推到遠端'
-  if (commit.isHead) return '目前所在 (HEAD)：你現在 checkout 的位置，已 push'
-  if (commit.branches?.local?.includes(branch)) {
-    return `本地最新點：本地 ${branch} 目前指到這裡，已 push`
-  }
-  if (commit.isUpstreamTip) return '已 push 的位置：遠端分支目前指到這個 commit'
-  if (commit.unpulled) return '遠端新 commit：已在遠端，本地還沒 pull'
-  return '歷史 commit'
-}
+// Remote virtual list re-renders only when the visible window moves this many rows.
+const REMOTE_WINDOW_STEP = Math.max(1, Math.floor(OVERSCAN_ROWS / 2))
 
 const BranchList = ({
   branches = [],
@@ -79,9 +61,9 @@ const BranchList = ({
   onRename,
   onCreateTag,
   localTags = [],
-  localOnlyTags = [],
-  remoteOnlyTags = [],
-  divergentTags = [],
+  localOnlyTags = EMPTY_LIST,
+  remoteOnlyTags = EMPTY_LIST,
+  divergentTags = EMPTY_LIST,
   divergentTagDetails = [],
   onRequestDeleteTag,
   onRequestDeleteBranch,
@@ -118,13 +100,20 @@ const BranchList = ({
   const localCountRef = useRef(0)
   const remoteCountRef = useRef(0)
   const remoteScrollerRef = useRef(null)
-  const [remoteScrollTop, setRemoteScrollTop] = useState(0)
+  // The remote list is virtualised. Instead of storing the raw scrollTop (which
+  // re-rendered this whole component on every scroll event), only keep the
+  // window start snapped to REMOTE_WINDOW_STEP rows: state changes once per few
+  // rows scrolled, and React skips the render when the value is unchanged.
+  const [remoteWindowStart, setRemoteWindowStart] = useState(0)
   const [remoteViewportH, setRemoteViewportH] = useState(0)
 
   React.useEffect(() => {
     const el = remoteScrollerRef.current
     if (!el) return
-    const onScroll = () => setRemoteScrollTop(el.scrollTop)
+    const onScroll = () =>
+      setRemoteWindowStart(
+        Math.floor(el.scrollTop / ROW_H / REMOTE_WINDOW_STEP) * REMOTE_WINDOW_STEP
+      )
     const ro = new ResizeObserver(() => setRemoteViewportH(el.clientHeight))
     el.addEventListener('scroll', onScroll, { passive: true })
     ro.observe(el)
@@ -270,29 +259,32 @@ const BranchList = ({
   // Handle context menu — opens via ref so BranchList itself does NOT re-render
   // when a menu opens. Re-rendering this tree is expensive when there are many
   // branches + expanded commit lists.
-  const handleContextMenu = useCallback(
-    (e, type, target, isRemote = false) => {
-      e.preventDefault()
+  // `branches` is read through a ref so this handler keeps the same identity
+  // between renders — memoised <CommitRow>s receive it as a prop.
+  const branchesRef = useRef(branches)
+  branchesRef.current = branches
+  const handleContextMenu = useCallback((e, type, target, isRemote = false) => {
+    e.preventDefault()
 
-      let tags = []
-      if (type === 'branch') {
-        const branchObj = branches.find((b) => (typeof b === 'string' ? b : b.name) === target)
-        tags = branchObj?.tags || []
-      } else if (type === 'commit') {
-        tags = target?.tags || []
-      }
+    let tags = []
+    if (type === 'branch') {
+      const branchObj = branchesRef.current.find(
+        (b) => (typeof b === 'string' ? b : b.name) === target
+      )
+      tags = branchObj?.tags || []
+    } else if (type === 'commit') {
+      tags = target?.tags || []
+    }
 
-      contextMenuRef.current?.open({
-        x: e.clientX,
-        y: e.clientY,
-        type,
-        target,
-        isRemote,
-        tags
-      })
-    },
-    [branches]
-  )
+    contextMenuRef.current?.open({
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      target,
+      isRemote,
+      tags
+    })
+  }, [])
 
   // Close context menu
   const closeContextMenu = useCallback(() => {
@@ -811,6 +803,10 @@ const BranchList = ({
                         const isActive = isCurrent || branch === currentBranch
                         const isExpanded =
                           expandedBranches.has(branch) || (tagSearchTerm && branchCommits[branch])
+                        // Filter once per branch (was computed twice: length check + map).
+                        const visibleCommits = branchCommits[branch]
+                          ? filterCommitsByTag(branchCommits[branch])
+                          : null
 
                         return (
                           <div key={`local-${branch}`}>
@@ -890,108 +886,21 @@ const BranchList = ({
                               (tagSearchTerm && branchCommits[branch])) &&
                               branchCommits[branch] && (
                                 <div className={styles.commitHistory}>
-                                  {filterCommitsByTag(branchCommits[branch]).length > 0 ? (
-                                    filterCommitsByTag(branchCommits[branch]).map((commit) => (
-                                      <div
-                                        key={commit.hash}
-                                        className={styles.commitItem}
-                                        onClick={() => {
-                                          hideRowTip()
-                                          handleViewCommit(commit)
-                                        }}
-                                        onContextMenu={(e) => {
-                                          hideRowTip()
-                                          handleContextMenu(e, 'commit', commit)
-                                        }}
-                                        onMouseEnter={(e) =>
-                                          showRowTip(e, commitDotTitle(commit, branch))
-                                        }
-                                        onMouseMove={moveRowTip}
-                                        onMouseLeave={hideRowTip}
-                                        style={{
-                                          cursor: 'pointer',
-                                          ...commitIndentStyle(entry.depth)
-                                        }}
-                                      >
-                                        <div
-                                          className={`${styles.commitDot} ${commitDotClass(commit, branch)}`}
-                                        />
-                                        <div className={styles.commitDetails}>
-                                          <div className={styles.commitMeta}>
-                                            {commitDisplay.hash && (
-                                              <span className={styles.commitHash}>
-                                                {commit.shortHash}
-                                              </span>
-                                            )}
-                                            {commitDisplay.author && (
-                                              <span className={styles.commitAuthor}>
-                                                {commit.author}
-                                              </span>
-                                            )}
-                                            {commitDisplay.date && commit.date && (
-                                              <span
-                                                className={styles.commitDate}
-                                                title={formatAbsoluteTime(commit.date)}
-                                              >
-                                                <Clock size={11} />
-                                                {formatRelativeTime(commit.date)}
-                                              </span>
-                                            )}
-                                            {commitDisplay.tags && commit.tags.length > 0 && (
-                                              <div className={tagStyles.commitTags}>
-                                                {commit.tags.map((tag) => (
-                                                  <TagBadge
-                                                    key={tag}
-                                                    tag={tag}
-                                                    inline
-                                                    localOnlyTags={localOnlyTags}
-                                                    remoteOnlyTags={remoteOnlyTags}
-                                                    divergentTags={divergentTags}
-                                                  />
-                                                ))}
-                                              </div>
-                                            )}
-                                            {commitDisplay.branches &&
-                                              (() => {
-                                                const info = commit.branches
-                                                if (!info) return null
-                                                const all = [
-                                                  ...(info.local || []).map((b) => ({
-                                                    name: b,
-                                                    isRemote: false,
-                                                    isCurrent: b === branch
-                                                  })),
-                                                  ...(info.remote || []).map((b) => ({
-                                                    name: b,
-                                                    isRemote: true,
-                                                    isCurrent: false
-                                                  }))
-                                                ]
-                                                if (all.length === 0) return null
-                                                return (
-                                                  <div className={styles.commitBranches}>
-                                                    {all.map((b) => (
-                                                      <span
-                                                        key={(b.isRemote ? 'r:' : 'l:') + b.name}
-                                                        className={`${styles.commitBranchBadge} ${b.isRemote ? styles.commitBranchRemote : styles.commitBranchLocal} ${b.isCurrent ? styles.commitBranchCurrent : ''}`}
-                                                        title={`${b.isCurrent ? 'Currently expanded — ' : ''}Tip of ${b.isRemote ? 'remote' : 'local'} branch: ${b.name}`}
-                                                      >
-                                                        <GitBranch size={10} />
-                                                        {b.name}
-                                                      </span>
-                                                    ))}
-                                                  </div>
-                                                )
-                                              })()}
-                                          </div>
-                                          {commitDisplay.message && (
-                                            <div className={styles.commitMessage}>
-                                              {commit.message}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))
+                                  {visibleCommits.length > 0 ? (
+                                    <CommitList
+                                      commits={visibleCommits}
+                                      branch={branch}
+                                      depth={entry.depth}
+                                      commitDisplay={commitDisplay}
+                                      localOnlyTags={localOnlyTags}
+                                      remoteOnlyTags={remoteOnlyTags}
+                                      divergentTags={divergentTags}
+                                      onView={handleViewCommit}
+                                      onContextMenu={handleContextMenu}
+                                      onTipShow={showRowTip}
+                                      onTipMove={moveRowTip}
+                                      onTipHide={hideRowTip}
+                                    />
                                   ) : tagSearchTerm ? (
                                     <div className={styles.noCommits}>
                                       <p
@@ -1045,13 +954,13 @@ const BranchList = ({
                       {remoteTreeEntries.length > 0 ? (
                         (() => {
                           const total = remoteTreeEntries.length
-                          const first = Math.max(
-                            0,
-                            Math.floor(remoteScrollTop / ROW_H) - OVERSCAN_ROWS
-                          )
+                          const first = Math.max(0, remoteWindowStart - OVERSCAN_ROWS)
                           const last = Math.min(
                             total - 1,
-                            Math.ceil((remoteScrollTop + remoteViewportH) / ROW_H) + OVERSCAN_ROWS
+                            remoteWindowStart +
+                              REMOTE_WINDOW_STEP +
+                              Math.ceil(remoteViewportH / ROW_H) +
+                              OVERSCAN_ROWS
                           )
                           const slice = []
                           for (let i = first; i <= last; i++)

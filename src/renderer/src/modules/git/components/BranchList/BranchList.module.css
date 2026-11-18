@@ -740,6 +740,20 @@
   transition: background-color 0.1s;
 }
 
+/* Mounted-but-offscreen rows skip layout/paint. 34px is only the placeholder
+   size used until a row has been rendered once (`auto` remembers the real one). */
+.commitItem {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 34px;
+}
+
+.commitListMore {
+  padding: 6px 14px;
+  font-size: 11px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+}
+
 .commitItem::before {
   content: '';
   position: absolute;

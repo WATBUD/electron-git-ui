@@ -1422,65 +1422,61 @@ ${fileContent
       // commits that exist on the remote but haven't been pulled yet still show
       // up in the list (like other Git UIs). Remote refs / branches without an
       // upstream just log themselves.
-      let revs = JSON.stringify(branchName)
+      const quote = (v) => JSON.stringify(v)
+      const hashSet = (out) =>
+        new Set(
+          out
+            .split('\n')
+            .filter(Boolean)
+            .map((h) => h.trim())
+        )
+
+      // Round 1 — one for-each-ref tells us whether this is a local branch,
+      // its upstream, and (via upstream:track) whether that upstream is gone.
       let upstream = ''
       let isLocalBranch = false
-      const unpushedHashes = new Set()
-      const unpulledHashes = new Set()
       try {
         const { stdout: refOut } = await execAsync(
-          `git for-each-ref --format="%(refname)|%(upstream:short)" ${JSON.stringify(`refs/heads/${branchName}`)}`,
+          `git for-each-ref --format="%(refname)|%(upstream:short)|%(upstream:track)" ${quote(`refs/heads/${branchName}`)}`,
           { cwd: currentRepoPath }
         )
-        const line = refOut.trim()
-        isLocalBranch = !!line
-        upstream = line.split('|')[1] || ''
+        const [refname, up, track] = refOut.trim().split('|')
+        isLocalBranch = !!refname
+        // "[gone]" = upstream branch was deleted on the remote
+        upstream = up && !(track || '').includes('gone') ? up : ''
       } catch {
         // not a local branch
       }
-      if (upstream) {
-        try {
-          // Skip upstreams that no longer exist (deleted on the remote).
-          await execAsync(
-            `git rev-parse --verify --quiet ${JSON.stringify(`${upstream}^{commit}`)}`,
-            { cwd: currentRepoPath }
-          )
-          revs += ` ${JSON.stringify(upstream)}`
-        } catch {
-          upstream = ''
-        }
-      }
-      if (isLocalBranch) {
-        // Commits not pushed yet: ahead of the upstream, or — for a branch
-        // that has no upstream — not reachable from any remote ref.
-        try {
-          const notRef = upstream ? JSON.stringify(upstream) : '--remotes'
-          const { stdout: unpushedOut } = await execAsync(
-            `git rev-list ${JSON.stringify(branchName)} --not ${notRef} -n 1000`,
-            { cwd: currentRepoPath }
-          )
-          unpushedOut
-            .split('\n')
-            .filter(Boolean)
-            .forEach((h) => unpushedHashes.add(h.trim()))
-          if (upstream) {
-            // Commits on the remote that the local branch doesn't have yet.
-            const { stdout: unpulledOut } = await execAsync(
-              `git rev-list ${JSON.stringify(upstream)} --not ${JSON.stringify(branchName)} -n 1000`,
-              { cwd: currentRepoPath }
-            )
-            unpulledOut
-              .split('\n')
-              .filter(Boolean)
-              .forEach((h) => unpulledHashes.add(h.trim()))
-          }
-        } catch {
-          // leave empty — markers are cosmetic
-        }
-      }
+
+      // Round 2 — the log and both marker queries are independent of each
+      // other, so run them at the same time instead of one after another.
+      const revs = upstream ? `${quote(branchName)} ${quote(upstream)}` : quote(branchName)
       const command = `git log ${revs} --decorate=full --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
       commandHistory.push(command)
-      const { stdout } = await execAsync(command, { cwd: currentRepoPath })
+
+      // Markers are cosmetic: a failure leaves the set empty instead of failing the list.
+      const markerSet = async (cmd) => {
+        try {
+          const { stdout: out } = await execAsync(cmd, { cwd: currentRepoPath })
+          return hashSet(out)
+        } catch {
+          return new Set()
+        }
+      }
+
+      const [{ stdout }, unpushedHashes, unpulledHashes] = await Promise.all([
+        execAsync(command, { cwd: currentRepoPath }),
+        // Not pushed: ahead of upstream, or (no upstream) not on any remote ref.
+        isLocalBranch
+          ? markerSet(
+              `git rev-list ${quote(branchName)} --not ${upstream ? quote(upstream) : '--remotes'} -n 1000`
+            )
+          : Promise.resolve(new Set()),
+        // On the remote but not pulled yet.
+        isLocalBranch && upstream
+          ? markerSet(`git rev-list ${quote(upstream)} --not ${quote(branchName)} -n 1000`)
+          : Promise.resolve(new Set())
+      ])
 
       const commits = stdout
         .trim()
