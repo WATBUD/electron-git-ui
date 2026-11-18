@@ -34,12 +34,36 @@ import {
 } from './branchTree'
 import { TagBadge, CreateTagModal } from '../Tag'
 import tagStyles from '../Tag/Tag.module.css'
+import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import { RenameBranchModal } from './RenameBranchModal'
 import { CreateBranchModal } from './CreateBranchModal'
 import { useCommitDisplayOptions } from '../Commit/CommitDisplayOptions'
 import { CommitTagLegend } from '../Commit/CommitTagLegend'
 /* eslint-disable react/prop-types */
 import styles from './BranchList.module.css'
+
+// Dot border colour on a commit row (one colour only, first match wins):
+//   pink  = committed locally but not pushed yet
+//   gold  = where this branch's local tip / HEAD is
+//   blue  = the pushed point (upstream branch tip)
+const commitDotClass = (commit, branch) => {
+  if (commit.unpushed) return styles.commitDotUnpushed
+  if (commit.isHead || commit.branches?.local?.includes(branch)) return styles.commitDotHead
+  if (commit.isUpstreamTip) return styles.commitDotPushed
+  return ''
+}
+
+// Tooltip explaining what the dot on a commit row means.
+const commitDotTitle = (commit, branch) => {
+  if (commit.unpushed) return '尚未 push：這個 commit 只存在本地，還沒推到遠端'
+  if (commit.isHead) return '目前所在 (HEAD)：你現在 checkout 的位置，已 push'
+  if (commit.branches?.local?.includes(branch)) {
+    return `本地最新點：本地 ${branch} 目前指到這裡，已 push`
+  }
+  if (commit.isUpstreamTip) return '已 push 的位置：遠端分支目前指到這個 commit'
+  if (commit.unpulled) return '遠端新 commit：已在遠端，本地還沒 pull'
+  return '歷史 commit'
+}
 
 const BranchList = ({
   branches = [],
@@ -191,6 +215,33 @@ const BranchList = ({
   const fileStatus = useSelector((s) => s.git.fileStatus || [])
   const hasUncommittedChanges = fileStatus.length > 0
   const { options: commitDisplay, toggle: toggleCommitDisplay } = useCommitDisplayOptions()
+
+  // Commit-row tooltip: shows the dot state as soon as the pointer is on the
+  // row and follows it. It is driven straight through the DOM (no React state)
+  // so mouse-move doesn't re-render this large list on every pixel.
+  const rowTipRef = useRef(null)
+
+  const moveRowTip = useCallback((e) => {
+    const el = rowTipRef.current
+    if (!el) return
+    const x = Math.min(e.clientX + 12, window.innerWidth - 300)
+    el.style.transform = `translate3d(${x}px, ${e.clientY + 18}px, 0)`
+  }, [])
+
+  const showRowTip = useCallback(
+    (e, text) => {
+      const el = rowTipRef.current
+      if (!el) return
+      el.textContent = text
+      moveRowTip(e)
+      el.style.display = 'block'
+    },
+    [moveRowTip]
+  )
+
+  const hideRowTip = useCallback(() => {
+    if (rowTipRef.current) rowTipRef.current.style.display = 'none'
+  }, [])
 
   const handleViewCommit = useCallback((commit) => {
     setCompareFrom(null)
@@ -529,6 +580,9 @@ const BranchList = ({
 
   return (
     <div className={styles.branchManagement}>
+      <ModalPortal>
+        <div ref={rowTipRef} className={styles.rowTip} />
+      </ModalPortal>
       <div className={styles.header}>
         <div className={styles.headerTitle}>
           <button
@@ -841,18 +895,26 @@ const BranchList = ({
                                       <div
                                         key={commit.hash}
                                         className={styles.commitItem}
-                                        onClick={() => handleViewCommit(commit)}
-                                        onContextMenu={(e) =>
+                                        onClick={() => {
+                                          hideRowTip()
+                                          handleViewCommit(commit)
+                                        }}
+                                        onContextMenu={(e) => {
+                                          hideRowTip()
                                           handleContextMenu(e, 'commit', commit)
+                                        }}
+                                        onMouseEnter={(e) =>
+                                          showRowTip(e, commitDotTitle(commit, branch))
                                         }
+                                        onMouseMove={moveRowTip}
+                                        onMouseLeave={hideRowTip}
                                         style={{
                                           cursor: 'pointer',
                                           ...commitIndentStyle(entry.depth)
                                         }}
-                                        title="Click to view changes"
                                       >
                                         <div
-                                          className={`${styles.commitDot} ${commit.isHead || commit.branches?.local?.includes(branch) ? styles.commitDotHead : ''}`}
+                                          className={`${styles.commitDot} ${commitDotClass(commit, branch)}`}
                                         />
                                         <div className={styles.commitDetails}>
                                           <div className={styles.commitMeta}>

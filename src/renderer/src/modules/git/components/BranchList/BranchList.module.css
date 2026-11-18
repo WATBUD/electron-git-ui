@@ -802,12 +802,21 @@
     0 0 8px rgba(102, 179, 255, 0.4);
 }
 
+/* Marker dots: the ball itself is coloured; border and the hover glow stay as
+   the default .commitDot / .commitItem:hover .commitDot styles. */
 .commitDotHead,
 .commitItem:hover .commitDotHead {
   background: radial-gradient(circle at 30% 30%, #fff3b0, #ffc400);
-  box-shadow:
-    0 0 0 1px rgba(255, 196, 0, 0.55),
-    0 0 8px rgba(255, 196, 0, 0.55);
+}
+
+.commitDotUnpushed,
+.commitItem:hover .commitDotUnpushed {
+  background: radial-gradient(circle at 30% 30%, #ffd1e6, #ff5fa2);
+}
+
+.commitDotPushed,
+.commitItem:hover .commitDotPushed {
+  background: radial-gradient(circle at 30% 30%, #d6ebff, #3d9bff);
 }
 
 .commitDetails {
@@ -1186,4 +1195,23 @@
 .headerFetchBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.rowTip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: none;
+  z-index: 6000;
+  pointer-events: none;
+  will-change: transform;
+  max-width: 280px;
+  padding: 5px 9px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #f2f2f5;
+  background-color: #2b2d3a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }

@@ -1423,24 +1423,60 @@ ${fileContent
       // up in the list (like other Git UIs). Remote refs / branches without an
       // upstream just log themselves.
       let revs = JSON.stringify(branchName)
+      let upstream = ''
+      let isLocalBranch = false
+      const unpushedHashes = new Set()
+      const unpulledHashes = new Set()
       try {
-        const { stdout: upstreamOut } = await execAsync(
-          `git for-each-ref --format="%(upstream:short)" ${JSON.stringify(`refs/heads/${branchName}`)}`,
+        const { stdout: refOut } = await execAsync(
+          `git for-each-ref --format="%(refname)|%(upstream:short)" ${JSON.stringify(`refs/heads/${branchName}`)}`,
           { cwd: currentRepoPath }
         )
-        const upstream = upstreamOut.trim()
-        if (upstream) {
+        const line = refOut.trim()
+        isLocalBranch = !!line
+        upstream = line.split('|')[1] || ''
+      } catch {
+        // not a local branch
+      }
+      if (upstream) {
+        try {
           // Skip upstreams that no longer exist (deleted on the remote).
           await execAsync(
             `git rev-parse --verify --quiet ${JSON.stringify(`${upstream}^{commit}`)}`,
-            {
-              cwd: currentRepoPath
-            }
+            { cwd: currentRepoPath }
           )
           revs += ` ${JSON.stringify(upstream)}`
+        } catch {
+          upstream = ''
         }
-      } catch {
-        // no upstream / upstream gone — fall back to the branch alone
+      }
+      if (isLocalBranch) {
+        // Commits not pushed yet: ahead of the upstream, or — for a branch
+        // that has no upstream — not reachable from any remote ref.
+        try {
+          const notRef = upstream ? JSON.stringify(upstream) : '--remotes'
+          const { stdout: unpushedOut } = await execAsync(
+            `git rev-list ${JSON.stringify(branchName)} --not ${notRef} -n 1000`,
+            { cwd: currentRepoPath }
+          )
+          unpushedOut
+            .split('\n')
+            .filter(Boolean)
+            .forEach((h) => unpushedHashes.add(h.trim()))
+          if (upstream) {
+            // Commits on the remote that the local branch doesn't have yet.
+            const { stdout: unpulledOut } = await execAsync(
+              `git rev-list ${JSON.stringify(upstream)} --not ${JSON.stringify(branchName)} -n 1000`,
+              { cwd: currentRepoPath }
+            )
+            unpulledOut
+              .split('\n')
+              .filter(Boolean)
+              .forEach((h) => unpulledHashes.add(h.trim()))
+          }
+        } catch {
+          // leave empty — markers are cosmetic
+        }
       }
       const command = `git log ${revs} --decorate=full --pretty=format:"%H|%h|%an|%ae|%ad|%s|%D" --date=iso -n ${limit}`
       commandHistory.push(command)
@@ -1462,6 +1498,7 @@ ${fileContent
           const localBranches = []
           const remoteBranches = []
           let isHead = false
+          let isUpstreamTip = false
           for (const tok of tokens) {
             // strip leading "HEAD -> "
             if (tok === 'HEAD' || tok.startsWith('HEAD -> ')) isHead = true
@@ -1478,6 +1515,7 @@ ${fileContent
             }
             const remoteMatch = cleaned.match(/^refs\/remotes\/(.+)$/)
             if (remoteMatch && remoteMatch[1] !== 'origin/HEAD') {
+              if (upstream && remoteMatch[1] === upstream) isUpstreamTip = true
               remoteBranches.push(remoteMatch[1])
               continue
             }
@@ -1491,6 +1529,9 @@ ${fileContent
             message,
             tags,
             isHead,
+            isUpstreamTip,
+            unpushed: unpushedHashes.has(hash),
+            unpulled: unpulledHashes.has(hash),
             branches: { local: localBranches, remote: remoteBranches }
           }
         })
