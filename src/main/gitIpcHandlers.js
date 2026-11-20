@@ -2053,49 +2053,114 @@ ${fileContent
     }
   })
 
-  // Get the local repo's `user.name` / `user.email`. Falls back to global
-  // values if no repo-level override exists.
-  ipcMain.handle('git:getUserConfig', async () => {
-    if (!currentRepoPath) return fail('No repository selected')
+  // Folder an author query/update should run in: an explicit `repoPath` (used by
+  // the "new project" prompt, where the repo may not be the open one yet) or the
+  // currently open repository.
+  const resolveAuthorCwd = (repoPath) => {
+    if (repoPath) {
+      if (typeof repoPath !== 'string' || !isAbsolute(repoPath) || !existsSync(repoPath)) {
+        return { error: 'Repository folder not found' }
+      }
+      return { cwd: repoPath }
+    }
+    if (!currentRepoPath) return { error: 'No repository selected' }
+    return { cwd: currentRepoPath }
+  }
+
+  // Get the repo's effective `user.name` / `user.email` (local override, else
+  // global). `scope` says where the identity comes from: 'local' = set on this
+  // repo, 'global' = inherited from the user-level config, 'none' = not set.
+  ipcMain.handle('git:getUserConfig', async (_, repoPath) => {
+    const target = resolveAuthorCwd(repoPath)
+    if (target.error) return fail(target.error)
     try {
-      const readKey = async (key) => {
-        commandHistory.push(`git config --get ${key}`)
+      const readKey = async (args, key) => {
+        const cmd = `git config ${args}--get ${key}`
+        commandHistory.push(cmd)
         try {
-          const { stdout } = await execAsync(`git config --get ${key}`, {
-            cwd: currentRepoPath
-          })
+          const { stdout } = await execAsync(cmd, { cwd: target.cwd })
           return stdout.trim()
         } catch {
           return ''
         }
       }
-      const [name, email] = await Promise.all([readKey('user.name'), readKey('user.email')])
-      return success({ name, email })
+      const [name, email, localName, localEmail] = await Promise.all([
+        readKey('', 'user.name'),
+        readKey('', 'user.email'),
+        readKey('--local ', 'user.name'),
+        readKey('--local ', 'user.email')
+      ])
+      const scope = localName || localEmail ? 'local' : name || email ? 'global' : 'none'
+      return success({ name, email, scope })
+    } catch (error) {
+      return fail(error.message)
+    }
+  })
+
+  // Every author identity configured on this machine: the global one plus the
+  // repo-local override of each given project. Used by the author picker so a
+  // previously used identity can be re-applied with one click.
+  ipcMain.handle('git:listKnownAuthors', async (_, repoPaths) => {
+    try {
+      const paths = (Array.isArray(repoPaths) ? repoPaths : []).filter(
+        (p) => typeof p === 'string' && isAbsolute(p) && existsSync(p)
+      )
+      const read = async (args, cwd) => {
+        try {
+          const { stdout } = await execFileAsync('git', ['config', ...args], { cwd })
+          return stdout.trim()
+        } catch {
+          return ''
+        }
+      }
+      const found = new Map()
+      const add = (name, email, source) => {
+        if (!name && !email) return
+        const key = `${name}\u0000${email.toLowerCase()}`
+        const entry = found.get(key) || { name, email, sources: [] }
+        if (!entry.sources.includes(source)) entry.sources.push(source)
+        found.set(key, entry)
+      }
+      const [gName, gEmail] = await Promise.all([
+        read(['--global', '--get', 'user.name']),
+        read(['--global', '--get', 'user.email'])
+      ])
+      add(gName, gEmail, '全域')
+      const locals = await Promise.all(
+        paths.map(async (dir) => {
+          const [name, email] = await Promise.all([
+            read(['--local', '--get', 'user.name'], dir),
+            read(['--local', '--get', 'user.email'], dir)
+          ])
+          return { dir, name, email }
+        })
+      )
+      locals.forEach(({ dir, name, email }) => add(name, email, basename(dir)))
+      return success({ authors: [...found.values()] })
     } catch (error) {
       return fail(error.message)
     }
   })
 
   // Set local repo `user.name` / `user.email`. Empty string unsets the key.
-  ipcMain.handle('git:setUserConfig', async (_, { name, email }) => {
-    if (!currentRepoPath) return fail('No repository selected')
+  ipcMain.handle('git:setUserConfig', async (_, { name, email }, repoPath) => {
+    const target = resolveAuthorCwd(repoPath)
+    if (target.error) return fail(target.error)
     try {
+      // execFile (no shell) so names with quotes / `$` are stored verbatim.
       const writeKey = async (key, value) => {
         if (value === undefined || value === null) return
         const trimmed = String(value).trim()
         if (trimmed === '') {
-          const cmd = `git config --unset ${key}`
-          commandHistory.push(cmd)
+          commandHistory.push(`git config --unset ${key}`)
           try {
-            await execAsync(cmd, { cwd: currentRepoPath })
+            await execFileAsync('git', ['config', '--unset', key], { cwd: target.cwd })
           } catch {
             // key may not exist — ignore
           }
         } else {
-          const safe = trimmed.replace(/"/g, '\\"')
-          const cmd = `git config ${key} "${safe}"`
-          commandHistory.push(cmd)
-          await execAsync(cmd, { cwd: currentRepoPath })
+          commandHistory.push(`git config ${key} ${JSON.stringify(trimmed)}`)
+          await execFileAsync('git', ['config', key, trimmed], { cwd: target.cwd })
         }
       }
       await writeKey('user.name', name)

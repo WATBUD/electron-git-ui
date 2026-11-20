@@ -5,6 +5,8 @@ import { ModalPortal } from '../../../../shared/components/ModalPortal'
 import { CopyButton } from '../../../../shared/components/CopyButton'
 import { fetchUserConfig, setUserConfig } from '../../store/git'
 import { CommitDialog } from '../Commit'
+import { AuthorPicker } from '../Author/AuthorPicker'
+import { rememberAuthor } from '../../../../shared/utils/authorHistory'
 import styles from './Toolbar.module.css'
 import {
   Download,
@@ -171,6 +173,7 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
     setAuthorSaving(true)
     try {
       await dispatch(setUserConfig({ name, email })).unwrap()
+      rememberAuthor(name, email)
       setShowAuthorEditor(false)
     } catch (err) {
       console.error('Failed to update user config:', err)
@@ -363,6 +366,10 @@ export const Toolbar = ({ onPull, onFetch, onPush, onCommit, onStash, loading })
 
           {showAuthorEditor && (
             <div className={styles.authorPopover}>
+              <AuthorPicker
+                current={{ name: authorDraft.name.trim(), email: authorDraft.email.trim() }}
+                onPick={(a) => setAuthorDraft({ name: a.name, email: a.email })}
+              />
               <div className={styles.authorField}>
                 <label className={styles.authorLabel}>Name</label>
                 <div className={styles.authorInputWrapper}>

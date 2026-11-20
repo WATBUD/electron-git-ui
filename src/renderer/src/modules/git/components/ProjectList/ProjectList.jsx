@@ -20,6 +20,7 @@ import {
   ArrowDownUp,
   X
 } from 'lucide-react'
+import { AuthorPromptModal } from './AuthorPromptModal'
 import styles from './ProjectList.module.css'
 
 // The project still uses plain JavaScript and does not ship the prop-types
@@ -46,6 +47,8 @@ const ProjectList = ({ onProjectSelect }) => {
   const [visibility, setVisibility] = React.useState('all')
   // Create-repository modal state.
   const [showCreate, setShowCreate] = React.useState(false)
+  // Repo path whose author should be confirmed (new project opened / cloned).
+  const [authorPromptPath, setAuthorPromptPath] = React.useState('')
   const [newRepoName, setNewRepoName] = React.useState('')
   const [newRepoDesc, setNewRepoDesc] = React.useState('')
   const [newRepoPrivate, setNewRepoPrivate] = React.useState(true)
@@ -96,8 +99,17 @@ const ProjectList = ({ onProjectSelect }) => {
     dispatch(removeProject(path))
   }
 
-  const handleAddProject = () => {
-    dispatch(selectRepository())
+  const handleAddProject = async () => {
+    const result = await dispatch(selectRepository())
+    const data = result.payload?.data
+    // A dismissed folder dialog reports 'No change' — only prompt for a real new repo.
+    if (
+      selectRepository.fulfilled.match(result) &&
+      data?.repoPath &&
+      data.message !== 'No change'
+    ) {
+      setAuthorPromptPath(data.repoPath)
+    }
   }
 
   const loadRemoteProjects = React.useCallback(async () => {
@@ -228,6 +240,7 @@ const ProjectList = ({ onProjectSelect }) => {
       }
       const path = result.data.repoPath
       dispatch(addProject(path))
+      setAuthorPromptPath(path)
       setRemoteProjects((items) =>
         items.map((item) => (item.url === project.url ? { ...item, localExists: true } : item))
       )
@@ -523,6 +536,10 @@ const ProjectList = ({ onProjectSelect }) => {
           )}
         </div>
       </div>
+
+      {authorPromptPath && (
+        <AuthorPromptModal repoPath={authorPromptPath} onClose={() => setAuthorPromptPath('')} />
+      )}
 
       {showCreate && (
         <div
